@@ -1,0 +1,32 @@
+{
+  "name": "@ergo-faucet/database",
+  "version": "0.0.0",
+  "description": "database utilities for ergo-faucet",
+  "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
+  "license": "GPL-3.0",
+  "author": "TechStack-BlockChain",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc --build tsconfig.build.json",
+    "coverage": "npm run test -- --coverage",
+    "lint": "eslint --fix . && npm run prettify",
+    "prettify": "prettier --write . --ignore-path ./.gitignore",
+    "release": "npm run test -- --run && npm run build && npm publish --access public",
+    "test": "NODE_OPTIONS='--import tsx' vitest",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.9",
+    "@vitest/coverage-istanbul": "^2.0.5",
+    "extensionless": "^1.9.6",
+    "prettier": "^3.2.4",
+    "tsx": "^4.19.4",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.5"
+  },
+  "engines": {
+    "node": ">=20.11.0"
+  }
+}
