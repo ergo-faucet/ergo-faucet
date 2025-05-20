@@ -28,5 +28,9 @@
   },
   "engines": {
     "node": ">=20.11.0"
+  },
+  "dependencies": {
+    "@rosen-bridge/extended-typeorm": "^0.0.3",
+    "typeorm": "^0.3.24"
   }
 }
