@@ -1,4 +1,5 @@
 import { createDataSource, AppDataSource } from './dataSource';
+import { Repository, EntityTarget, ObjectLiteral } from 'typeorm';
 
 class DataSourceHandler {
   private static instance: DataSourceHandler;
@@ -36,6 +37,12 @@ class DataSourceHandler {
       throw new Error('DataSource not initialized. Call initialize() first.');
     }
     return this.dataSource;
+  }
+
+  public getRepository<T extends ObjectLiteral>(
+    entity: EntityTarget<T>,
+  ): Repository<T> {
+    return this.getDataSource().getRepository(entity);
   }
 
   public async close(): Promise<void> {
