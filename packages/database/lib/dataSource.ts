@@ -1,53 +1,36 @@
-import path from 'path';
-import { fileURLToPath } from 'url';
 import { DataSource } from '@rosen-bridge/extended-typeorm';
-import {
-  Asset,
-  AuthMethod,
-  Package,
-  PackageAuthMethod,
-  User,
-  UserAuthStatus,
-  UserRequest,
-} from './index';
+import { entities } from './entities';
+import { migrations } from './migrations';
+import { DatabaseConfig, CommonDataSourceConfig } from './utils';
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-export const createDataSource = (type: 'sqlite' | 'postgres' = 'sqlite') => {
-  const commonConfig = {
-    entities: [
-      Asset,
-      AuthMethod,
-      Package,
-      PackageAuthMethod,
-      User,
-      UserAuthStatus,
-      UserRequest,
-    ],
-    synchronize: false,
-    logging: false,
-  };
-
-  if (type === 'sqlite') {
-    return new DataSource({
-      type: 'sqlite',
-      database: path.join(__dirname, 'database.sqlite'),
-      migrations: [path.join(__dirname, 'migrations/sqlite/*.ts')],
-      ...commonConfig,
-    });
-  }
-
-  return new DataSource({
-    type: 'postgres',
-    host: 'localhost',
-    port: 5432,
-    username: 'postgres',
-    password: 'postgres',
-    database: 'ergo_faucet',
-    migrations: [path.join(__dirname, 'migrations/postgres/*.ts')],
-    ...commonConfig,
-  });
+/**
+ * Common configuration for the data source.
+ * Includes entities, synchronization, logging, and migrations.
+ */
+const commonConfig: CommonDataSourceConfig = {
+  entities: [...entities],
+  synchronize: false,
+  logging: false,
+  migrations: [],
 };
 
-export type AppDataSource = ReturnType<typeof createDataSource>;
+/**
+ * Creates a new data source instance based on the provided configuration.
+ * @param config - The database configuration object.
+ * @returns A new instance of the DataSource.
+ */
+export const createDataSource = (config: DatabaseConfig) => {
+  const finalConfig = {
+    ...commonConfig,
+    ...config,
+    migrations: migrations[config.type] || [],
+  };
+
+  return new DataSource(finalConfig);
+};
+
+/**
+ * Type definition for the application data source.
+ * Represents the return type of the createDataSource function or undefined.
+ */
+export type AppDataSource = ReturnType<typeof createDataSource> | undefined;

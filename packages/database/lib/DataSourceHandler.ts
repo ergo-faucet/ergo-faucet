@@ -1,56 +1,63 @@
 import { createDataSource, AppDataSource } from './dataSource';
-import { Repository, EntityTarget, ObjectLiteral } from 'typeorm';
+import { DatabaseConfig } from './utils';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 
 class DataSourceHandler {
-  private static instance: DataSourceHandler;
+  private static instance: DataSourceHandler = new DataSourceHandler();
   private dataSource?: AppDataSource;
 
   private constructor() {}
 
-  public static getInstance(): DataSourceHandler {
-    if (!DataSourceHandler.instance) {
-      DataSourceHandler.instance = new DataSourceHandler();
+  /**
+   * Retrieves the singleton instance of the DataSourceHandler.
+   * @returns The singleton instance of DataSourceHandler.
+   * @throws Error if the instance has not been initialized.
+   */
+  public static getInstance = (): DataSourceHandler => {
+    if (!this.instance) {
+      throw new Error('DataSourceHandler instance has not been initialized.');
     }
     return DataSourceHandler.instance;
-  }
+  };
 
-  public async initialize(
-    type: 'postgres' | 'sqlite' = 'sqlite',
-  ): Promise<AppDataSource> {
-    if (this.dataSource?.isInitialized) {
-      return this.dataSource;
+  /**
+   * Initializes the data source with the provided configuration.
+   * @param config - The database configuration object.
+   * @returns The initialized AppDataSource instance.
+   * @throws Error if initialization or migrations fail.
+   */
+  public static initialize = async (
+    config: DatabaseConfig,
+    logger?: AbstractLogger,
+  ): Promise<AppDataSource> => {
+    if (this.instance.dataSource?.isInitialized) {
+      return this.instance.dataSource;
     }
 
-    this.dataSource = createDataSource(type);
-    try {
-      await this.dataSource.initialize();
-      console.log(`Data Source (${type}) initialized successfully`);
-      return this.dataSource;
-    } catch (error) {
-      console.error(`Error initializing ${type} Data Source:`, error);
-      throw error;
-    }
-  }
+    this.instance.dataSource = createDataSource(config);
+    await this.instance.dataSource.initialize();
+    await this.instance.dataSource.runMigrations();
+    logger?.info(`Data Source (${config.type}) initialized successfully`);
+    return this.instance.dataSource;
+  };
 
-  public getDataSource(): AppDataSource {
-    if (!this.dataSource?.isInitialized) {
-      throw new Error('DataSource not initialized. Call initialize() first.');
-    }
+  /**
+   * Retrieves the current data source instance.
+   * @returns The current AppDataSource instance or undefined if not initialized.
+   */
+  public getDataSource = (): AppDataSource => {
     return this.dataSource;
-  }
+  };
 
-  public getRepository<T extends ObjectLiteral>(
-    entity: EntityTarget<T>,
-  ): Repository<T> {
-    return this.getDataSource().getRepository(entity);
-  }
-
-  public async close(): Promise<void> {
+  /**
+   * Closes the current data source connection if it is initialized.
+   * @returns A promise that resolves when the connection is closed.
+   */
+  public close = async (): Promise<void> => {
     if (this.dataSource?.isInitialized) {
       await this.dataSource.destroy();
-      console.log('Data Source connection closed');
     }
-  }
+  };
 }
 
-export const dataSourceHandler = DataSourceHandler.getInstance();
+export const dataSourceHandler = DataSourceHandler;

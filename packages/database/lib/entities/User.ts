@@ -1,11 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
 
 @Entity('users')
 export class User {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
-  @Index({ unique: true })
-  address!: string;
+  @Column('simple-array')
+  addresses!: string[];
 }

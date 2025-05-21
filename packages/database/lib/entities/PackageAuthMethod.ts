@@ -13,6 +13,6 @@ export class PackageAuthMethod {
   @ManyToOne(() => AuthMethod)
   authMethod!: AuthMethod;
 
-  @Column()
+  @Column({ type: 'int' })
   order!: number;
 }

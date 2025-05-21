@@ -9,27 +9,27 @@ export class Package {
   @ManyToOne(() => Asset)
   asset!: Asset;
 
-  @Column()
+  @Column({ type: 'varchar' })
   name!: string;
 
-  @Column()
+  @Column({ type: 'text' })
   description!: string;
 
-  @Column({ type: 'enum', enum: ['normal', 'random'] })
+  @Column({ type: 'text', default: 'normal' })
   type!: 'normal' | 'random';
 
-  @Column({ type: 'enum', enum: ['show', 'hide'] })
+  @Column({ type: 'text', default: 'show' })
   status!: 'show' | 'hide';
 
-  @Column({ name: 'open_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'open_at', type: 'date', nullable: true })
   openAt?: Date;
 
-  @Column({ name: 'close_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'close_at', type: 'date', nullable: true })
   closeAt?: Date;
 
-  @Column()
+  @Column({ type: 'bigint' })
   delay!: number;
 
-  @Column({ name: 'number_each_user' })
+  @Column({ name: 'number_each_user', type: 'int' })
   numberEachUser!: number;
 }

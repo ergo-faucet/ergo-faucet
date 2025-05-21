@@ -5,13 +5,13 @@ export class Asset {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column()
+  @Column({ type: 'varchar' })
   @Index({ unique: true })
   tokenId!: string;
 
   @Column({ type: 'bigint' })
   amount!: string;
 
-  @Column({ name: 'usage_description' })
+  @Column({ type: 'text' })
   usageDescription!: string;
 }

@@ -17,13 +17,13 @@ export class UserAuthStatus {
   @ManyToOne(() => Package, { nullable: true })
   package?: Package;
 
-  @Column({ name: 'verified_at', type: 'timestamp' })
+  @Column({ name: 'verified_at', type: 'date' })
   verifiedAt!: Date;
 
-  @Column({ type: 'enum', enum: ['passed', 'failed', 'pending'] })
+  @Column({ type: 'text' })
   status!: 'passed' | 'failed' | 'pending';
 
-  @Column({ name: 'expires_at', type: 'timestamp', nullable: true })
+  @Column({ name: 'expires_at', type: 'date', nullable: true })
   expiresAt?: Date;
 
   @Column({ name: 'auth_meta_data', type: 'text', nullable: true })

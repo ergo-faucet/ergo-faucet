@@ -13,12 +13,12 @@ export class UserRequest {
   @ManyToOne(() => Package)
   package!: Package;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'date' })
   timestamp!: Date;
 
-  @Column({ name: 'destination_address' })
+  @Column({ name: 'destination_address', type: 'varchar' })
   destinationAddress!: string;
 
-  @Column({ type: 'enum', enum: ['paid', 'failed', 'pending'] })
+  @Column({ type: 'text' })
   status!: 'paid' | 'failed' | 'pending';
 }
