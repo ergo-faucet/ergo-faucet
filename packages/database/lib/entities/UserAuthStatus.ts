@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToOne,
+} from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 import { AuthMethod } from './AuthMethod';
 import { Package } from './Package';

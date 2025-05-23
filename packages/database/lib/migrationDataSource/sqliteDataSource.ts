@@ -7,7 +7,7 @@ const sqliteDataSource = new DataSource({
   database: ':memory:',
   entities: [...entities],
   synchronize: false,
-  logging: true,
+  logging: false,
   migrations: migrations.sqlite,
 });
 

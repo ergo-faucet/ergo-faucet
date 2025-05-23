@@ -35,8 +35,7 @@
   },
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^2.0.1",
-    "@rosen-bridge/extended-typeorm": "^0.0.3",
-    "pg": "^8.16.0",
-    "typeorm": "^0.3.24"
+    "@rosen-bridge/extended-typeorm": "^0.1.0",
+    "pg": "^8.16.0"
   }
 }

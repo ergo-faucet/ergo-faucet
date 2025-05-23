@@ -1,4 +1,9 @@
-import { Entity, PrimaryGeneratedColumn, Column, Index } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  Index,
+} from '@rosen-bridge/extended-typeorm';
 
 @Entity('assets')
 export class Asset {

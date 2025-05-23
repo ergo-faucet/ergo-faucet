@@ -1,4 +1,8 @@
-import { Entity, PrimaryGeneratedColumn, Column } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+} from '@rosen-bridge/extended-typeorm';
 
 @Entity('auth_methods')
 export class AuthMethod {
