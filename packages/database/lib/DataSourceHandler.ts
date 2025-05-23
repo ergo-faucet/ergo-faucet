@@ -1,17 +1,33 @@
-import { createDataSource, AppDataSource } from './dataSource';
-import { DatabaseConfig } from './utils';
-import { AbstractLogger } from '@rosen-bridge/abstract-logger';
+import { createDataSource } from './index';
+import { DataSource } from '@rosen-bridge/extended-typeorm';
+import { DatabaseConfig } from './types';
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
+/**
+ * Singleton handler for managing database connections and operations.
+ * Provides centralized control over data source initialization, access, and cleanup.
+ */
 class DataSourceHandler {
-  private static instance: DataSourceHandler = new DataSourceHandler();
-  private dataSource?: AppDataSource;
-
-  private constructor() {}
+  private static instance: DataSourceHandler;
+  private dataSource: DataSource;
+  private logger: AbstractLogger;
 
   /**
-   * Retrieves the singleton instance of the DataSourceHandler.
-   * @returns The singleton instance of DataSourceHandler.
-   * @throws Error if the instance has not been initialized.
+   * Private constructor to enforce singleton pattern.
+   * @param config - Database configuration parameters
+   * @param logger - Logger instance (falls back to DummyLogger if not provided)
+   */
+  private constructor(config: DatabaseConfig, logger: AbstractLogger) {
+    this.logger = logger ? logger : new DummyLogger();
+    this.dataSource = createDataSource(config);
+  }
+
+  /**
+   * Gets the singleton instance of DataSourceHandler.
+   * @returns The initialized DataSourceHandler instance
+   * @throws {Error} If handler hasn't been initialized via initialize() first
+   * @example
+   * const handler = DataSourceHandler.getInstance();
    */
   public static getInstance = (): DataSourceHandler => {
     if (!this.instance) {
@@ -21,43 +37,53 @@ class DataSourceHandler {
   };
 
   /**
-   * Initializes the data source with the provided configuration.
-   * @param config - The database configuration object.
-   * @returns The initialized AppDataSource instance.
-   * @throws Error if initialization or migrations fail.
+   * Initializes the database connection and runs pending migrations.
+   * @param config - Database configuration parameters
+   * @param logger - Optional logger instance for connection events
+   * @returns Promise that resolves to initialized DataSource
+   * @throws {Error} If connection initialization or migrations fail
+   * @example
+   * const dataSource = await DataSourceHandler.initialize(config, logger);
    */
   public static initialize = async (
     config: DatabaseConfig,
     logger?: AbstractLogger,
-  ): Promise<AppDataSource> => {
-    if (this.instance.dataSource?.isInitialized) {
+  ): Promise<DataSource> => {
+    if (this.instance?.dataSource?.isInitialized) {
       return this.instance.dataSource;
     }
 
-    this.instance.dataSource = createDataSource(config);
+    this.instance = new DataSourceHandler(config, logger || new DummyLogger());
     await this.instance.dataSource.initialize();
     await this.instance.dataSource.runMigrations();
-    logger?.info(`Data Source (${config.type}) initialized successfully`);
+    this.instance.logger.info(
+      `Data Source (${config.type}) initialized successfully`,
+    );
     return this.instance.dataSource;
   };
 
   /**
-   * Retrieves the current data source instance.
-   * @returns The current AppDataSource instance or undefined if not initialized.
+   * Gets the active data source instance.
+   * @returns Configured DataSource instance or undefined if not initialized
+   * @example
+   * const dataSource = handler.getDataSource();
    */
-  public getDataSource = (): AppDataSource => {
+  public getDataSource = (): DataSource => {
     return this.dataSource;
   };
 
   /**
-   * Closes the current data source connection if it is initialized.
-   * @returns A promise that resolves when the connection is closed.
+   * Safely closes the database connection if active.
+   * @returns Promise that resolves when connection is closed
+   * @example
+   * await handler.close();
    */
   public close = async (): Promise<void> => {
     if (this.dataSource?.isInitialized) {
       await this.dataSource.destroy();
+      this.logger.info('Database connection closed');
     }
   };
 }
 
-export const dataSourceHandler = DataSourceHandler;
+export { DataSourceHandler };

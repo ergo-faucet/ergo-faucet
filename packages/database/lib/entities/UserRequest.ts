@@ -12,10 +12,10 @@ export class UserRequest {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user!: User;
 
-  @ManyToOne(() => Package)
+  @ManyToOne(() => Package, { onDelete: 'CASCADE' })
   package!: Package;
 
   @Column({ type: 'date' })

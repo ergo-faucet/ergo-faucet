@@ -25,21 +25,3 @@ export {
   UserAuthStatus,
   UserRequest,
 };
-
-export type Entities =
-  | Asset
-  | AuthMethod
-  | Package
-  | PackageAuthMethod
-  | User
-  | UserAuthStatus
-  | UserRequest;
-
-export type EntityClasses =
-  | typeof Asset
-  | typeof AuthMethod
-  | typeof Package
-  | typeof PackageAuthMethod
-  | typeof User
-  | typeof UserAuthStatus
-  | typeof UserRequest;

@@ -11,7 +11,7 @@ export class Package {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Asset)
+  @ManyToOne(() => Asset, { onDelete: 'CASCADE' })
   asset!: Asset;
 
   @Column({ type: 'varchar' })

@@ -13,13 +13,13 @@ export class UserAuthStatus {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   user!: User;
 
-  @ManyToOne(() => AuthMethod)
+  @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE' })
   authMethod!: AuthMethod;
 
-  @ManyToOne(() => Package, { nullable: true })
+  @ManyToOne(() => Package, { onDelete: 'CASCADE' })
   package?: Package;
 
   @Column({ name: 'verified_at', type: 'date' })

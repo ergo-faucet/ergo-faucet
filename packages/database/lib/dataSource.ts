@@ -1,13 +1,13 @@
 import { DataSource } from '@rosen-bridge/extended-typeorm';
 import { entities } from './entities';
 import { migrations } from './migrations';
-import { DatabaseConfig, CommonDataSourceConfig } from './utils';
+import { DatabaseConfig } from './types';
 
 /**
  * Common configuration for the data source.
  * Includes entities, synchronization, logging, and migrations.
  */
-const commonConfig: CommonDataSourceConfig = {
+const commonConfig = {
   entities: [...entities],
   synchronize: false,
   logging: false,
@@ -23,14 +23,8 @@ export const createDataSource = (config: DatabaseConfig) => {
   const finalConfig = {
     ...commonConfig,
     ...config,
-    migrations: migrations[config.type] || [],
+    migrations: migrations[config.type],
   };
 
   return new DataSource(finalConfig);
 };
-
-/**
- * Type definition for the application data source.
- * Represents the return type of the createDataSource function or undefined.
- */
-export type AppDataSource = ReturnType<typeof createDataSource> | undefined;

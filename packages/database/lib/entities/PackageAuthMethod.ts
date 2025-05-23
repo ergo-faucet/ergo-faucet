@@ -12,10 +12,10 @@ export class PackageAuthMethod {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Package)
+  @ManyToOne(() => Package, { onDelete: 'CASCADE' })
   package!: Package;
 
-  @ManyToOne(() => AuthMethod)
+  @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE' })
   authMethod!: AuthMethod;
 
   @Column({ type: 'int' })
