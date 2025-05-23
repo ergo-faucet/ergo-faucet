@@ -17,7 +17,7 @@ class DataSourceHandler {
    * @param config - Database configuration parameters
    * @param logger - Logger instance (falls back to DummyLogger if not provided)
    */
-  private constructor(config: DatabaseConfig, logger: AbstractLogger) {
+  private constructor(config: DatabaseConfig, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.dataSource = createDataSource(config);
   }
@@ -48,18 +48,18 @@ class DataSourceHandler {
   public static initialize = async (
     config: DatabaseConfig,
     logger?: AbstractLogger,
-  ): Promise<DataSource> => {
-    if (this.instance?.dataSource?.isInitialized) {
-      return this.instance.dataSource;
+  ): Promise<void> => {
+    if (this.instance) {
+      return;
     }
 
-    this.instance = new DataSourceHandler(config, logger || new DummyLogger());
+    this.instance = new DataSourceHandler(config, logger);
     await this.instance.dataSource.initialize();
     await this.instance.dataSource.runMigrations();
     this.instance.logger.info(
       `Data Source (${config.type}) initialized successfully`,
     );
-    return this.instance.dataSource;
+    return;
   };
 
   /**

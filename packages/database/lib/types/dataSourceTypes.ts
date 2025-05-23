@@ -1,6 +1,8 @@
 export interface SqliteDataSourceConfig {
   type: 'sqlite';
   database: string;
+  path: string;
+  logging: false;
 }
 
 export interface PostgresDataSourceConfig {
@@ -10,6 +12,7 @@ export interface PostgresDataSourceConfig {
   username: string;
   password: string;
   database: string;
+  logging: false;
 }
 
 export type DatabaseConfig = SqliteDataSourceConfig | PostgresDataSourceConfig;

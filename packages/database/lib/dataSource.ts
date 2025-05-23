@@ -10,7 +10,6 @@ import { DatabaseConfig } from './types';
 const commonConfig = {
   entities: [...entities],
   synchronize: false,
-  logging: false,
   migrations: [],
 };
 
