@@ -1,4 +1,4 @@
-import { createDataSource } from './index';
+import { createDataSource } from './dataSource';
 import { DataSource } from '@rosen-bridge/extended-typeorm';
 import { DatabaseConfig } from './types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
