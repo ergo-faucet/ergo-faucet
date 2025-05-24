@@ -1,7 +1,7 @@
 import { DataSource } from '@rosen-bridge/extended-typeorm';
 import { entities } from './entities';
 import { migrations } from './migrations';
-import { DatabaseConfig } from './types';
+import { DatabaseConfig } from './index';
 
 /**
  * Common configuration for the data source.
