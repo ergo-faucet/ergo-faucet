@@ -40,26 +40,22 @@ class DataSourceHandler {
    * Initializes the database connection and runs pending migrations.
    * @param config - Database configuration parameters
    * @param logger - Optional logger instance for connection events
-   * @returns Promise that resolves when initialization is complete
    * @throws {Error} If connection initialization or migrations fail
    * @example
-   * await DataSourceHandler.initialize(config, logger);
+   * const dataSource = await DataSourceHandler.initialize(config, logger);
    */
   public static initialize = async (
     config: DatabaseConfig,
     logger?: AbstractLogger,
-  ): Promise<void> => {
-    if (this.instance) {
-      return;
+  ) => {
+    if (!this.instance) {
+      this.instance = new DataSourceHandler(config, logger);
+      await this.instance.dataSource.initialize();
+      await this.instance.dataSource.runMigrations();
+      this.instance.logger.info(
+        `Data Source (${config.type}) initialized successfully`,
+      );
     }
-
-    this.instance = new DataSourceHandler(config, logger);
-    await this.instance.dataSource.initialize();
-    await this.instance.dataSource.runMigrations();
-    this.instance.logger.info(
-      `Data Source (${config.type}) initialized successfully`,
-    );
-    return;
   };
 
   /**
