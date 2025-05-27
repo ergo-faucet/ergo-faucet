@@ -4,7 +4,7 @@ import {
   Column,
 } from '@rosen-bridge/extended-typeorm';
 
-@Entity('auth_methods')
+@Entity('auth_method_entity')
 export class AuthMethod {
   @PrimaryGeneratedColumn()
   id!: number;
