@@ -4,7 +4,7 @@ import {
   Column,
 } from '@rosen-bridge/extended-typeorm';
 
-@Entity('users')
+@Entity('user_entity')
 export class User {
   @PrimaryGeneratedColumn()
   id!: number;
