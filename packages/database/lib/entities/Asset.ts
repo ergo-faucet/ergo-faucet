@@ -2,20 +2,19 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  Index,
+  BigIntValueTransformer,
 } from '@rosen-bridge/extended-typeorm';
 
-@Entity('assets')
+@Entity('asset_entity')
 export class Asset {
   @PrimaryGeneratedColumn()
   id!: number;
 
   @Column({ type: 'varchar' })
-  @Index({ unique: true })
   tokenId!: string;
 
-  @Column({ type: 'bigint' })
-  amount!: string;
+  @Column({ type: 'bigint', transformer: new BigIntValueTransformer() })
+  amount!: bigint;
 
   @Column({ type: 'text' })
   usageDescription!: string;
