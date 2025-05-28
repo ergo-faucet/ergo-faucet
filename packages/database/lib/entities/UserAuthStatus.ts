@@ -3,34 +3,36 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  JoinColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 import { AuthMethod } from './AuthMethod';
 import { Package } from './Package';
 
-@Entity('user_auth_status')
+@Entity('user_auth_status_entity')
 export class UserAuthStatus {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   user!: User;
 
-  @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE' })
+  @ManyToOne(() => AuthMethod, { nullable: false })
+  @JoinColumn({ name: 'auth_method_id' })
   authMethod!: AuthMethod;
 
-  @ManyToOne(() => Package, { onDelete: 'CASCADE' })
-  package?: Package;
+  @ManyToOne(() => Package, { lazy: true, nullable: true })
+  package?: Promise<Package>;
 
-  @Column({ name: 'verified_at', type: 'date' })
+  @Column({ type: 'date' })
   verifiedAt!: Date;
 
   @Column({ type: 'text' })
   status!: 'passed' | 'failed' | 'pending';
 
-  @Column({ name: 'expires_at', type: 'date', nullable: true })
+  @Column({ type: 'date', nullable: true })
   expiresAt?: Date;
 
-  @Column({ name: 'auth_meta_data', type: 'text', nullable: true })
+  @Column({ type: 'text', nullable: true })
   authMetaData?: string;
 }

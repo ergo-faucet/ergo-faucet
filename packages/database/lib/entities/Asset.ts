@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   BigIntValueTransformer,
+  Index,
 } from '@rosen-bridge/extended-typeorm';
 
 @Entity('asset_entity')
@@ -11,6 +12,7 @@ export class Asset {
   id!: number;
 
   @Column({ type: 'varchar' })
+  @Index()
   tokenId!: string;
 
   @Column({ type: 'bigint', transformer: new BigIntValueTransformer() })

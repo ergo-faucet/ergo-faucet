@@ -3,16 +3,18 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  JoinColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { Asset } from './Asset';
 
-@Entity('packages')
+@Entity('package_entity')
 export class Package {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Asset, { onDelete: 'CASCADE' })
-  asset!: Asset;
+  @ManyToOne(() => Asset, { nullable: false, lazy: true, onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'asset_id' })
+  asset!: Promise<Asset>;
 
   @Column({ type: 'varchar' })
   name!: string;

@@ -7,7 +7,7 @@ import {
 import { User } from './User';
 import { Package } from './Package';
 
-@Entity('user_requests')
+@Entity('user_request_entity')
 export class UserRequest {
   @PrimaryGeneratedColumn()
   id!: number;
@@ -21,7 +21,7 @@ export class UserRequest {
   @Column({ type: 'date' })
   timestamp!: Date;
 
-  @Column({ name: 'destination_address', type: 'varchar' })
+  @Column({ type: 'varchar' })
   destinationAddress!: string;
 
   @Column({ type: 'text' })

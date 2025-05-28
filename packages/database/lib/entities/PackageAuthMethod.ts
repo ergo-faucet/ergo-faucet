@@ -7,7 +7,7 @@ import {
 import { Package } from './Package';
 import { AuthMethod } from './AuthMethod';
 
-@Entity('package_auth_methods')
+@Entity('package_auth_method_entity')
 export class PackageAuthMethod {
   @PrimaryGeneratedColumn()
   id!: number;
