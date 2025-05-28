@@ -1,14 +1,15 @@
 import {
   Entity,
   PrimaryGeneratedColumn,
-  Column,
+  OneToMany,
 } from '@rosen-bridge/extended-typeorm';
+import { UserAddress } from './UserAddress';
 
 @Entity('user_entity')
 export class User {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @Column('simple-array')
-  addresses!: string[];
+  @OneToMany(() => UserAddress, (address) => address.user, { cascade: true })
+  addresses!: UserAddress[];
 }
