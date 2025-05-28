@@ -17,7 +17,7 @@ export class UserAuthStatus {
   @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
   user!: User;
 
-  @ManyToOne(() => AuthMethod, { nullable: false })
+  @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'auth_method_id' })
   authMethod!: AuthMethod;
 
