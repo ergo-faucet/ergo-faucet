@@ -2,19 +2,24 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  ManyToOne,
-  JoinColumn,
+  OneToMany,
 } from '@rosen-bridge/extended-typeorm';
 import { Asset } from './Asset';
+import { PackageAuthMethod } from './PackageAuthMethod';
 
 @Entity('package_entity')
 export class Package {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Asset, { nullable: false, lazy: true, onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'asset_id' })
-  asset!: Promise<Asset>;
+  @OneToMany(() => Asset, (asset) => asset.package, {
+    cascade: false,
+    lazy: true,
+  })
+  assets!: Promise<Asset[]>;
+
+  @OneToMany(() => PackageAuthMethod, (pam) => pam.package)
+  authMethods!: PackageAuthMethod[];
 
   @Column({ type: 'varchar' })
   name!: string;
