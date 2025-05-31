@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  JoinColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 import { Package } from './Package';
@@ -13,9 +14,11 @@ export class UserRequest {
   id!: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'user_id' })
   user!: User;
 
   @ManyToOne(() => Package, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'package_id' })
   package!: Package;
 
   @Column({ type: 'date' })

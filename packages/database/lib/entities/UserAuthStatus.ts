@@ -15,6 +15,7 @@ export class UserAuthStatus {
   id!: number;
 
   @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn({ name: 'user_id' })
   user!: User;
 
   @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE', nullable: false })
@@ -22,6 +23,7 @@ export class UserAuthStatus {
   authMethod!: AuthMethod;
 
   @ManyToOne(() => Package, { lazy: true, nullable: true })
+  @JoinColumn({ name: 'package_id' })
   package?: Promise<Package>;
 
   @Column({ type: 'date' })
