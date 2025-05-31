@@ -16,6 +16,6 @@ export class UserAddress {
   @JoinColumn({ name: 'user_id' })
   user!: User;
 
-  @Column()
+  @Column({ type: 'varchar' })
   value!: string;
 }
