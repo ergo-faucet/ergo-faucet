@@ -11,7 +11,7 @@
     "dev": "node --watch --loader ./ts-node-esm-loader.js --loader extensionless ./lib/server.ts",
     "build": "tsc --build tsconfig.build.json",
     "start": "node --loader extensionless --no-warnings dist/server.js",
-    "test": "cross-env NODE_OPTIONS=\"--import tsx\" vitest",
+    "test": "cross-env NODE_OPTIONS=\"--import tsx --loader extensionless\" vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint --fix . && npm run prettify",
     "prettify": "prettier --write ."
