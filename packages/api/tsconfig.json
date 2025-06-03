@@ -1,15 +1,9 @@
 {
+  "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
     "outDir": "./dist",
-    "rootDir": "./lib",
-    "strict": true,
-    "esModuleInterop": true,
-    "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true,
-    "moduleResolution": "node"
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
   },
-  "include": ["lib/**/*"],
-  "exclude": ["node_modules"]
+  "include": ["tests", "lib", "vitest.config.ts"]
 }
