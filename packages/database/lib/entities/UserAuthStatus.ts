@@ -14,9 +14,9 @@ export class UserAuthStatus {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false, lazy: true })
   @JoinColumn({ name: 'user_id' })
-  user!: User;
+  user!: Promise<User>;
 
   @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE', nullable: false })
   @JoinColumn({ name: 'auth_method_id' })

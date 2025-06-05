@@ -10,6 +10,9 @@ export class User {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @OneToMany(() => UserAddress, (address) => address.user, { cascade: true })
-  addresses!: UserAddress[];
+  @OneToMany(() => UserAddress, (address) => address.user, {
+    cascade: true,
+    lazy: true,
+  })
+  addresses!: Promise<UserAddress[]>;
 }

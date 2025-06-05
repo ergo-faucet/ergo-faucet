@@ -12,9 +12,12 @@ export class UserAddress {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, (user) => user.addresses, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
-  user!: User;
+  @ManyToOne(() => User, (user) => user.addresses, {
+    onDelete: 'CASCADE',
+    lazy: true,
+  })
+  @JoinColumn()
+  user!: Promise<User>;
 
   @Column({ type: 'varchar' })
   value!: string;

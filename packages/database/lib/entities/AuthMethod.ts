@@ -12,7 +12,7 @@ export class AuthMethod {
   id!: number;
 
   @OneToMany(() => PackageAuthMethod, (pam) => pam.authMethod)
-  packages!: PackageAuthMethod[];
+  packageAuthMethods!: PackageAuthMethod[];
 
   @Column({ type: 'varchar' })
   name!: string;
