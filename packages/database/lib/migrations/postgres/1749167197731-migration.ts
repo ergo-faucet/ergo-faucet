@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1748729967648 implements MigrationInterface {
-  name = 'Migration1748729967648';
+export class Migration1749167197731 implements MigrationInterface {
+  name = 'Migration1749167197731';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -18,6 +18,7 @@ export class Migration1748729967648 implements MigrationInterface {
                 "order" integer NOT NULL,
                 "package_id" integer,
                 "auth_method_id" integer,
+                CONSTRAINT "UQ_65785e00a90676968926d56195b" UNIQUE ("package_id", "auth_method_id", "order"),
                 CONSTRAINT "PK_4b378e0b1bc00bada7a8f5183ea" PRIMARY KEY ("id")
             )
         `);
@@ -52,7 +53,7 @@ export class Migration1748729967648 implements MigrationInterface {
             CREATE TABLE "user_address_entity" (
                 "id" SERIAL NOT NULL,
                 "value" character varying NOT NULL,
-                "user_id" integer,
+                "userId" integer,
                 CONSTRAINT "PK_0b981d423406bfb13aa34c7dfd8" PRIMARY KEY ("id")
             )
         `);
@@ -100,7 +101,7 @@ export class Migration1748729967648 implements MigrationInterface {
         `);
     await queryRunner.query(`
             ALTER TABLE "user_address_entity"
-            ADD CONSTRAINT "FK_cdd51042e29bcf208b3de5e06ed" FOREIGN KEY ("user_id") REFERENCES "user_entity"("id") ON DELETE CASCADE ON UPDATE NO ACTION
+            ADD CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1" FOREIGN KEY ("userId") REFERENCES "user_entity"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
     await queryRunner.query(`
             ALTER TABLE "user_auth_status_entity"
@@ -141,7 +142,7 @@ export class Migration1748729967648 implements MigrationInterface {
             ALTER TABLE "user_auth_status_entity" DROP CONSTRAINT "FK_51088000d10159035652128ed98"
         `);
     await queryRunner.query(`
-            ALTER TABLE "user_address_entity" DROP CONSTRAINT "FK_cdd51042e29bcf208b3de5e06ed"
+            ALTER TABLE "user_address_entity" DROP CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1"
         `);
     await queryRunner.query(`
             ALTER TABLE "asset_entity" DROP CONSTRAINT "FK_38ec839e81d35bb2748d8152093"

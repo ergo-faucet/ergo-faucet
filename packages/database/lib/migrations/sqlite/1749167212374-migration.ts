@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1748729954009 implements MigrationInterface {
-  name = 'Migration1748729954009';
+export class Migration1749167212374 implements MigrationInterface {
+  name = 'Migration1749167212374';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -16,7 +16,8 @@ export class Migration1748729954009 implements MigrationInterface {
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "order" integer NOT NULL,
                 "package_id" integer,
-                "auth_method_id" integer
+                "auth_method_id" integer,
+                CONSTRAINT "UQ_65785e00a90676968926d56195b" UNIQUE ("package_id", "auth_method_id", "order")
             )
         `);
     await queryRunner.query(`
@@ -48,7 +49,7 @@ export class Migration1748729954009 implements MigrationInterface {
             CREATE TABLE "user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
-                "user_id" integer
+                "userId" integer
             )
         `);
     await queryRunner.query(`
@@ -82,6 +83,7 @@ export class Migration1748729954009 implements MigrationInterface {
                 "order" integer NOT NULL,
                 "package_id" integer,
                 "auth_method_id" integer,
+                CONSTRAINT "UQ_65785e00a90676968926d56195b" UNIQUE ("package_id", "auth_method_id", "order"),
                 CONSTRAINT "FK_9e692bd33c217783ebb6c027afb" FOREIGN KEY ("package_id") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
                 CONSTRAINT "FK_7fcb88864b51e24d07a912a0c68" FOREIGN KEY ("auth_method_id") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
@@ -143,15 +145,15 @@ export class Migration1748729954009 implements MigrationInterface {
             CREATE TABLE "temporary_user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
-                "user_id" integer,
-                CONSTRAINT "FK_cdd51042e29bcf208b3de5e06ed" FOREIGN KEY ("user_id") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+                "userId" integer,
+                CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
-            INSERT INTO "temporary_user_address_entity"("id", "value", "user_id")
+            INSERT INTO "temporary_user_address_entity"("id", "value", "userId")
             SELECT "id",
                 "value",
-                "user_id"
+                "userId"
             FROM "user_address_entity"
         `);
     await queryRunner.query(`
@@ -325,14 +327,14 @@ export class Migration1748729954009 implements MigrationInterface {
             CREATE TABLE "user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
-                "user_id" integer
+                "userId" integer
             )
         `);
     await queryRunner.query(`
-            INSERT INTO "user_address_entity"("id", "value", "user_id")
+            INSERT INTO "user_address_entity"("id", "value", "userId")
             SELECT "id",
                 "value",
-                "user_id"
+                "userId"
             FROM "temporary_user_address_entity"
         `);
     await queryRunner.query(`
@@ -384,7 +386,8 @@ export class Migration1748729954009 implements MigrationInterface {
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "order" integer NOT NULL,
                 "package_id" integer,
-                "auth_method_id" integer
+                "auth_method_id" integer,
+                CONSTRAINT "UQ_65785e00a90676968926d56195b" UNIQUE ("package_id", "auth_method_id", "order")
             )
         `);
     await queryRunner.query(`
