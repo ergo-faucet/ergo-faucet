@@ -1,25 +1,9 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1749167212374 implements MigrationInterface {
-  name = 'Migration1749167212374';
+export class Migration1749315358572 implements MigrationInterface {
+  name = 'Migration1749315358572';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`
-            CREATE TABLE "auth_method_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "name" varchar NOT NULL,
-                "config" text NOT NULL
-            )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "package_auth_method_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "order" integer NOT NULL,
-                "package_id" integer,
-                "auth_method_id" integer,
-                CONSTRAINT "UQ_65785e00a90676968926d56195b" UNIQUE ("package_id", "auth_method_id", "order")
-            )
-        `);
     await queryRunner.query(`
             CREATE TABLE "package_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -39,21 +23,38 @@ export class Migration1749167212374 implements MigrationInterface {
                 "tokenId" varchar NOT NULL,
                 "amount" bigint NOT NULL,
                 "usageDescription" text NOT NULL,
-                "package_id" integer
+                "packageId" integer
             )
         `);
     await queryRunner.query(`
             CREATE INDEX "IDX_941e620c721dbd2ec1a03bdef3" ON "asset_entity" ("tokenId")
         `);
     await queryRunner.query(`
-            CREATE TABLE "user_address_entity" (
+            CREATE TABLE "auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "value" varchar NOT NULL,
-                "userId" integer
+                "name" varchar NOT NULL,
+                "config" text NOT NULL
+            )
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer NOT NULL,
+                "packageId" integer,
+                "authMethodId" integer,
+                CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order")
             )
         `);
     await queryRunner.query(`
             CREATE TABLE "user_entity" ("id" integer PRIMARY KEY AUTOINCREMENT NOT NULL)
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "user_address_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "value" varchar NOT NULL,
+                "userId" integer,
+                CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value")
+            )
         `);
     await queryRunner.query(`
             CREATE TABLE "user_auth_status_entity" (
@@ -62,9 +63,9 @@ export class Migration1749167212374 implements MigrationInterface {
                 "status" text NOT NULL,
                 "expiresAt" date,
                 "authMetaData" text,
-                "user_id" integer NOT NULL,
-                "auth_method_id" integer NOT NULL,
-                "package_id" integer
+                "userId" integer,
+                "authMethodId" integer,
+                "packageId" integer
             )
         `);
     await queryRunner.query(`
@@ -73,35 +74,9 @@ export class Migration1749167212374 implements MigrationInterface {
                 "timestamp" date NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
-                "user_id" integer,
-                "package_id" integer
+                "userId" integer,
+                "packageId" integer
             )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "temporary_package_auth_method_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "order" integer NOT NULL,
-                "package_id" integer,
-                "auth_method_id" integer,
-                CONSTRAINT "UQ_65785e00a90676968926d56195b" UNIQUE ("package_id", "auth_method_id", "order"),
-                CONSTRAINT "FK_9e692bd33c217783ebb6c027afb" FOREIGN KEY ("package_id") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_7fcb88864b51e24d07a912a0c68" FOREIGN KEY ("auth_method_id") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
-            )
-        `);
-    await queryRunner.query(`
-            INSERT INTO "temporary_package_auth_method_entity"("id", "order", "package_id", "auth_method_id")
-            SELECT "id",
-                "order",
-                "package_id",
-                "auth_method_id"
-            FROM "package_auth_method_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "package_auth_method_entity"
-        `);
-    await queryRunner.query(`
-            ALTER TABLE "temporary_package_auth_method_entity"
-                RENAME TO "package_auth_method_entity"
         `);
     await queryRunner.query(`
             DROP INDEX "IDX_941e620c721dbd2ec1a03bdef3"
@@ -112,8 +87,8 @@ export class Migration1749167212374 implements MigrationInterface {
                 "tokenId" varchar NOT NULL,
                 "amount" bigint NOT NULL,
                 "usageDescription" text NOT NULL,
-                "package_id" integer,
-                CONSTRAINT "FK_38ec839e81d35bb2748d8152093" FOREIGN KEY ("package_id") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+                "packageId" integer,
+                CONSTRAINT "FK_dc2ee4d919892ecaad131a176e5" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -122,13 +97,13 @@ export class Migration1749167212374 implements MigrationInterface {
                     "tokenId",
                     "amount",
                     "usageDescription",
-                    "package_id"
+                    "packageId"
                 )
             SELECT "id",
                 "tokenId",
                 "amount",
                 "usageDescription",
-                "package_id"
+                "packageId"
             FROM "asset_entity"
         `);
     await queryRunner.query(`
@@ -142,10 +117,37 @@ export class Migration1749167212374 implements MigrationInterface {
             CREATE INDEX "IDX_941e620c721dbd2ec1a03bdef3" ON "asset_entity" ("tokenId")
         `);
     await queryRunner.query(`
+            CREATE TABLE "temporary_package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer NOT NULL,
+                "packageId" integer,
+                "authMethodId" integer,
+                CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "temporary_package_auth_method_entity"("id", "order", "packageId", "authMethodId")
+            SELECT "id",
+                "order",
+                "packageId",
+                "authMethodId"
+            FROM "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "temporary_package_auth_method_entity"
+                RENAME TO "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
             CREATE TABLE "temporary_user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
                 "userId" integer,
+                CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value"),
                 CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
@@ -170,12 +172,12 @@ export class Migration1749167212374 implements MigrationInterface {
                 "status" text NOT NULL,
                 "expiresAt" date,
                 "authMetaData" text,
-                "user_id" integer NOT NULL,
-                "auth_method_id" integer NOT NULL,
-                "package_id" integer,
-                CONSTRAINT "FK_51088000d10159035652128ed98" FOREIGN KEY ("user_id") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_12f15867751aed20acb219e50e4" FOREIGN KEY ("auth_method_id") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_f1fabd5104262e9a859e0a112c1" FOREIGN KEY ("package_id") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+                "userId" integer,
+                "authMethodId" integer,
+                "packageId" integer,
+                CONSTRAINT "FK_359a7061b1cce4191f212893715" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_1706f917d940b8559937eb33f8e" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_66bd1b1ac02bcbbf13ca3964109" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -185,18 +187,18 @@ export class Migration1749167212374 implements MigrationInterface {
                     "status",
                     "expiresAt",
                     "authMetaData",
-                    "user_id",
-                    "auth_method_id",
-                    "package_id"
+                    "userId",
+                    "authMethodId",
+                    "packageId"
                 )
             SELECT "id",
                 "verifiedAt",
                 "status",
                 "expiresAt",
                 "authMetaData",
-                "user_id",
-                "auth_method_id",
-                "package_id"
+                "userId",
+                "authMethodId",
+                "packageId"
             FROM "user_auth_status_entity"
         `);
     await queryRunner.query(`
@@ -212,10 +214,10 @@ export class Migration1749167212374 implements MigrationInterface {
                 "timestamp" date NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
-                "user_id" integer,
-                "package_id" integer,
-                CONSTRAINT "FK_71ff7a20d477cc2d43b1195d624" FOREIGN KEY ("user_id") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_f64f8fef102a948db0bf83cd5ae" FOREIGN KEY ("package_id") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+                "userId" integer,
+                "packageId" integer,
+                CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_d1a8058eb7a3869b932f1905afd" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -224,15 +226,15 @@ export class Migration1749167212374 implements MigrationInterface {
                     "timestamp",
                     "destinationAddress",
                     "status",
-                    "user_id",
-                    "package_id"
+                    "userId",
+                    "packageId"
                 )
             SELECT "id",
                 "timestamp",
                 "destinationAddress",
                 "status",
-                "user_id",
-                "package_id"
+                "userId",
+                "packageId"
             FROM "user_request_entity"
         `);
     await queryRunner.query(`
@@ -255,8 +257,8 @@ export class Migration1749167212374 implements MigrationInterface {
                 "timestamp" date NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
-                "user_id" integer,
-                "package_id" integer
+                "userId" integer,
+                "packageId" integer
             )
         `);
     await queryRunner.query(`
@@ -265,15 +267,15 @@ export class Migration1749167212374 implements MigrationInterface {
                     "timestamp",
                     "destinationAddress",
                     "status",
-                    "user_id",
-                    "package_id"
+                    "userId",
+                    "packageId"
                 )
             SELECT "id",
                 "timestamp",
                 "destinationAddress",
                 "status",
-                "user_id",
-                "package_id"
+                "userId",
+                "packageId"
             FROM "temporary_user_request_entity"
         `);
     await queryRunner.query(`
@@ -290,9 +292,9 @@ export class Migration1749167212374 implements MigrationInterface {
                 "status" text NOT NULL,
                 "expiresAt" date,
                 "authMetaData" text,
-                "user_id" integer NOT NULL,
-                "auth_method_id" integer NOT NULL,
-                "package_id" integer
+                "userId" integer,
+                "authMethodId" integer,
+                "packageId" integer
             )
         `);
     await queryRunner.query(`
@@ -302,18 +304,18 @@ export class Migration1749167212374 implements MigrationInterface {
                     "status",
                     "expiresAt",
                     "authMetaData",
-                    "user_id",
-                    "auth_method_id",
-                    "package_id"
+                    "userId",
+                    "authMethodId",
+                    "packageId"
                 )
             SELECT "id",
                 "verifiedAt",
                 "status",
                 "expiresAt",
                 "authMetaData",
-                "user_id",
-                "auth_method_id",
-                "package_id"
+                "userId",
+                "authMethodId",
+                "packageId"
             FROM "temporary_user_auth_status_entity"
         `);
     await queryRunner.query(`
@@ -327,7 +329,8 @@ export class Migration1749167212374 implements MigrationInterface {
             CREATE TABLE "user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
-                "userId" integer
+                "userId" integer,
+                CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value")
             )
         `);
     await queryRunner.query(`
@@ -339,6 +342,30 @@ export class Migration1749167212374 implements MigrationInterface {
         `);
     await queryRunner.query(`
             DROP TABLE "temporary_user_address_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "package_auth_method_entity"
+                RENAME TO "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer NOT NULL,
+                "packageId" integer,
+                "authMethodId" integer,
+                CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order")
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "package_auth_method_entity"("id", "order", "packageId", "authMethodId")
+            SELECT "id",
+                "order",
+                "packageId",
+                "authMethodId"
+            FROM "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "temporary_package_auth_method_entity"
         `);
     await queryRunner.query(`
             DROP INDEX "IDX_941e620c721dbd2ec1a03bdef3"
@@ -353,7 +380,7 @@ export class Migration1749167212374 implements MigrationInterface {
                 "tokenId" varchar NOT NULL,
                 "amount" bigint NOT NULL,
                 "usageDescription" text NOT NULL,
-                "package_id" integer
+                "packageId" integer
             )
         `);
     await queryRunner.query(`
@@ -362,13 +389,13 @@ export class Migration1749167212374 implements MigrationInterface {
                     "tokenId",
                     "amount",
                     "usageDescription",
-                    "package_id"
+                    "packageId"
                 )
             SELECT "id",
                 "tokenId",
                 "amount",
                 "usageDescription",
-                "package_id"
+                "packageId"
             FROM "temporary_asset_entity"
         `);
     await queryRunner.query(`
@@ -378,40 +405,22 @@ export class Migration1749167212374 implements MigrationInterface {
             CREATE INDEX "IDX_941e620c721dbd2ec1a03bdef3" ON "asset_entity" ("tokenId")
         `);
     await queryRunner.query(`
-            ALTER TABLE "package_auth_method_entity"
-                RENAME TO "temporary_package_auth_method_entity"
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "package_auth_method_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "order" integer NOT NULL,
-                "package_id" integer,
-                "auth_method_id" integer,
-                CONSTRAINT "UQ_65785e00a90676968926d56195b" UNIQUE ("package_id", "auth_method_id", "order")
-            )
-        `);
-    await queryRunner.query(`
-            INSERT INTO "package_auth_method_entity"("id", "order", "package_id", "auth_method_id")
-            SELECT "id",
-                "order",
-                "package_id",
-                "auth_method_id"
-            FROM "temporary_package_auth_method_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "temporary_package_auth_method_entity"
-        `);
-    await queryRunner.query(`
             DROP TABLE "user_request_entity"
         `);
     await queryRunner.query(`
             DROP TABLE "user_auth_status_entity"
         `);
     await queryRunner.query(`
+            DROP TABLE "user_address_entity"
+        `);
+    await queryRunner.query(`
             DROP TABLE "user_entity"
         `);
     await queryRunner.query(`
-            DROP TABLE "user_address_entity"
+            DROP TABLE "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "auth_method_entity"
         `);
     await queryRunner.query(`
             DROP INDEX "IDX_941e620c721dbd2ec1a03bdef3"
@@ -421,12 +430,6 @@ export class Migration1749167212374 implements MigrationInterface {
         `);
     await queryRunner.query(`
             DROP TABLE "package_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "package_auth_method_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "auth_method_entity"
         `);
   }
 }

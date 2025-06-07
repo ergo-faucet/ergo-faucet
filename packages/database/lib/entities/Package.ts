@@ -2,24 +2,13 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  OneToMany,
+  BigIntValueTransformer,
 } from '@rosen-bridge/extended-typeorm';
-import { Asset } from './Asset';
-import { PackageAuthMethod } from './PackageAuthMethod';
 
 @Entity('package_entity')
 export class Package {
   @PrimaryGeneratedColumn()
   id!: number;
-
-  @OneToMany(() => Asset, (asset) => asset.package, {
-    cascade: false,
-    lazy: true,
-  })
-  assets!: Promise<Asset[]>;
-
-  @OneToMany(() => PackageAuthMethod, (pam) => pam.package)
-  authMethods!: PackageAuthMethod[];
 
   @Column({ type: 'varchar' })
   name!: string;
@@ -39,7 +28,7 @@ export class Package {
   @Column({ name: 'close_at', type: 'date', nullable: true })
   closeAt?: Date;
 
-  @Column({ type: 'bigint' })
+  @Column({ type: 'bigint', transformer: new BigIntValueTransformer() })
   delay!: number;
 
   @Column({ name: 'number_each_user', type: 'int' })

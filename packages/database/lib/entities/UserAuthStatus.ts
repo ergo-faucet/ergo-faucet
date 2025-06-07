@@ -14,17 +14,17 @@ export class UserAuthStatus {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false, lazy: true })
-  @JoinColumn({ name: 'user_id' })
-  user!: Promise<User>;
+  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
+  @JoinColumn()
+  user!: User;
 
   @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE', nullable: false })
-  @JoinColumn({ name: 'auth_method_id' })
+  @JoinColumn()
   authMethod!: AuthMethod;
 
-  @ManyToOne(() => Package, { lazy: true, nullable: true })
-  @JoinColumn({ name: 'package_id' })
-  package?: Promise<Package>;
+  @ManyToOne(() => Package, { lazy: true, nullable: false })
+  @JoinColumn()
+  package?: Package;
 
   @Column({ type: 'date' })
   verifiedAt!: Date;

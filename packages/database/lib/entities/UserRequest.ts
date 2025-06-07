@@ -13,12 +13,12 @@ export class UserRequest {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'user_id' })
+  @ManyToOne(() => User, { onDelete: 'CASCADE', eager: true })
+  @JoinColumn()
   user!: User;
 
-  @ManyToOne(() => Package, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'package_id' })
+  @ManyToOne(() => Package, { onDelete: 'CASCADE', eager: true })
+  @JoinColumn()
   package!: Package;
 
   @Column({ type: 'date' })

@@ -16,11 +16,11 @@ export class PackageAuthMethod {
   id!: number;
 
   @ManyToOne(() => Package, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'package_id' })
+  @JoinColumn()
   package!: Package;
 
   @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'auth_method_id' })
+  @JoinColumn()
   authMethod!: AuthMethod;
 
   @Column({ type: 'int' })

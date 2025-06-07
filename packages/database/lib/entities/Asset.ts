@@ -14,9 +14,9 @@ export class Asset {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Package, (pkg) => pkg.assets)
-  @JoinColumn({ name: 'package_id' })
-  package!: Package;
+  @ManyToOne(() => Package, { lazy: true })
+  @JoinColumn()
+  package!: Promise<Package>;
 
   @Column({ type: 'varchar' })
   @Index()

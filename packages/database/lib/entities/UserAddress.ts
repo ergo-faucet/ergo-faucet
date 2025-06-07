@@ -4,20 +4,19 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Unique,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 
 @Entity('user_address_entity')
+@Unique(['value'])
 export class UserAddress {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, (user) => user.addresses, {
-    onDelete: 'CASCADE',
-    lazy: true,
-  })
+  @ManyToOne(() => User, { onDelete: 'CASCADE' })
   @JoinColumn()
-  user!: Promise<User>;
+  user!: User;
 
   @Column({ type: 'varchar' })
   value!: string;
