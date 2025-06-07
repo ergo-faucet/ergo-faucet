@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Relation,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 import { AuthMethod } from './AuthMethod';
@@ -14,17 +15,23 @@ export class UserAuthStatus {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE', nullable: false })
+  @ManyToOne(() => User, (user) => user.authStatuses, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
   @JoinColumn()
-  user!: User;
+  user!: Relation<User>;
 
-  @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE', nullable: false })
+  @ManyToOne(() => AuthMethod, (method) => method.userAuthStatuses, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
   @JoinColumn()
-  authMethod!: AuthMethod;
+  authMethod!: Relation<AuthMethod>;
 
-  @ManyToOne(() => Package, { lazy: true, nullable: false })
+  @ManyToOne(() => Package, (pkg) => pkg.authStatuses, { nullable: false })
   @JoinColumn()
-  package?: Package;
+  package?: Relation<Package>;
 
   @Column({ type: 'date' })
   verifiedAt!: Date;

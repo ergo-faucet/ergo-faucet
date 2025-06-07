@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
+  Relation,
   Unique,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
@@ -14,9 +15,9 @@ export class UserAddress {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.addresses, { onDelete: 'CASCADE' })
   @JoinColumn()
-  user!: User;
+  user!: Relation<User>;
 
   @Column({ type: 'varchar' })
   value!: string;

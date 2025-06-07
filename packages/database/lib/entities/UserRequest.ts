@@ -4,6 +4,7 @@ import {
   Column,
   ManyToOne,
   JoinColumn,
+  Relation,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 import { Package } from './Package';
@@ -13,13 +14,19 @@ export class UserRequest {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => User, { onDelete: 'CASCADE', eager: true })
+  @ManyToOne(() => User, (user) => user.requests, {
+    onDelete: 'CASCADE',
+    eager: true,
+  })
   @JoinColumn()
-  user!: User;
+  user!: Relation<User>;
 
-  @ManyToOne(() => Package, { onDelete: 'CASCADE', eager: true })
+  @ManyToOne(() => Package, (pkg) => pkg.requests, {
+    onDelete: 'CASCADE',
+    eager: true,
+  })
   @JoinColumn()
-  package!: Package;
+  package!: Relation<Package>;
 
   @Column({ type: 'date' })
   timestamp!: Date;

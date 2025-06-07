@@ -6,6 +6,7 @@ import {
   Index,
   ManyToOne,
   JoinColumn,
+  Relation,
 } from '@rosen-bridge/extended-typeorm';
 import { Package } from './Package';
 
@@ -14,9 +15,9 @@ export class Asset {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Package, { lazy: true })
+  @ManyToOne(() => Package, (pkg) => pkg.assets)
   @JoinColumn()
-  package!: Promise<Package>;
+  package!: Relation<Package>;
 
   @Column({ type: 'varchar' })
   @Index()

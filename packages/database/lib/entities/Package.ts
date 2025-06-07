@@ -3,7 +3,13 @@ import {
   PrimaryGeneratedColumn,
   Column,
   BigIntValueTransformer,
+  OneToMany,
+  Relation,
 } from '@rosen-bridge/extended-typeorm';
+import { Asset } from './Asset';
+import { PackageAuthMethod } from './PackageAuthMethod';
+import { UserAuthStatus } from './UserAuthStatus';
+import { UserRequest } from './UserRequest';
 
 @Entity('package_entity')
 export class Package {
@@ -33,4 +39,16 @@ export class Package {
 
   @Column({ name: 'number_each_user', type: 'int' })
   numberEachUser!: number;
+
+  @OneToMany(() => Asset, (asset) => asset.package)
+  assets!: Relation<Asset[]>;
+
+  @OneToMany(() => PackageAuthMethod, (pam) => pam.package)
+  authMethods!: Relation<PackageAuthMethod[]>;
+
+  @OneToMany(() => UserAuthStatus, (status) => status.package)
+  authStatuses!: Relation<UserAuthStatus[]>;
+
+  @OneToMany(() => UserRequest, (request) => request.package)
+  requests!: Relation<UserRequest[]>;
 }

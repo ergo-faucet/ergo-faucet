@@ -5,6 +5,7 @@ import {
   ManyToOne,
   JoinColumn,
   Unique,
+  Relation,
 } from '@rosen-bridge/extended-typeorm';
 import { Package } from './Package';
 import { AuthMethod } from './AuthMethod';
@@ -15,13 +16,15 @@ export class PackageAuthMethod {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Package, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Package, (pkg) => pkg.authMethods, { onDelete: 'CASCADE' })
   @JoinColumn()
-  package!: Package;
+  package!: Relation<Package>;
 
-  @ManyToOne(() => AuthMethod, { onDelete: 'CASCADE' })
+  @ManyToOne(() => AuthMethod, (method) => method.packageAuthMethods, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
-  authMethod!: AuthMethod;
+  authMethod!: Relation<AuthMethod>;
 
   @Column({ type: 'int' })
   order!: number;
