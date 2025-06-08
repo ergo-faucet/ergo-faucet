@@ -1,10 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { FastifyAPIServer } from '../lib/server';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
-import fastify from 'fastify';
-import fastifyCors from '@fastify/cors';
-import fastifySwagger from '@fastify/swagger';
-import fastifySwaggerUi from '@fastify/swagger-ui';
 import { ServerConfig } from '../lib/types';
 
 /**
@@ -23,6 +19,7 @@ describe('FastifyAPIServer', () => {
 
   beforeEach(() => {
     // Reset the singleton instance before each test
+    // eslint-disable-next-line
     (FastifyAPIServer as any).instance = undefined;
     server = FastifyAPIServer.init(defaultConfig);
   });
@@ -40,6 +37,7 @@ describe('FastifyAPIServer', () => {
      * Verifies that getInstance throws an error when instance is not initialized.
      */
     it('should throw error when getting instance before initialization', () => {
+      // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
       expect(() => FastifyAPIServer.getInstance()).toThrow('FastifyAPIServer instance has not been initialized');
     });
@@ -105,6 +103,7 @@ describe('FastifyAPIServer', () => {
           uiConfig: uiConfigOptions,
         },
       };
+      // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
       const swaggerServer = FastifyAPIServer.init(swaggerConfig);
       await swaggerServer.init();
@@ -223,6 +222,7 @@ describe('FastifyAPIServer', () => {
           uiConfig: uiConfigOptions,
         },
       };
+      // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
       const swaggerServer = FastifyAPIServer.init(swaggerConfig);
       const spy = vi.spyOn(mockLogger, 'info');
@@ -247,6 +247,7 @@ describe('FastifyAPIServer', () => {
         ...defaultConfig,
         port: -1,
       };
+      // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
       const errorServer = FastifyAPIServer.init(errorConfig);
       const spy = vi.spyOn(mockLogger, 'error');
