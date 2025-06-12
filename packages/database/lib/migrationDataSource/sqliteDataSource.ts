@@ -4,7 +4,7 @@ import { migrations } from '../migrations';
 
 const sqliteDataSource = new DataSource({
   type: 'sqlite',
-  database: ':memory:',
+  database: 'sqlite.db',
   entities: [...entities],
   synchronize: false,
   logging: false,
