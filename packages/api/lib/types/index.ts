@@ -1,1 +1,1 @@
-export {ServerConfig, RouteRegistrationCallback, APIServer} from './server'
+export { Route, RouteRegistrationCallback, ServerConfig } from './server';

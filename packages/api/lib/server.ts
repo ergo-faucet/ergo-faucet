@@ -1,9 +1,9 @@
 import fastify, { FastifyInstance } from 'fastify';
-import fastifySwagger from '@fastify/swagger';
-import fastifySwaggerUi from '@fastify/swagger-ui';
+import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
+import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { ServerConfig, RouteRegistrationCallback, APIServer } from './types';
+import { Route, RouteRegistrationCallback, ServerConfig } from './types';
 
 /**
  * Fastify-based API server implementation.
@@ -11,27 +11,28 @@ import { ServerConfig, RouteRegistrationCallback, APIServer } from './types';
  * and custom route registration.
  * Implements the Singleton pattern to ensure only one server instance exists.
  */
-export class FastifyAPIServer implements APIServer {
+export class FastifyAPIServer {
   private static instance: FastifyAPIServer;
   private fastify: FastifyInstance;
   private routeCallbacks: RouteRegistrationCallback[] = [];
-  private config: ServerConfig;
+  private port: number;
+  private host: string;
+  private corsOrigins: string | string[];
+  private swagger: FastifyDynamicSwaggerOptions;
+  private swaggerUi: FastifySwaggerUiOptions;
   private logger: AbstractLogger;
 
   /**
    * Private constructor to enforce singleton pattern.
-   * @param config - Server configuration parameters including port, host, and logger
+   * @param config - Server configuration parameters including port, host,
    */
-  private constructor(config: ServerConfig) {
-    this.logger = config.logger ?? new DummyLogger();
-    this.config = {
-      port: config.port ?? 3000,
-      host: config.host ?? '0.0.0.0',
-      logger: this.logger,
-      corsOrigins: config.corsOrigins ?? '*',
-      swagger: config.swagger,
-      swaggerUi: config.swaggerUi,
-    }; 
+  private constructor(config: ServerConfig, logger?: AbstractLogger) {
+    this.logger = logger ?? new DummyLogger();
+    this.port = config.port;
+    this.host = config.host;
+    this.corsOrigins = config.corsOrigins;
+    this.swagger = config.swagger;
+    this.swaggerUi = config.swaggerUi;
 
     this.fastify = fastify({
       logger: true,
@@ -53,41 +54,43 @@ export class FastifyAPIServer implements APIServer {
   /**
    * Initializes the singleton instance with the provided configuration.
    * @param config - Server configuration parameters
+   * @param logger - The logger of the class
    * @returns The initialized FastifyAPIServer instance
    */
-  public static init(config: ServerConfig): FastifyAPIServer {
+  public static async init(
+    config: ServerConfig,
+    logger: AbstractLogger,
+  ): Promise<FastifyAPIServer> {
     if (this.instance) {
-      throw new Error('FastifyAPIServer instance has already been initialized.');
+      throw new Error(
+        'FastifyAPIServer instance has already been initialized.',
+      );
     }
-    this.instance = new FastifyAPIServer(config);
-    return this.instance;
-  }
-
-  /**
-   * Initializes the server by registering plugins and routes.
-   * Sets up CORS, Swagger documentation (if configured), and registers all route callbacks.
-   * @returns Promise that resolves when initialization is complete
-   * @example
-   * await server.init();
-   */
-  async init() {
+    this.instance = new FastifyAPIServer(config, logger);
     // Register CORS
-    await this.fastify.register(fastifyCors, {
-      origin: this.config.corsOrigins,
+    await this.instance.fastify.register(fastifyCors, {
+      origin: this.instance.corsOrigins,
     });
 
     // Register Swagger if configured
-    if (this.config.swagger) {
-      await this.fastify.register(fastifySwagger, this.config.swagger);
-      if (this.config.swaggerUi) {
-        await this.fastify.register(fastifySwaggerUi, this.config.swaggerUi);
+    if (this.instance.swagger) {
+      await this.instance.fastify.register(
+        fastifySwagger,
+        this.instance.swagger,
+      );
+      if (this.instance.swaggerUi) {
+        await this.instance.fastify.register(
+          fastifySwaggerUi,
+          this.instance.swaggerUi,
+        );
       }
     }
 
     // Register all route callbacks
-    for (const callback of this.routeCallbacks) {
-      await callback(this.fastify, this.config);
+    for (const callback of this.instance.routeCallbacks) {
+      await callback(this.instance.fastify);
     }
+    return this.instance;
   }
 
   /**
@@ -103,6 +106,64 @@ export class FastifyAPIServer implements APIServer {
   }
 
   /**
+   * Registers multiple routes with a common prefix in Fastify.
+   *
+   * This function takes an array of route definitions and a prefix string. It
+   * registers each route in the provided Fastify instance under the specified
+   * prefix, allowing you to organize and group related routes together.
+   *
+   * @param {Route[]} routes - An array of route objects, where each object contains:
+   *   - `url`: The URL path for the route (e.g., '/users').
+   *   - `method`: The HTTP method for the route (e.g., 'get', 'post').
+   *   - `handler`: A function that handles the request and response.
+   *
+   * @param {string} prefix - The prefix to prepend to each route's URL path.
+   *
+   * @returns {void}
+   *
+   * @example
+   * // Define some routes
+   * const routes = [
+   *   { url: '/login', method: 'post', handler: loginHandler },
+   *   { url: '/logout', method: 'delete', handler: logoutHandler }
+   * ];
+   *
+   * // Register the routes with a prefix
+   * registerRoutesWithPrefix(routes, '/api/auth');
+   */
+  registerRoutesWithPrefix(routes: Route[], prefix: string): void {
+    this.fastify.register(
+      (subInstance) => {
+        routes.forEach((route) => {
+          const fullUrl = `${prefix}${route.url}`;
+
+          // Access the method dynamically and call it with the handler
+          switch (route.method) {
+            case 'get':
+              subInstance.get(fullUrl, route.handler);
+              break;
+            case 'post':
+              subInstance.post(fullUrl, route.handler);
+              break;
+            case 'put':
+              subInstance.put(fullUrl, route.handler);
+              break;
+            case 'delete':
+              subInstance.delete(fullUrl, route.handler);
+              break;
+            case 'patch':
+              subInstance.patch(fullUrl, route.handler);
+              break;
+            default:
+              throw new Error(`Unsupported HTTP method: ${route.method}`);
+          }
+        });
+      },
+      { prefix },
+    );
+  }
+
+  /**
    * Starts the server and begins listening for requests.
    * Initializes the server if not already initialized.
    * @returns Promise that resolves when the server is listening
@@ -111,18 +172,15 @@ export class FastifyAPIServer implements APIServer {
    * await server.start();
    */
   async start() {
-    await this.init();
     try {
       await this.fastify.listen({
-        port: this.config.port,
-        host: this.config.host,
+        port: this.port,
+        host: this.host,
       });
-      this.logger.info(
-        `Server listening on ${this.config.host}:${this.config.port}`
-      );
-      if (this.config.swagger) {
+      this.logger.info(`Server listening on ${this.host}:${this.port}`);
+      if (this.swagger) {
         this.logger.info(
-          `Swagger docs available at ${this.config.host}:${this.config.port}/docs`
+          `Swagger docs available at ${this.host}:${this.port}/docs`,
         );
       }
     } catch (err) {
