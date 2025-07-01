@@ -3,7 +3,7 @@ import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { Route, RouteRegistrationCallback, ServerConfig } from './types';
+import { ServerConfig } from './types';
 
 /**
  * Fastify-based API server implementation.
@@ -14,7 +14,6 @@ import { Route, RouteRegistrationCallback, ServerConfig } from './types';
 export class FastifyAPIServer {
   private static instance: FastifyAPIServer;
   private fastify: FastifyInstance;
-  private routeCallbacks: RouteRegistrationCallback[] = [];
   private port: number;
   private host: string;
   private corsOrigins: string | string[];
@@ -85,83 +84,38 @@ export class FastifyAPIServer {
         );
       }
     }
-
-    // Register all route callbacks
-    for (const callback of this.instance.routeCallbacks) {
-      await callback(this.instance.fastify);
-    }
+    
     return this.instance;
   }
 
-  /**
-   * Registers a route callback to be executed during server initialization.
-   * @param callback - Function that registers routes with the Fastify instance
-   * @example
-   * server.registerRoutes(async (fastify) => {
-   *   fastify.get('/health', () => ({ status: 'ok' }));
-   * });
-   */
-  registerRoutes(callback: RouteRegistrationCallback) {
-    this.routeCallbacks.push(callback);
-  }
-
-  /**
-   * Registers multiple routes with a common prefix in Fastify.
-   *
-   * This function takes an array of route definitions and a prefix string. It
-   * registers each route in the provided Fastify instance under the specified
-   * prefix, allowing you to organize and group related routes together.
-   *
-   * @param {Route[]} routes - An array of route objects, where each object contains:
-   *   - `url`: The URL path for the route (e.g., '/users').
-   *   - `method`: The HTTP method for the route (e.g., 'get', 'post').
-   *   - `handler`: A function that handles the request and response.
-   *
-   * @param {string} prefix - The prefix to prepend to each route's URL path.
-   *
-   * @returns {void}
-   *
-   * @example
-   * // Define some routes
-   * const routes = [
-   *   { url: '/login', method: 'post', handler: loginHandler },
-   *   { url: '/logout', method: 'delete', handler: logoutHandler }
-   * ];
-   *
-   * // Register the routes with a prefix
-   * registerRoutesWithPrefix(routes, '/api/auth');
-   */
-  registerRoutesWithPrefix(routes: Route[], prefix: string): void {
-    this.fastify.register(
-      (subInstance) => {
-        routes.forEach((route) => {
-          const fullUrl = `${prefix}${route.url}`;
-
-          // Access the method dynamically and call it with the handler
-          switch (route.method) {
-            case 'get':
-              subInstance.get(fullUrl, route.handler);
-              break;
-            case 'post':
-              subInstance.post(fullUrl, route.handler);
-              break;
-            case 'put':
-              subInstance.put(fullUrl, route.handler);
-              break;
-            case 'delete':
-              subInstance.delete(fullUrl, route.handler);
-              break;
-            case 'patch':
-              subInstance.patch(fullUrl, route.handler);
-              break;
-            default:
-              throw new Error(`Unsupported HTTP method: ${route.method}`);
-          }
-        });
-      },
-      { prefix },
-    );
-  }
+ /**
+ * Registers routes with a common prefix in Fastify using a callback function.
+ *
+ * This function takes a callback that receives a Fastify instance for route registration
+ * and a prefix string. It allows you to organize and group related routes together
+ * under the specified prefix.
+ *
+ * @param {(fastify: FastifyInstance) => void} routeCallback - A callback function that takes a Fastify instance
+ *   and registers routes on it. This follows Fastify's plugin route registration pattern.
+ * @param {string} prefix - The prefix to prepend to all routes registered in the callback.
+ * @returns {void}
+ *
+ * @example
+ * // Register routes with a prefix using a callback
+ * registerRoutesWithPrefix((fastify) => {
+ *   fastify.post('/login', loginHandler);
+ *   fastify.delete('/logout', logoutHandler);
+ * }, '/api/auth');
+ */
+registerRoutesWithPrefix(routeCallback: (fastify: FastifyInstance) => void, prefix: string): void {
+  this.fastify.register(
+    (instance, opts, done) => {
+      routeCallback(this.fastify);
+      done();
+    },
+    { prefix }
+  );
+}
 
   /**
    * Starts the server and begins listening for requests.
