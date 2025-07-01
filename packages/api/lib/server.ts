@@ -100,8 +100,8 @@ export class FastifyAPIServer {
    * @param {string} prefix - The prefix to prepend to all routes registered in the callback.
    * @returns {void}
    */
-  register(routeCallback: (fastify: FastifyInstance) => void, prefix: string): void {
-    this.fastify.register(
+  async register(routeCallback: (fastify: FastifyInstance) => Promise<void>, prefix: string): Promise<void> {
+    await this.fastify.register(
       routeCallback,
       { prefix }
     );
