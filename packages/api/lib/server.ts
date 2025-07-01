@@ -88,34 +88,24 @@ export class FastifyAPIServer {
     return this.instance;
   }
 
- /**
- * Registers routes with a common prefix in Fastify using a callback function.
- *
- * This function takes a callback that receives a Fastify instance for route registration
- * and a prefix string. It allows you to organize and group related routes together
- * under the specified prefix.
- *
- * @param {(fastify: FastifyInstance) => void} routeCallback - A callback function that takes a Fastify instance
- *   and registers routes on it. This follows Fastify's plugin route registration pattern.
- * @param {string} prefix - The prefix to prepend to all routes registered in the callback.
- * @returns {void}
- *
- * @example
- * // Register routes with a prefix using a callback
- * registerRoutesWithPrefix((fastify) => {
- *   fastify.post('/login', loginHandler);
- *   fastify.delete('/logout', logoutHandler);
- * }, '/api/auth');
- */
-registerRoutesWithPrefix(routeCallback: (fastify: FastifyInstance) => void, prefix: string): void {
-  this.fastify.register(
-    (instance, opts, done) => {
-      routeCallback(this.fastify);
-      done();
-    },
-    { prefix }
-  );
-}
+  /**
+   * Registers routes with a common prefix in Fastify using a callback function.
+   *
+   * This function takes a callback that receives a Fastify instance for route registration
+   * and a prefix string. It allows you to organize and group related routes together
+   * under the specified prefix.
+   *
+   * @param {(fastify: FastifyInstance) => void} routeCallback - A callback function that takes a Fastify instance
+   *   and registers routes on it. This follows Fastify's plugin route registration pattern.
+   * @param {string} prefix - The prefix to prepend to all routes registered in the callback.
+   * @returns {void}
+   */
+  register(routeCallback: (fastify: FastifyInstance) => void, prefix: string): void {
+    this.fastify.register(
+      routeCallback,
+      { prefix }
+    );
+  }
 
   /**
    * Starts the server and begins listening for requests.
