@@ -39,7 +39,7 @@ describe('FastifyAPIServer', () => {
         fastifyInstance.get('/test', () => 'test response');
       });
 
-      server.registerRoutesWithPrefix(mockRouteCallback, '/api/v1');
+      server.register(mockRouteCallback, '/api/v1');
 
       // Verify the callback was called with the Fastify instance
       expect(mockRouteCallback).toHaveBeenCalledWith(expect.any(Object));
@@ -62,8 +62,8 @@ describe('FastifyAPIServer', () => {
         fastifyInstance.get('/route2', () => 'route2');
       });
 
-      server.registerRoutesWithPrefix(mockCallback1, '/prefix1');
-      server.registerRoutesWithPrefix(mockCallback2, '/prefix2');
+      server.register(mockCallback1, '/prefix1');
+      server.register(mockCallback2, '/prefix2');
 
       const response1 = await server['fastify'].inject({
         method: 'GET',
@@ -85,7 +85,7 @@ describe('FastifyAPIServer', () => {
         fastifyInstance.get('/root', () => 'root route');
       });
 
-      server.registerRoutesWithPrefix(mockCallback, '');
+      server.register(mockCallback, '');
 
       const response = await server['fastify'].inject({
         method: 'GET',
@@ -101,7 +101,7 @@ describe('FastifyAPIServer', () => {
         fastifyInstance.get('/nested', () => 'nested route');
       });
 
-      server.registerRoutesWithPrefix(mockCallback, '/api/v1/users');
+      server.register(mockCallback, '/api/v1/users');
 
       const response = await server['fastify'].inject({
         method: 'GET',
@@ -119,7 +119,7 @@ describe('FastifyAPIServer', () => {
         fastifyInstance.get('/test', () => 'test');
       });
 
-      server.registerRoutesWithPrefix(mockCallback, '/test');
+      server.register(mockCallback, '/test');
 
       expect(receivedInstance).not.toBeNull();
       expect(receivedInstance).toBe(server['fastify']);
@@ -132,7 +132,7 @@ describe('FastifyAPIServer', () => {
       });
 
       expect(() => {
-        server.registerRoutesWithPrefix(mockCallback, '/error');
+        server.register(mockCallback, '/error');
       }).not.toThrow(); // Fastify handles plugin errors asynchronously
 
       // Verify the error was logged
@@ -147,7 +147,7 @@ describe('FastifyAPIServer', () => {
         fastifyInstance.delete('/delete', () => 'DELETE');
       });
 
-      server.registerRoutesWithPrefix(mockCallback, '/methods');
+      server.register(mockCallback, '/methods');
 
       const getResponse = await server['fastify'].inject({
         method: 'GET',

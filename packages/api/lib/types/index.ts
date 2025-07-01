@@ -1,1 +1,1 @@
-export { Route, RouteRegistrationCallback, ServerConfig } from './server';
+export { ServerConfig } from './server';

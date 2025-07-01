@@ -1,9 +1,10 @@
-import fastify, { FastifyInstance } from 'fastify';
+import fastify from 'fastify';
 import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig } from './types';
+import { FastifySeverInstance } from './types/server';
 
 /**
  * Fastify-based API server implementation.
@@ -13,7 +14,7 @@ import { ServerConfig } from './types';
  */
 export class FastifyAPIServer {
   private static instance: FastifyAPIServer;
-  private fastify: FastifyInstance;
+  private fastify: FastifySeverInstance;
   private port: number;
   private host: string;
   private corsOrigins: string | string[];
@@ -95,12 +96,12 @@ export class FastifyAPIServer {
    * and a prefix string. It allows you to organize and group related routes together
    * under the specified prefix.
    *
-   * @param {(fastify: FastifyInstance) => void} routeCallback - A callback function that takes a Fastify instance
+   * @param {(fastify: FastifySeverInstance) => void} routeCallback - A callback function that takes a Fastify instance
    *   and registers routes on it. This follows Fastify's plugin route registration pattern.
    * @param {string} prefix - The prefix to prepend to all routes registered in the callback.
    * @returns {void}
    */
-  async register(routeCallback: (fastify: FastifyInstance) => Promise<void>, prefix: string): Promise<void> {
+  async register(routeCallback: (fastify: FastifySeverInstance) => Promise<void>, prefix: string): Promise<void> {
     await this.fastify.register(
       routeCallback,
       { prefix }
