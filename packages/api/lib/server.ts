@@ -73,15 +73,12 @@ export class FastifyAPIServer {
       origin: this.instance.corsOrigins,
     });
 
-      await this.instance.fastify.register(
-        fastifySwagger,
-        this.instance.swagger,
-      );
-        await this.instance.fastify.register(
-          fastifySwaggerUi,
-          this.instance.swaggerUi,
-        );
-    
+    await this.instance.fastify.register(fastifySwagger, this.instance.swagger);
+    await this.instance.fastify.register(
+      fastifySwaggerUi,
+      this.instance.swaggerUi,
+    );
+
     return this.instance;
   }
 
@@ -97,11 +94,11 @@ export class FastifyAPIServer {
    * @param {string} prefix - The prefix to prepend to all routes registered in the callback.
    * @returns {void}
    */
-  async register(routeCallback: (fastify: FastifySeverInstance) => Promise<void>, prefix: string): Promise<void> {
-    await this.fastify.register(
-      routeCallback,
-      { prefix }
-    );
+  async register(
+    routeCallback: (fastify: FastifySeverInstance) => Promise<void>,
+    prefix: string,
+  ): Promise<void> {
+    await this.fastify.register(routeCallback, { prefix });
   }
 
   /**
