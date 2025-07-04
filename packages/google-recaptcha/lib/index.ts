@@ -1,3 +1,3 @@
-import { GooglereCaptcha } from './googleRecpatcha';
+import { GooglereCaptcha } from './googleRecaptcha';
 
 export { GooglereCaptcha };
