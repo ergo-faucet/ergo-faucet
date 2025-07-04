@@ -25,6 +25,7 @@ export class FastifyAPIServer {
   /**
    * Private constructor to enforce singleton pattern.
    * @param config - Server configuration parameters including port, host,
+   * @param logger - Logger for the class to log. A DummyLogger by default
    */
   private constructor(config: ServerConfig, logger?: AbstractLogger) {
     this.logger = logger ?? new DummyLogger();
@@ -35,7 +36,7 @@ export class FastifyAPIServer {
     this.swaggerUi = config.swaggerUi;
 
     this.fastify = fastify({
-      logger: true,
+      logger: config.activeFastifyLogger,
     });
   }
 
@@ -72,19 +73,14 @@ export class FastifyAPIServer {
       origin: this.instance.corsOrigins,
     });
 
-    // Register Swagger if configured
-    if (this.instance.swagger) {
       await this.instance.fastify.register(
         fastifySwagger,
         this.instance.swagger,
       );
-      if (this.instance.swaggerUi) {
         await this.instance.fastify.register(
           fastifySwaggerUi,
           this.instance.swaggerUi,
         );
-      }
-    }
     
     return this.instance;
   }

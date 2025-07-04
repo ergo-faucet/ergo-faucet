@@ -10,6 +10,7 @@ export interface ServerConfig {
   corsOrigins: string | string[];
   swagger: FastifyDynamicSwaggerOptions;
   swaggerUi: FastifySwaggerUiOptions;
+  activeFastifyLogger: boolean;
 }
 
 export type FastifySeverInstance = FastifyInstance<
