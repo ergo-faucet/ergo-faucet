@@ -1,1 +1,1 @@
-export { ServerConfig } from './server';
+export { FastifySeverInstance, ServerConfig } from './fastifyAPIServer';

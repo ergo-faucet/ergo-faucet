@@ -4,7 +4,7 @@ import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig } from './types';
-import { FastifySeverInstance } from './types/server';
+import { FastifySeverInstance } from './types/fastifyAPIServer';
 
 /**
  * Fastify-based API server implementation.
@@ -45,23 +45,23 @@ export class FastifyAPIServer {
    * @returns The singleton instance of FastifyAPIServer
    * @throws {Error} If the instance has not been initialized
    */
-  public static getInstance(): FastifyAPIServer {
+  public static getInstance = (): FastifyAPIServer => {
     if (!this.instance) {
       throw new Error('FastifyAPIServer instance has not been initialized.');
     }
     return this.instance;
-  }
+  };
 
-  /**
+  /**initialize
    * Initializes the singleton instance with the provided configuration.
    * @param config - Server configuration parameters
    * @param logger - The logger of the class
    * @returns The initialized FastifyAPIServer instance
    */
-  public static async init(
+  public static initialize = async (
     config: ServerConfig,
     logger: AbstractLogger,
-  ): Promise<FastifyAPIServer> {
+  ): Promise<void> => {
     if (this.instance) {
       throw new Error(
         'FastifyAPIServer instance has already been initialized.',
@@ -79,8 +79,8 @@ export class FastifyAPIServer {
       this.instance.swaggerUi,
     );
 
-    return this.instance;
-  }
+    this.instance.logger.info(`FastifyAPIServer initialized successfully.`);
+  };
 
   /**
    * Registers routes with a common prefix in Fastify using a callback function.
@@ -94,12 +94,12 @@ export class FastifyAPIServer {
    * @param {string} prefix - The prefix to prepend to all routes registered in the callback.
    * @returns {void}
    */
-  async register(
+  public register = async (
     routeCallback: (fastify: FastifySeverInstance) => Promise<void>,
     prefix: string,
-  ): Promise<void> {
+  ): Promise<void> => {
     await this.fastify.register(routeCallback, { prefix });
-  }
+  };
 
   /**
    * Starts the server and begins listening for requests.
@@ -109,7 +109,7 @@ export class FastifyAPIServer {
    * @example
    * await server.start();
    */
-  async start() {
+  public start = async () => {
     try {
       await this.fastify.listen({
         port: this.port,
@@ -125,5 +125,5 @@ export class FastifyAPIServer {
       this.logger.error(err instanceof Error ? err.message : String(err));
       process.exit(1);
     }
-  }
+  };
 }
