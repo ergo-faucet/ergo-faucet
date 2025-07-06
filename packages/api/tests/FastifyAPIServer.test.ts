@@ -1,192 +1,126 @@
-// import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-// import { FastifyInstance } from 'fastify';
-// import { FastifyAPIServer } from '../lib/server';
-// import { AbstractLogger } from '@rosen-bridge/abstract-logger';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { FastifyAPIServer } from '../lib/FastifyAPIServer';
+import { ServerConfig } from '../lib/types';
+import { FastifySeverInstance } from '../lib/types';
 
-// // Mock logger
-// class MockLogger implements AbstractLogger {
-//   debug = vi.fn();
-//   info = vi.fn();
-//   warn = vi.fn();
-//   error = vi.fn();
-// }
+/**
+ * Test suite for the FastifyAPIServer class.
+ * This suite tests the initialization, route registration, and server start functionality.
+ */
+describe('FastifyAPIServer', () => {
+  /**
+   * Reset the FastifyAPIServer instance before each test.
+   */
+  beforeEach(() => {
+    // eslint-disable-next-line
+    (FastifyAPIServer as any).instance = undefined;
+  });
 
-// describe('FastifyAPIServer', () => {
-//   let server: FastifyAPIServer;
-//   const mockLogger = new MockLogger();
-//   const baseConfig = {
-//     port: 3000,
-//     host: 'localhost',
-//     corsOrigins: '*',
-//     swagger: {},
-//     swaggerUi: {},
-//   };
+  /**
+   * Configuration for the FastifyAPIServer.
+   * @type {ServerConfig}
+   */
+  const config: ServerConfig = {
+    port: 3000,
+    host: 'localhost',
+    corsOrigins: '*',
+    swagger: {
+      exposeHeadRoutes: true,
+      openapi: {
+        info: {
+          title: 'Test API',
+          description: 'API Documentation',
+          version: '1.0.0',
+        },
+      },
+    },
+    swaggerUi: {
+      routePrefix: '/docs',
+    },
+    activeFastifyLogger: false,
+  };
 
-//   beforeEach(async () => {
-//     // Clear any existing instance
-//     // eslint-disable-next-line
-//     (FastifyAPIServer as any).instance = undefined;
-//     server = await FastifyAPIServer.init(baseConfig, mockLogger);
-//   });
+  /**
+   * Test case to initialized the server properly.
+   */
+  it('should initialize the server instance', async () => {
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+    expect(instance).toBeInstanceOf(FastifyAPIServer);
+  });
 
-//   afterEach(async () => {
-//     await server['fastify'].close();
-//   });
+  /**
+   * Test case to verify that an error is thrown if the instance is not initialized.
+   */
+  it('should throw an error if instance is not initialized', () => {
+    expect(() => FastifyAPIServer.getInstance()).toThrow(
+      'FastifyAPIServer instance has not been initialized.',
+    );
+  });
 
-//   describe('registerRoutesWithPrefix', () => {
-//     it('should register routes with the correct prefix', async () => {
-//       const mockRouteCallback = vi.fn((fastifyInstance: FastifyInstance) => {
-//         fastifyInstance.get('/test', () => 'test response');
-//       });
+  /**
+   * Test case to verify that an error is thrown if trying to initialize the server twice.
+   */
+  it('should throw an error if trying to initialize twice', async () => {
+    await FastifyAPIServer.initialize(config);
+    await expect(FastifyAPIServer.initialize(config)).rejects.toThrow(
+      'FastifyAPIServer instance has already been initialized.',
+    );
+  });
 
-//       server.register(mockRouteCallback, '/api/v1');
+  /**
+   * Test case to verify that routes are registered with a prefix and respond to requests.
+   */
+  it('should register routes with a prefix and respond to requests', async () => {
+    try {
+      await FastifyAPIServer.initialize(config);
+      const instance = FastifyAPIServer.getInstance();
 
-//       // Verify the callback was called with the Fastify instance
-//       expect(mockRouteCallback).toHaveBeenCalledWith(expect.any(Object));
+      const routeCallback = vi.fn(async (fastify: FastifySeverInstance) => {
+        fastify.get('/', async () => 'Hello World');
+      });
 
-//       // Verify the route was registered with the prefix
-//       const response = await server['fastify'].inject({
-//         method: 'GET',
-//         url: '/api/v1/test',
-//       });
+      // Register the route
+      await instance.register(routeCallback, '/test');
+      expect(routeCallback).toHaveBeenCalled();
 
-//       expect(response.statusCode).toBe(200);
-//       expect(response.body).toBe('test response');
-//     });
+      // Start the server
+      await instance.start();
 
-//     it('should handle multiple route registrations with different prefixes', async () => {
-//       const mockCallback1 = vi.fn((fastifyInstance: FastifyInstance) => {
-//         fastifyInstance.get('/route1', () => 'route1');
-//       });
-//       const mockCallback2 = vi.fn((fastifyInstance: FastifyInstance) => {
-//         fastifyInstance.get('/route2', () => 'route2');
-//       });
+      // Assertions
+      const response = await fetch(
+        `http://${config.host}:${config.port}/test/`,
+      );
+      expect(response.status).toBe(200);
+      expect(await response.text()).toBe('Hello World');
 
-//       server.register(mockCallback1, '/prefix1');
-//       server.register(mockCallback2, '/prefix2');
+      // free the host and port
+      await instance.close();
+    } catch (err) {
+      console.error('Error during test execution:', err);
+      throw err;
+    }
+  });
 
-//       const response1 = await server['fastify'].inject({
-//         method: 'GET',
-//         url: '/prefix1/route1',
-//       });
-//       const response2 = await server['fastify'].inject({
-//         method: 'GET',
-//         url: '/prefix2/route2',
-//       });
+  /**
+   * Test case to verify that the server starts with no errors.
+   */
+  it('should start the server with no errors', async () => {
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+    await expect(instance.start()).resolves.not.toThrow();
+    // free the host and port
+    await instance.close();
+  });
 
-//       expect(response1.statusCode).toBe(200);
-//       expect(response1.body).toBe('route1');
-//       expect(response2.statusCode).toBe(200);
-//       expect(response2.body).toBe('route2');
-//     });
+  /**
+   * Test case to verify that an error is thrown when starting the server on a wrong port number.
+   */
+  it('should throw an error when starting the server on wrong port number', async () => {
+    const errorConfig = { ...config, port: -1 };
+    await FastifyAPIServer.initialize(errorConfig);
+    const instance = FastifyAPIServer.getInstance();
 
-//     it('should handle empty prefix correctly', async () => {
-//       const mockCallback = vi.fn((fastifyInstance: FastifyInstance) => {
-//         fastifyInstance.get('/root', () => 'root route');
-//       });
-
-//       server.register(mockCallback, '');
-
-//       const response = await server['fastify'].inject({
-//         method: 'GET',
-//         url: '/root',
-//       });
-
-//       expect(response.statusCode).toBe(200);
-//       expect(response.body).toBe('root route');
-//     });
-
-//     it('should handle nested prefixes correctly', async () => {
-//       const mockCallback = vi.fn((fastifyInstance: FastifyInstance) => {
-//         fastifyInstance.get('/nested', () => 'nested route');
-//       });
-
-//       server.register(mockCallback, '/api/v1/users');
-
-//       const response = await server['fastify'].inject({
-//         method: 'GET',
-//         url: '/api/v1/users/nested',
-//       });
-
-//       expect(response.statusCode).toBe(200);
-//       expect(response.body).toBe('nested route');
-//     });
-
-//     it('should pass the correct Fastify instance to the callback', async () => {
-//       let receivedInstance: FastifyInstance | null = null;
-//       const mockCallback = vi.fn((fastifyInstance: FastifyInstance) => {
-//         receivedInstance = fastifyInstance;
-//         fastifyInstance.get('/test', () => 'test');
-//       });
-
-//       server.register(mockCallback, '/test');
-
-//       expect(receivedInstance).not.toBeNull();
-//       expect(receivedInstance).toBe(server['fastify']);
-//     });
-
-//     it('should handle route registration errors in the callback', async () => {
-//       const error = new Error('Route registration failed');
-//       const mockCallback = vi.fn(() => {
-//         throw error;
-//       });
-
-//       expect(() => {
-//         server.register(mockCallback, '/error');
-//       }).not.toThrow(); // Fastify handles plugin errors asynchronously
-
-//       // Verify the error was logged
-//       expect(mockLogger.error).toHaveBeenCalledWith(error.message);
-//     });
-
-//     it('should work with all HTTP methods', async () => {
-//       const mockCallback = vi.fn((fastifyInstance: FastifyInstance) => {
-//         fastifyInstance.get('/get', () => 'GET');
-//         fastifyInstance.post('/post', () => 'POST');
-//         fastifyInstance.put('/put', () => 'PUT');
-//         fastifyInstance.delete('/delete', () => 'DELETE');
-//       });
-
-//       server.register(mockCallback, '/methods');
-
-//       const getResponse = await server['fastify'].inject({
-//         method: 'GET',
-//         url: '/methods/get',
-//       });
-//       const postResponse = await server['fastify'].inject({
-//         method: 'POST',
-//         url: '/methods/post',
-//       });
-//       const putResponse = await server['fastify'].inject({
-//         method: 'PUT',
-//         url: '/methods/put',
-//       });
-//       const deleteResponse = await server['fastify'].inject({
-//         method: 'DELETE',
-//         url: '/methods/delete',
-//       });
-
-//       expect(getResponse.body).toBe('GET');
-//       expect(postResponse.body).toBe('POST');
-//       expect(putResponse.body).toBe('PUT');
-//       expect(deleteResponse.body).toBe('DELETE');
-//     });
-//   });
-
-//   // Additional tests for singleton behavior
-//   describe('singleton behavior', () => {
-//     it('should throw error when getting instance before initialization', () => {
-//       // @ts-expect-error - We're intentionally clearing the singleton for testing
-//       FastifyAPIServer.instance = undefined;
-//       expect(() => FastifyAPIServer.getInstance()).toThrow(
-//         'FastifyAPIServer instance has not been initialized.',
-//       );
-//     });
-
-//     it('should throw error when initializing multiple times', async () => {
-//       await expect(
-//         FastifyAPIServer.init(baseConfig, mockLogger),
-//       ).rejects.toThrow('FastifyAPIServer instance has already been initialized.');
-//     });
-//   });
-// });
+    await expect(instance.start()).rejects.toThrow(RangeError);
+  });
+});

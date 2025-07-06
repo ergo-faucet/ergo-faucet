@@ -60,7 +60,7 @@ export class FastifyAPIServer {
    */
   public static initialize = async (
     config: ServerConfig,
-    logger: AbstractLogger,
+    logger: AbstractLogger = new DummyLogger(),
   ): Promise<void> => {
     if (this.instance) {
       throw new Error(
@@ -110,20 +110,18 @@ export class FastifyAPIServer {
    * await server.start();
    */
   public start = async () => {
-    try {
-      await this.fastify.listen({
-        port: this.port,
-        host: this.host,
-      });
-      this.logger.info(`Server listening on ${this.host}:${this.port}`);
-      if (this.swagger) {
-        this.logger.info(
-          `Swagger docs available at ${this.host}:${this.port}/docs`,
-        );
-      }
-    } catch (err) {
-      this.logger.error(err instanceof Error ? err.message : String(err));
-      process.exit(1);
-    }
+    await this.fastify.listen({
+      port: this.port,
+      host: this.host,
+    });
+    this.logger.info(`Server listening on ${this.host}:${this.port}`);
+    this.logger.info(
+      `Swagger docs available at ${this.host}:${this.port}/docs`,
+    );
+  };
+
+  public close = async () => {
+    await this.fastify.close();
+    this.logger.info(`Server has been closed succeessfully`);
   };
 }
