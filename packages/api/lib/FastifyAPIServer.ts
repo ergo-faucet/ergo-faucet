@@ -103,7 +103,6 @@ export class FastifyAPIServer {
 
   /**
    * Starts the server and begins listening for requests.
-   * Initializes the server if not already initialized.
    * @returns Promise that resolves when the server is listening
    * @throws {Error} If server fails to start
    * @example
@@ -120,6 +119,13 @@ export class FastifyAPIServer {
     );
   };
 
+  /**
+   * Closes the already running server
+   * @returns Promise that resolves when the server is closed
+   * @throws {Error} If server fails to close
+   * @example
+   * await server.close();
+   */
   public close = async () => {
     await this.fastify.close();
     this.logger.info(`Server has been closed succeessfully`);
