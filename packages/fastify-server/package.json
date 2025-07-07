@@ -1,7 +1,7 @@
 {
   "name": "@ergo-faucet/fastify-server",
   "version": "0.0.0",
-  "description": "API utilities for ergo-faucet",
+  "description": "Fastify server utilities for ergo-faucet",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
