@@ -14,7 +14,7 @@
     "test": "NODE_OPTIONS=\"--import tsx\" vitest",
     "test:coverage": "vitest run --coverage",
     "lint": "eslint --fix . && npm run prettify",
-    "prettify": "prettier --write ."
+    "prettify": "prettier --write . --ignore-path ./.gitignore"
   },
   "repository": {
     "type": "git",
