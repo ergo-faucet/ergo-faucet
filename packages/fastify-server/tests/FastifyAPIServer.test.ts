@@ -1,7 +1,5 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { FastifyAPIServer } from '../lib/FastifyAPIServer';
-import { ServerConfig } from '../lib/types';
-import { FastifySeverInstance } from '../lib/types';
+import { ServerConfig, FastifyAPIServer, FastifySeverInstance } from '../lib';
 
 /**
  * Test suite for the FastifyAPIServer class.
@@ -41,7 +39,7 @@ describe('FastifyAPIServer', () => {
   };
 
   /**
-   * Test case to initialized the server properly.
+   * Test case to initialize the server properly.
    */
   it('should initialize the server instance', async () => {
     await FastifyAPIServer.initialize(config);
@@ -72,34 +70,31 @@ describe('FastifyAPIServer', () => {
    * Test case to verify that routes are registered with a prefix and respond to requests.
    */
   it('should register routes with a prefix and respond to requests', async () => {
-    try {
-      await FastifyAPIServer.initialize(config);
-      const instance = FastifyAPIServer.getInstance();
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
 
-      const routeCallback = vi.fn(async (fastify: FastifySeverInstance) => {
-        fastify.get('/', async () => 'Hello World');
-      });
+    const routeCallback = vi.fn(async (fastify: FastifySeverInstance) => {
+      fastify.get('/', async () => 'Hello World');
+    });
 
-      // Register the route
-      await instance.register(routeCallback, '/test');
-      expect(routeCallback).toHaveBeenCalled();
+    // Register the route
+    await instance.register(routeCallback, '/test');
+    expect(routeCallback).toHaveBeenCalled();
 
-      // Start the server
-      await instance.start();
+    // Start the server
+    await instance.start();
 
-      // Assertions
-      const response = await fetch(
-        `http://${config.host}:${config.port}/test/`,
-      );
-      expect(response.status).toBe(200);
-      expect(await response.text()).toBe('Hello World');
+    // A request to the server
+    const response = await instance['fastify'].inject({
+      method: 'GET',
+      url: `/test`,
+    });
 
-      // free the host and port
-      await instance.close();
-    } catch (err) {
-      console.error('Error during test execution:', err);
-      throw err;
-    }
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe('Hello World');
+
+    // free the host and port
+    await instance.close();
   });
 
   /**

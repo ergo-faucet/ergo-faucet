@@ -3,8 +3,7 @@ import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { ServerConfig } from './types';
-import { FastifySeverInstance } from './types/fastifyAPIServer';
+import { ServerConfig, FastifySeverInstance } from './types';
 
 /**
  * Fastify-based API server implementation.
@@ -15,8 +14,8 @@ import { FastifySeverInstance } from './types/fastifyAPIServer';
 export class FastifyAPIServer {
   private static instance: FastifyAPIServer;
   private fastify: FastifySeverInstance;
-  private port: number;
-  private host: string;
+  private readonly port: number;
+  private readonly host: string;
   private corsOrigins: string | string[];
   private swagger: FastifyDynamicSwaggerOptions;
   private swaggerUi: FastifySwaggerUiOptions;
@@ -52,7 +51,7 @@ export class FastifyAPIServer {
     return this.instance;
   };
 
-  /**initialize
+  /**
    * Initializes the singleton instance with the provided configuration.
    * @param config - Server configuration parameters
    * @param logger - The logger of the class
@@ -60,7 +59,7 @@ export class FastifyAPIServer {
    */
   public static initialize = async (
     config: ServerConfig,
-    logger: AbstractLogger = new DummyLogger(),
+    logger?: AbstractLogger,
   ): Promise<void> => {
     if (this.instance) {
       throw new Error(
@@ -99,6 +98,9 @@ export class FastifyAPIServer {
     prefix: string,
   ): Promise<void> => {
     await this.fastify.register(routeCallback, { prefix });
+    this.logger.debug(
+      `The prefix: ${prefix} has been registered successfully.`,
+    );
   };
 
   /**
