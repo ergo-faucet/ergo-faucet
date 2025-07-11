@@ -103,7 +103,10 @@ class GooglereCaptcha {
    * @param remoteip - Optional remote IP address of the user.
    * @returns True if verification is successful and score passes threshold, otherwise false.
    */
-  public verifyByAPI = async (token: string, remoteip?: string) => {
+  public verifyByAPI = async (
+    token: string,
+    remoteip?: string,
+  ): Promise<boolean> => {
     const queryParams: verifyQuery = {
       secret: this.recaptchaKey,
       response: token,
@@ -136,18 +139,20 @@ class GooglereCaptcha {
           });
         }
       }
+
+      return false;
     } catch (err) {
       if (err instanceof reCaptchaError) {
         this.logger.debug(err.message);
-        return false;
       }
       if (axios.isAxiosError(err)) {
         this.logger.error(`Axios error.`, {
           message: err.message,
           stack: err.stack,
         });
-        throw err;
       }
+
+      throw err;
     }
   };
 
