@@ -33,6 +33,7 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
+    "@google-cloud/recaptcha-enterprise": "^6.3.0",
     "axios": "^1.10.0"
   }
 }
