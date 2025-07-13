@@ -13,7 +13,7 @@
     "release": "npm run test -- --run && npm run build && npm publish --access public",
     "test": "NODE_OPTIONS=\"--import tsx\" vitest",
     "coverage": "npm run test -- --coverage",
-    "type-check": "tsx --noEmit",
+    "type-check": "tsc --noEmit",
     "lint": "eslint --fix . && npm run prettify",
     "prettify": "prettier --write . --ignore-path ./.gitignore"
   },
