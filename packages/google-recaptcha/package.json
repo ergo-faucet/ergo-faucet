@@ -1,5 +1,5 @@
 {
-  "name": "google-recaptcha",
+  "name": "@ergo-faucet/google-recaptcha",
   "version": "0.0.0",
   "description": "google reCaptcha utilities for ergo-faucet",
   "repository": " https://github.com/TechStack-BlockChain/ergo-faucet.git",
@@ -28,6 +28,7 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
+    "@rosen-bridge/abstract-logger": "^2.0.1",
     "axios": "^1.10.0"
   }
 }
