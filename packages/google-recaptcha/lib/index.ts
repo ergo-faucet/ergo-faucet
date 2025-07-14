@@ -1,23 +1,2 @@
-import { GooglereCaptcha } from './GoogleRecaptcha';
-import {
-  reCaptchaClientError,
-  reCaptchaServerError,
-  InvalidInputSecret,
-  InvalidToken,
-  MissingInputSecret,
-  MissingToken,
-  BadRequest,
-  TimeoutOrDuplicate,
-} from './googleRecaptchaErrors';
-
-export { GooglereCaptcha };
-export {
-  reCaptchaClientError,
-  reCaptchaServerError,
-  InvalidInputSecret,
-  InvalidToken,
-  MissingInputSecret,
-  MissingToken,
-  BadRequest,
-  TimeoutOrDuplicate,
-};
+export { GooglereCaptcha } from './GoogleRecaptcha';
+export * from './googleRecaptchaErrors';
