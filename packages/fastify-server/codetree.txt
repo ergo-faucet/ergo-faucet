@@ -1,0 +1,484 @@
+================================================================
+Files Structure
+================================================================
+lib/
+  types/
+    fastifyAPIServer.ts
+    index.ts
+  FastifyAPIServer.ts
+  index.ts
+tests/
+  FastifyAPIServer.test.ts
+.eslintignore
+package.json
+README.md
+tsconfig.build.json
+tsconfig.json
+vitest.config.ts
+
+================================================================
+Repository Files
+================================================================
+
+================
+File: lib/types/fastifyAPIServer.ts
+================
+import { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
+import { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
+import { FastifyBaseLogger, FastifyInstance } from 'fastify';
+import { Server, IncomingMessage, ServerResponse } from 'http';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+
+export interface ServerConfig {
+  port: number;
+  host: string;
+  corsOrigins: string | string[];
+  swagger: FastifyDynamicSwaggerOptions;
+  swaggerUi: FastifySwaggerUiOptions;
+  activeFastifyLogger: boolean;
+  jwtSecret: string;
+}
+
+export type FastifySeverInstance = FastifyInstance<
+  // eslint-disable-next-line
+  Server<any, any>,
+  IncomingMessage,
+  ServerResponse<IncomingMessage>,
+  FastifyBaseLogger,
+  TypeBoxTypeProvider
+>;
+
+================
+File: lib/types/index.ts
+================
+export { FastifySeverInstance, ServerConfig } from './fastifyAPIServer';
+
+================
+File: lib/FastifyAPIServer.ts
+================
+import fastify from 'fastify';
+import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
+import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
+import fastifyCors from '@fastify/cors';
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { ServerConfig, FastifySeverInstance } from './types';
+import fastifyJwt from '@fastify/jwt';
+
+/**
+ * Fastify-based API server implementation.
+ * Provides a configurable HTTP server with support for CORS, Swagger documentation,
+ * and custom route registration.
+ * Implements the Singleton pattern to ensure only one server instance exists.
+ */
+export class FastifyAPIServer {
+  private static instance: FastifyAPIServer;
+  private fastify: FastifySeverInstance;
+  private readonly port: number;
+  private readonly host: string;
+  private corsOrigins: string | string[];
+  private swagger: FastifyDynamicSwaggerOptions;
+  private swaggerUi: FastifySwaggerUiOptions;
+   private jwtSecret: string;
+  private logger: AbstractLogger;
+  
+
+  /**
+   * Private constructor to enforce singleton pattern.
+   * @param config - Server configuration parameters including port, host,
+   * @param logger - Logger for the class to log. A DummyLogger by default
+   */
+  private constructor(config: ServerConfig, logger?: AbstractLogger) {
+    this.logger = logger ?? new DummyLogger();
+    this.port = config.port;
+    this.host = config.host;
+    this.corsOrigins = config.corsOrigins;
+    this.swagger = config.swagger;
+    this.swaggerUi = config.swaggerUi;
+    this.jwtSecret = config.jwtSecret;
+
+    this.fastify = fastify({
+      logger: config.activeFastifyLogger,
+    });
+  }
+
+  /**
+   * Gets the singleton instance of FastifyAPIServer.
+   * @returns The singleton instance of FastifyAPIServer
+   * @throws {Error} If the instance has not been initialized
+   */
+  public static getInstance = (): FastifyAPIServer => {
+    if (!this.instance) {
+      throw new Error('FastifyAPIServer instance has not been initialized.');
+    }
+    return this.instance;
+  };
+
+  /**
+   * Initializes the singleton instance with the provided configuration.
+   * @param config - Server configuration parameters
+   * @param logger - The logger of the class
+   * @returns The initialized FastifyAPIServer instance
+   */
+  public static initialize = async (
+    config: ServerConfig,
+    logger?: AbstractLogger,
+  ): Promise<void> => {
+    if (this.instance) {
+      throw new Error(
+        'FastifyAPIServer instance has already been initialized.',
+      );
+    }
+    this.instance = new FastifyAPIServer(config, logger);
+    // Register CORS
+    await this.instance.fastify.register(fastifyCors, {
+      origin: this.instance.corsOrigins,
+    });
+
+     await this.instance.fastify.register(fastifyJwt, {
+      secret: this.instance.jwtSecret,
+    });
+
+    await this.instance.fastify.register(fastifySwagger, this.instance.swagger);
+    await this.instance.fastify.register(
+      fastifySwaggerUi,
+      this.instance.swaggerUi,
+    );
+
+    this.instance.logger.info(`FastifyAPIServer initialized successfully.`);
+  };
+
+  /**
+   * Registers routes with a common prefix in Fastify using a callback function.
+   *
+   * This function takes a callback that receives a Fastify instance for route registration
+   * and a prefix string. It allows you to organize and group related routes together
+   * under the specified prefix.
+   *
+   * @param {(fastify: FastifySeverInstance) => void} routeCallback - A callback function that takes a Fastify instance
+   *   and registers routes on it. This follows Fastify's plugin route registration pattern.
+   * @param {string} prefix - The prefix to prepend to all routes registered in the callback.
+   * @returns {void}
+   */
+  public register = async (
+    routeCallback: (fastify: FastifySeverInstance) => Promise<void>,
+    prefix: string,
+  ): Promise<void> => {
+    await this.fastify.register(routeCallback, { prefix });
+    this.logger.debug(
+      `The prefix: ${prefix} has been registered successfully.`,
+    );
+  };
+
+  /**
+   * Starts the server and begins listening for requests.
+   * @returns Promise that resolves when the server is listening
+   * @throws {Error} If server fails to start
+   * @example
+   * await server.start();
+   */
+  public start = async () => {
+    await this.fastify.listen({
+      port: this.port,
+      host: this.host,
+    });
+    this.logger.info(`Server listening on ${this.host}:${this.port}`);
+    this.logger.info(
+      `Swagger docs available at ${this.host}:${this.port}/docs`,
+    );
+  };
+
+  /**
+   * Generate a signed JWT.
+   * @param payload - Payload to include in the JWT.
+   */
+  public signJWT = <T extends object>(payload: T): string => {
+    return this.fastify.jwt.sign(payload);
+  };
+
+
+
+  /**
+   * Verify a JWT and return the decoded payload.
+   * @param token - The JWT token string.
+   */
+  public verifyJWT = <T extends object>(token: string): T => {
+    return this.fastify.jwt.verify<T>(token);
+  };
+
+  /**
+   * Closes the already running server
+   * @returns Promise that resolves when the server is closed
+   * @throws {Error} If server fails to close
+   * @example
+   * await server.close();
+   */
+  public close = async () => {
+    await this.fastify.close();
+    this.logger.info(`Server has been closed succeessfully`);
+  };
+}
+
+================
+File: lib/index.ts
+================
+export { FastifyAPIServer } from './FastifyAPIServer';
+export { FastifySeverInstance, ServerConfig } from './types';
+
+================
+File: tests/FastifyAPIServer.test.ts
+================
+import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { ServerConfig, FastifyAPIServer, FastifySeverInstance } from '../lib';
+
+/**
+ * Test suite for the FastifyAPIServer class.
+ * This suite tests the initialization, route registration, and server start functionality.
+ */
+describe('FastifyAPIServer', () => {
+  /**
+   * Reset the FastifyAPIServer instance before each test.
+   */
+  beforeEach(() => {
+    // eslint-disable-next-line
+    (FastifyAPIServer as any).instance = undefined;
+  });
+
+  /**
+   * Configuration for the FastifyAPIServer.
+   * @type {ServerConfig}
+   */
+  const config: ServerConfig = {
+    port: 3000,
+    host: 'localhost',
+    corsOrigins: '*',
+    swagger: {
+      exposeHeadRoutes: true,
+      openapi: {
+        info: {
+          title: 'Test API',
+          description: 'API Documentation',
+          version: '1.0.0',
+        },
+      },
+    },
+    swaggerUi: {
+      routePrefix: '/docs',
+    },
+    activeFastifyLogger: false,
+  };
+
+  /**
+   * Test case to initialize the server properly.
+   */
+  it('should initialize the server instance', async () => {
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+    expect(instance).toBeInstanceOf(FastifyAPIServer);
+  });
+
+  /**
+   * Test case to verify that an error is thrown if the instance is not initialized.
+   */
+  it('should throw an error if instance is not initialized', () => {
+    expect(() => FastifyAPIServer.getInstance()).toThrow(
+      'FastifyAPIServer instance has not been initialized.',
+    );
+  });
+
+  /**
+   * Test case to verify that an error is thrown if trying to initialize the server twice.
+   */
+  it('should throw an error if trying to initialize twice', async () => {
+    await FastifyAPIServer.initialize(config);
+    await expect(FastifyAPIServer.initialize(config)).rejects.toThrow(
+      'FastifyAPIServer instance has already been initialized.',
+    );
+  });
+
+  /**
+   * Test case to verify that routes are registered with a prefix and respond to requests.
+   */
+  it('should register routes with a prefix and respond to requests', async () => {
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+
+    const routeCallback = vi.fn(async (fastify: FastifySeverInstance) => {
+      fastify.get('/', async () => 'Hello World');
+    });
+
+    // Register the route
+    await instance.register(routeCallback, '/test');
+    expect(routeCallback).toHaveBeenCalled();
+
+    // Start the server
+    await instance.start();
+
+    // A request to the server
+    const response = await instance['fastify'].inject({
+      method: 'GET',
+      url: `/test`,
+    });
+
+    expect(response.statusCode).toBe(200);
+    expect(response.body).toBe('Hello World');
+
+    // free the host and port
+    await instance.close();
+  });
+
+  /**
+   * Test case to verify that the server starts with no errors.
+   */
+  it('should start the server with no errors', async () => {
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+    await expect(instance.start()).resolves.not.toThrow();
+    // free the host and port
+    await instance.close();
+  });
+
+  /**
+   * Test case to verify that an error is thrown when starting the server on a wrong port number.
+   */
+  it('should throw an error when starting the server on wrong port number', async () => {
+    const errorConfig = { ...config, port: -1 };
+    await FastifyAPIServer.initialize(errorConfig);
+    const instance = FastifyAPIServer.getInstance();
+
+    await expect(instance.start()).rejects.toThrow(RangeError);
+  });
+});
+
+================
+File: .eslintignore
+================
+dist
+
+================
+File: package.json
+================
+{
+  "name": "@ergo-faucet/fastify-server",
+  "version": "0.1.0",
+  "description": "Fastify server utilities for ergo-faucet",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "engines": {
+    "node": "20.11.0"
+  },
+  "scripts": {
+    "build": "tsc --build tsconfig.build.json",
+    "release": "npm run test -- --run && npm run build && npm publish --access public",
+    "test": "NODE_OPTIONS=\"--import tsx\" vitest",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint --fix . && npm run prettify",
+    "prettify": "prettier --write . --ignore-path ./.gitignore"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/TechStack-BlockChain/ergo-faucet.git"
+  },
+  "keywords": [
+    "ergo",
+    "faucet",
+    "fastify-server"
+  ],
+  "author": "TechStack-BlockChain",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/TechStack-BlockChain/ergo-faucet/issues"
+  },
+  "homepage": "https://github.com/TechStack-BlockChain/ergo-faucet#readme",
+  "dependencies": {
+    "@fastify/cors": "^11.0.1",
+    "@fastify/jwt": "^9.1.0",
+    "@fastify/swagger": "^9.5.1",
+    "@fastify/swagger-ui": "^5.2.3",
+    "@fastify/type-provider-typebox": "^5.1.0",
+    "@rosen-bridge/abstract-logger": "^2.0.1",
+    "fastify": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.9",
+    "@vitest/coverage-istanbul": "^2.0.5",
+    "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
+    "vitest": "^2.0.5"
+  }
+}
+
+================
+File: README.md
+================
+# @ergo-faucet/fastify-server
+
+## Table of contents
+
+- [Introduction](#introduction)
+- [Installation](#installation)
+
+## Introduction
+
+Fastify server utilities for ergo-faucet
+
+## Installation
+
+npm:
+
+```sh
+npm i @ergo-faucet/fastify-server
+```
+
+yarn:
+
+```sh
+yarn add @ergo-faucet/fastify-server
+```
+
+================
+File: tsconfig.build.json
+================
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./lib"
+  },
+  "exclude": ["tests", "vitest.config.ts"]
+}
+
+================
+File: tsconfig.json
+================
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": true
+  },
+  "include": ["tests", "lib", "vitest.config.ts"]
+}
+
+================
+File: vitest.config.ts
+================
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    globals: true,
+    coverage: {
+      all: true,
+      reporter: ['cobertura', 'lcov', 'text', 'text-summary'],
+      provider: 'istanbul',
+      include: ['src'],
+    },
+    passWithNoTests: true,
+    poolOptions: {
+      forks: {
+        singleFork: true,
+      },
+    },
+  },
+});
