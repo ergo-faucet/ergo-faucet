@@ -3,7 +3,7 @@ import { ServerConfig, FastifyAPIServer, FastifySeverInstance } from '../lib';
 
 /**
  * Test suite for the FastifyAPIServer class.
- * This suite tests the initialization, route registration, and server start functionality.
+ * This suite tests the initialization, route registration, JWT handling, and server start functionality.
  */
 describe('FastifyAPIServer', () => {
   /**
@@ -22,6 +22,7 @@ describe('FastifyAPIServer', () => {
     port: 3000,
     host: 'localhost',
     corsOrigins: '*',
+    jwtSecret: 'test_secret',
     swagger: {
       exposeHeadRoutes: true,
       openapi: {
@@ -117,5 +118,20 @@ describe('FastifyAPIServer', () => {
     const instance = FastifyAPIServer.getInstance();
 
     await expect(instance.start()).rejects.toThrow(RangeError);
+  });
+
+  /**
+   * Test to verify that JWT signing and verification work as expected.
+   */
+  it('should sign and verify JWT correctly', async () => {
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+
+    const payload = { user: 'test_user', role: 'admin' };
+    const token = instance.signJWT(payload);
+    const verified = instance.verifyJWT<typeof payload>(token);
+
+    expect(verified.user).toBe('test_user');
+    expect(verified.role).toBe('admin');
   });
 });
