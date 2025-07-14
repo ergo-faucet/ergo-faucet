@@ -55,9 +55,11 @@ class GoogleRecaptcha {
    * @param recaptchaKey - Site key for reCAPTCHA.
    * @param threshold - Optional risk score threshold.
    * @param logger - Optional custom logger.
-   * @param hostnames - Valid Hostnames.
+   * @param hostnames - List of allowed domain names (as strings) for validation, configured in the Google Cloud Console.
+   *                    Example: ["localhost", "example.com", "subdomain.example.com", "120.0.0.1"] Do not include
+   *                    scheme ("https://"), page paths ("example.com/page"), or port numbers ("localhost:8000").
    *
-   * @throws Error if the instance has already been initialized.
+   *  @throws Error if the instance has already been initialized.
    * @returns The `GoogleRecaptcha` instance.
    */
   public static initialize = async (
@@ -122,7 +124,10 @@ class GoogleRecaptcha {
         throw new TimeoutOrDuplicate();
       }
 
-      if (!this.hostnames.includes(response.hostname))
+      if (
+        !this.hostnames.includes('*') &&
+        !this.hostnames.includes(response.hostname)
+      )
         throw new InvalidHostname();
 
       if (response.success) {
