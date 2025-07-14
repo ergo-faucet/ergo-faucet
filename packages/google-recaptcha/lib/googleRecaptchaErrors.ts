@@ -1,66 +1,69 @@
-export class reCaptchaError extends Error {
+export class reCaptchaServerError extends Error {
   public constructor(message?: string) {
     super(message);
   }
 }
 
-export class MissingInputSecret extends reCaptchaError {
+export class reCaptchaClientError extends Error {
+  public constructor(message?: string) {
+    super(message);
+  }
+}
+
+export class MissingInputSecret extends reCaptchaServerError {
   public constructor() {
     super('The secret parameter is missing.');
     this.name = 'missing-input-secret';
   }
 }
 
-export class InvalidInputSecret extends reCaptchaError {
-  public constructor(secret: string) {
-    super(`'The secret parameter: ${secret} is invalid or malformed.`);
+export class InvalidInputSecret extends reCaptchaServerError {
+  public constructor() {
+    super(`'The secret parameter is invalid or malformed.`);
     this.name = 'invalid-input-secret';
   }
 }
 
-export class MissingInputResponse extends reCaptchaError {
+export class MissingToken extends reCaptchaClientError {
   public constructor() {
-    super('The response parameter is missing.');
+    super('The reCAPTCAH token parameter is missing.');
     this.name = 'missing-input-response';
   }
 }
 
-export class InvalidInputResponse extends reCaptchaError {
-  public constructor(response: string) {
-    super(`The response parameter: ${response} is invalid or malformed.`);
+export class InvalidToken extends reCaptchaClientError {
+  public constructor() {
+    super(`The eCAPTCAH token (response parameter) is invalid or malformed.`);
     this.name = 'invalid-input-response';
   }
 }
 
-export class BadRequest extends reCaptchaError {
+export class BadRequest extends reCaptchaServerError {
   public constructor() {
     super(`The request is invalid or malformed.`);
     this.name = 'bad-request';
   }
 }
 
-export class TimeoutOrDuplicate extends reCaptchaError {
+export class TimeoutOrDuplicate extends reCaptchaClientError {
   public constructor() {
     super(
-      `The response is no longer valid: either is too old or has been used previously.`,
+      `The eCAPTCAH token is no longer valid: either is too old or has been used previously.`,
     );
     this.name = 'timeout-or-duplicate';
   }
 }
 
-export const throwRecaptchaError = (
-  code: string,
-  context: { secret: string; response: string },
-) => {
+export const throwRecaptchaError = (code: string) => {
   switch (code) {
     case 'missing-input-secret':
       throw new MissingInputSecret();
     case 'invalid-input-secret':
-      throw new InvalidInputSecret(context.secret);
+      throw new InvalidInputSecret();
     case 'missing-input-response':
-      throw new MissingInputResponse();
+      throw new MissingToken();
     case 'invalid-input-response':
-      throw new InvalidInputResponse(context.response);
+      throw new InvalidToken();
     case 'bad-request':
       throw new BadRequest();
     case 'timeout-or-duplicate':

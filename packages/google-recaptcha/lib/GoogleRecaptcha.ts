@@ -1,7 +1,11 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import axios, { AxiosInstance } from 'axios';
 import { reCAPTCHAResponse, verifyQuery } from './types';
-import { reCaptchaError, throwRecaptchaError } from './googleRecaptchaErrors';
+import {
+  reCaptchaServerError,
+  reCaptchaClientError,
+  throwRecaptchaError,
+} from './googleRecaptchaErrors';
 
 class GooglereCaptcha {
   private static instance: GooglereCaptcha;
@@ -22,7 +26,6 @@ class GooglereCaptcha {
   private constructor(
     recaptchaKey: string,
     threshold: number = 0.5,
-    verifyURL: string,
     axiosInstance?: AxiosInstance,
     logger?: AbstractLogger,
   ) {
@@ -31,7 +34,7 @@ class GooglereCaptcha {
     this.axiosInstance = axiosInstance
       ? axiosInstance
       : axios.create({
-          baseURL: `${verifyURL}`,
+          baseURL: 'https://www.google.com/recaptcha/api/siteverify',
           timeout: 1000,
         });
     this.logger = logger ? logger : new DummyLogger();
@@ -62,19 +65,18 @@ class GooglereCaptcha {
   public static initialize = async (
     recaptchaKey: string,
     threshold: number = 0.5,
-    verifyURL: string,
     axiosInstance?: AxiosInstance,
     logger?: AbstractLogger,
   ) => {
-    if (!this.instance) {
-      this.instance = new GooglereCaptcha(
-        recaptchaKey,
-        threshold,
-        verifyURL,
-        axiosInstance,
-        logger,
-      );
+    if (this.instance) {
+      throw new Error('GooglereCaptcha instance has already been initialized.');
     }
+    this.instance = new GooglereCaptcha(
+      recaptchaKey,
+      threshold,
+      axiosInstance,
+      logger,
+    );
   };
 
   /**
@@ -118,26 +120,25 @@ class GooglereCaptcha {
 
       if (Array.isArray(response.error_codes)) {
         for (const code of response.error_codes) {
-          throwRecaptchaError(code, {
-            secret: this.recaptchaKey,
-            response: token,
-          });
+          throwRecaptchaError(code);
         }
       }
 
       return false;
     } catch (err) {
-      if (err instanceof reCaptchaError) {
+      if (err instanceof reCaptchaServerError) {
         this.logger.debug(err.message);
+      }
+      if (err instanceof reCaptchaClientError) {
+        throw err;
       }
       if (axios.isAxiosError(err)) {
         this.logger.error(`Axios error.`, {
           message: err.message,
           stack: err.stack,
         });
-      }
-
-      throw err;
+      } else this.logger.error(`Unknown error ${err}`);
+      return false;
     }
   };
 }
