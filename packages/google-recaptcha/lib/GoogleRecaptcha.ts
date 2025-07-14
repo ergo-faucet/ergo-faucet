@@ -2,9 +2,11 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import axios from 'axios';
 import { RecaptchaResponse, VerifyQuery } from './types';
 import {
+  InvalidHostname,
   RecaptchaClientError,
   RecaptchaServerError,
   throwRecaptchaError,
+  TimeoutOrDuplicate,
 } from './googleRecaptchaErrors';
 
 class GoogleRecaptcha {
@@ -12,21 +14,25 @@ class GoogleRecaptcha {
   private logger: AbstractLogger;
   private readonly recaptchaKey: string;
   private readonly threshold: number;
+  private hostnames: string[];
 
   /**
    * Private constructor for singleton pattern.
    *
    * @param recaptchaKey - Your reCAPTCHA secret key.
    * @param threshold - Optional risk score threshold, defaults to 0.5.
+   * @param hostnames - Valid Hostnames.
    * @param logger - Optional custom logger, defaults to DummyLogger.
    */
   private constructor(
     recaptchaKey: string,
     threshold: number = 0.5,
+    hostnames: string[],
     logger?: AbstractLogger,
   ) {
     this.recaptchaKey = recaptchaKey;
     this.threshold = threshold;
+    this.hostnames = hostnames;
     this.logger = logger ? logger : new DummyLogger();
   }
 
@@ -49,6 +55,7 @@ class GoogleRecaptcha {
    * @param recaptchaKey - Site key for reCAPTCHA.
    * @param threshold - Optional risk score threshold.
    * @param logger - Optional custom logger.
+   * @param hostnames - Valid Hostnames.
    *
    * @throws Error if the instance has already been initialized.
    * @returns The `GoogleRecaptcha` instance.
@@ -56,12 +63,18 @@ class GoogleRecaptcha {
   public static initialize = async (
     recaptchaKey: string,
     threshold: number = 0.5,
+    hostnames: string[],
     logger?: AbstractLogger,
   ) => {
     if (this.instance) {
       throw new Error('GooglereCaptcha instance has already been initialized.');
     }
-    this.instance = new GoogleRecaptcha(recaptchaKey, threshold, logger);
+    this.instance = new GoogleRecaptcha(
+      recaptchaKey,
+      threshold,
+      hostnames,
+      logger,
+    );
   };
 
   /**
@@ -99,10 +112,22 @@ class GoogleRecaptcha {
         )
       ).data;
 
+      const challengeTime = new Date(response.challenge_ts).getTime();
+      const now = Date.now();
+
+      const diffInMs = now - challengeTime;
+      const diffInMinutes = diffInMs / (1000 * 60);
+
+      if (diffInMinutes > 2) {
+        throw new TimeoutOrDuplicate();
+      }
+
+      if (!this.hostnames.includes(response.hostname)) throw InvalidHostname;
+
       if (response.success) {
         if (response.score !== undefined && response.score > this.threshold) {
           return true;
-        }
+        } else if (response.score === undefined) return true;
       }
 
       if (Array.isArray(response.error_codes)) {

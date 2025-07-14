@@ -53,6 +53,12 @@ export class TimeoutOrDuplicate extends RecaptchaClientError {
     this.name = 'timeout-or-duplicate';
   }
 }
+export class InvalidHostname extends RecaptchaClientError {
+  public constructor() {
+    super(`The Hostname is not between valid hostnames.`);
+    this.name = 'invalid-hostname';
+  }
+}
 
 export const throwRecaptchaError = (code: string) => {
   switch (code) {
