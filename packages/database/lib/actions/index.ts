@@ -1,1 +1,1 @@
-export { UserAddressAction } from './userAddressActions';
+export { UserAddressAction } from './UserAddressActions';
