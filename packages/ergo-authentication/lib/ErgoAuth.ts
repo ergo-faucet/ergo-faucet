@@ -4,6 +4,7 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ChallengeRecord, VerifySignatureParams } from './types';
 import { verifySignature } from './utils';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+import { FastifyInstance, FastifyRequest } from 'fastify';
 
 type RedisConfig = RedisOptions;
 const ERGO_AUTH_PREFIX = '/ergo-auth';
@@ -134,16 +135,16 @@ export class ErgoAuth {
    * @param prefix - URL prefix for the routes
    */
   private registerRoutes = async (prefix: string): Promise<void> => {
-    await this.fastifyServer.register(async (fastify) => {
-      fastify.post('/challenge', async (request) => {
+    await this.fastifyServer.register(async (fastify: FastifyInstance) => {
+      fastify.post('/challenge', async (request: FastifyRequest) => {
         const { address } = request.body as { address: string };
         const challenge = await this.createChallenge(address);
         return { challenge };
       });
     }, prefix);
 
-    await this.fastifyServer.register(async (fastify) => {
-      fastify.post('/verify', async (request) => {
+    await this.fastifyServer.register(async (fastify: FastifyInstance) => {
+      fastify.post('/verify', async (request: FastifyRequest) => {
         const { address, signedMessage, proof } = request.body as {
           address: string;
           signedMessage: string;
@@ -157,6 +158,7 @@ export class ErgoAuth {
         return { isValid };
       });
     }, prefix);
+
     this.logger.info(`[ErgoAuth] Routes registered under prefix "${prefix}"`);
   };
 
