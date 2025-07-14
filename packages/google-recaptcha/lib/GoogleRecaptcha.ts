@@ -1,5 +1,5 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import axios, { AxiosInstance } from 'axios';
+import axios from 'axios';
 import { reCAPTCHAResponse, verifyQuery } from './types';
 import {
   reCaptchaServerError,
@@ -12,7 +12,6 @@ class GooglereCaptcha {
   private logger: AbstractLogger;
   private readonly recaptchaKey: string;
   private readonly threshold: number;
-  private axiosInstance: AxiosInstance;
 
   /**
    * Private constructor for singleton pattern.
@@ -20,23 +19,15 @@ class GooglereCaptcha {
    * @param recaptchaKey - Your reCAPTCHA secret key.
    * @param threshold - Optional risk score threshold, defaults to 0.5.
    * @param verifyURL - The URL endpoint to verify the reCAPTCHA token.
-   * @param axiosInstance - Optional custom Axios instance.
    * @param logger - Optional custom logger, defaults to DummyLogger.
    */
   private constructor(
     recaptchaKey: string,
     threshold: number = 0.5,
-    axiosInstance?: AxiosInstance,
     logger?: AbstractLogger,
   ) {
     this.recaptchaKey = recaptchaKey;
     this.threshold = threshold;
-    this.axiosInstance = axiosInstance
-      ? axiosInstance
-      : axios.create({
-          baseURL: 'https://www.google.com/recaptcha/api/siteverify',
-          timeout: 1000,
-        });
     this.logger = logger ? logger : new DummyLogger();
   }
 
@@ -59,24 +50,17 @@ class GooglereCaptcha {
    * @param recaptchaKey - Site key for reCAPTCHA.
    * @param threshold - Optional risk score threshold.
    * @param verifyURL - The URL endpoint to verify the reCAPTCHA token.
-   * @param axiosInstance - Optional custom Axios instance.
    * @param logger - Optional custom logger.
    */
   public static initialize = async (
     recaptchaKey: string,
     threshold: number = 0.5,
-    axiosInstance?: AxiosInstance,
     logger?: AbstractLogger,
   ) => {
     if (this.instance) {
       throw new Error('GooglereCaptcha instance has already been initialized.');
     }
-    this.instance = new GooglereCaptcha(
-      recaptchaKey,
-      threshold,
-      axiosInstance,
-      logger,
-    );
+    this.instance = new GooglereCaptcha(recaptchaKey, threshold, logger);
   };
 
   /**
@@ -90,7 +74,7 @@ class GooglereCaptcha {
    * @param remoteip - Optional remote IP address of the user.
    * @returns True if verification is successful and score passes threshold, otherwise false.
    */
-  public verifyByAPI = async (
+  public verifyToken = async (
     token: string,
     remoteip?: string,
   ): Promise<boolean> => {
@@ -101,17 +85,19 @@ class GooglereCaptcha {
     };
     try {
       const response = (
-        await this.axiosInstance.post<reCAPTCHAResponse>(
-          '',
-          {},
+        await axios.post<reCAPTCHAResponse>(
+          'https://www.google.com/recaptcha/api/siteverify',
+          null,
           {
             params: queryParams,
             headers: {
               'Content-Type': 'application/x-www-form-urlencoded',
             },
+            timeout: 2000,
           },
         )
       ).data;
+
       if (response.success) {
         if (response.score !== undefined && response.score > this.threshold) {
           return true;
