@@ -1,51 +1,51 @@
-export class reCaptchaServerError extends Error {
+export class RecaptchaServerError extends Error {
   public constructor(message?: string) {
     super(message);
   }
 }
 
-export class reCaptchaClientError extends Error {
+export class RecaptchaClientError extends Error {
   public constructor(message?: string) {
     super(message);
   }
 }
 
-export class MissingInputSecret extends reCaptchaServerError {
+export class MissingInputSecret extends RecaptchaServerError {
   public constructor() {
     super('The secret parameter is missing.');
     this.name = 'missing-input-secret';
   }
 }
 
-export class InvalidInputSecret extends reCaptchaServerError {
+export class InvalidInputSecret extends RecaptchaServerError {
   public constructor() {
     super(`'The secret parameter is invalid or malformed.`);
     this.name = 'invalid-input-secret';
   }
 }
 
-export class MissingToken extends reCaptchaClientError {
+export class MissingToken extends RecaptchaClientError {
   public constructor() {
     super('The reCAPTCHA token parameter is missing.');
     this.name = 'missing-input-response';
   }
 }
 
-export class InvalidToken extends reCaptchaClientError {
+export class InvalidToken extends RecaptchaClientError {
   public constructor() {
     super(`The reCAPTCHA token (response parameter) is invalid or malformed.`);
     this.name = 'invalid-input-response';
   }
 }
 
-export class BadRequest extends reCaptchaServerError {
+export class BadRequest extends RecaptchaServerError {
   public constructor() {
     super(`The request is invalid or malformed.`);
     this.name = 'bad-request';
   }
 }
 
-export class TimeoutOrDuplicate extends reCaptchaClientError {
+export class TimeoutOrDuplicate extends RecaptchaClientError {
   public constructor() {
     super(
       `The reCAPTCHA token is no longer valid: either is too old or has been used previously.`,

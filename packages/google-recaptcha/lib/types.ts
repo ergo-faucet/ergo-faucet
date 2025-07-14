@@ -1,4 +1,4 @@
-export interface reCAPTCHAResponse {
+export interface RecaptchaResponse {
   success: boolean;
   score?: number; // the score for this request (0.0 - 1.0)
   action?: string;
@@ -7,7 +7,7 @@ export interface reCAPTCHAResponse {
   error_codes: string[]; // optional
 }
 
-export interface verifyQuery {
+export interface VerifyQuery {
   secret: string;
   response: string;
   remoteip?: string;

@@ -1,9 +1,9 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import axios from 'axios';
-import { reCAPTCHAResponse, verifyQuery } from './types';
+import { RecaptchaResponse, VerifyQuery } from './types';
 import {
-  reCaptchaServerError,
-  reCaptchaClientError,
+  RecaptchaClientError,
+  RecaptchaServerError,
   throwRecaptchaError,
 } from './googleRecaptchaErrors';
 
@@ -31,20 +31,20 @@ class GoogleRecaptcha {
   }
 
   /**
-   * Returns the singleton instance of `GooglereCaptcha`.
+   * Returns the singleton instance of `GoogleRecaptcha`.
    *
    * @throws Error if the instance has not been initialized.
    * @returns The initialized `GoogleRecaptcha` instance.
    */
   public static getInstance = (): GoogleRecaptcha => {
     if (!this.instance) {
-      throw new Error('GooglereCaptcha instance has not been initialized.');
+      throw new Error('GoogleRecaptcha instance has not been initialized.');
     }
     return GoogleRecaptcha.instance;
   };
 
   /**
-   * Initializes the singleton instance of `GooglereCaptcha` if not already initialized.
+   * Initializes the singleton instance of `GoogleRecaptcha` if not already initialized.
    *
    * @param recaptchaKey - Site key for reCAPTCHA.
    * @param threshold - Optional risk score threshold.
@@ -79,14 +79,14 @@ class GoogleRecaptcha {
     token: string,
     remoteip?: string,
   ): Promise<boolean> => {
-    const queryParams: verifyQuery = {
+    const queryParams: VerifyQuery = {
       secret: this.recaptchaKey,
       response: token,
       remoteip,
     };
     try {
       const response = (
-        await axios.post<reCAPTCHAResponse>(
+        await axios.post<RecaptchaResponse>(
           'https://www.google.com/recaptcha/api/siteverify',
           null,
           {
@@ -113,10 +113,10 @@ class GoogleRecaptcha {
 
       return false;
     } catch (err) {
-      if (err instanceof reCaptchaServerError) {
+      if (err instanceof RecaptchaServerError) {
         this.logger.debug(err.message);
       }
-      if (err instanceof reCaptchaClientError) {
+      if (err instanceof RecaptchaClientError) {
         throw err;
       }
       if (axios.isAxiosError(err)) {
