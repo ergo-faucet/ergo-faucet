@@ -6,12 +6,18 @@ import { ServerConfig, FastifyAPIServer, FastifySeverInstance } from '../lib';
  * This suite tests the initialization, route registration, JWT handling, and server start functionality.
  */
 describe('FastifyAPIServer', () => {
+  /**
+   * Reset the FastifyAPIServer instance before each test.
+   */
   beforeEach(() => {
-    // Reset the singleton instance before each test
     // eslint-disable-next-line
     (FastifyAPIServer as any).instance = undefined;
   });
 
+  /**
+   * Configuration for the FastifyAPIServer.
+   * @type {ServerConfig}
+   */
   const config: ServerConfig = {
     port: 3000,
     host: 'localhost',
@@ -34,7 +40,7 @@ describe('FastifyAPIServer', () => {
   };
 
   /**
-   * Test to verify that the server initializes correctly with valid configuration.
+   * Test case to initialize the server properly.
    */
   it('should initialize the server instance', async () => {
     await FastifyAPIServer.initialize(config);
@@ -43,7 +49,7 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test to verify that accessing instance before initialization throws an error.
+   * Test case to verify that an error is thrown if the instance is not initialized.
    */
   it('should throw an error if instance is not initialized', () => {
     expect(() => FastifyAPIServer.getInstance()).toThrow(
@@ -52,7 +58,7 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test to verify that reinitializing the singleton instance throws an error.
+   * Test case to verify that an error is thrown if trying to initialize the server twice.
    */
   it('should throw an error if trying to initialize twice', async () => {
     await FastifyAPIServer.initialize(config);
@@ -62,7 +68,7 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test to verify that a route can be registered and responds correctly to requests.
+   * Test case to verify that routes are registered with a prefix and respond to requests.
    */
   it('should register routes with a prefix and respond to requests', async () => {
     await FastifyAPIServer.initialize(config);
@@ -72,11 +78,14 @@ describe('FastifyAPIServer', () => {
       fastify.get('/', async () => 'Hello World');
     });
 
+    // Register the route
     await instance.register(routeCallback, '/test');
     expect(routeCallback).toHaveBeenCalled();
 
+    // Start the server
     await instance.start();
 
+    // A request to the server
     const response = await instance['fastify'].inject({
       method: 'GET',
       url: `/test`,
@@ -85,21 +94,23 @@ describe('FastifyAPIServer', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toBe('Hello World');
 
+    // free the host and port
     await instance.close();
   });
 
   /**
-   * Test to verify that the server starts successfully without throwing errors.
+   * Test case to verify that the server starts with no errors.
    */
   it('should start the server with no errors', async () => {
     await FastifyAPIServer.initialize(config);
     const instance = FastifyAPIServer.getInstance();
     await expect(instance.start()).resolves.not.toThrow();
+    // free the host and port
     await instance.close();
   });
 
   /**
-   * Test to verify that starting the server on an invalid port throws an error.
+   * Test case to verify that an error is thrown when starting the server on a wrong port number.
    */
   it('should throw an error when starting the server on wrong port number', async () => {
     const errorConfig = { ...config, port: -1 };
