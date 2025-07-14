@@ -26,14 +26,14 @@ export class InvalidInputSecret extends reCaptchaServerError {
 
 export class MissingToken extends reCaptchaClientError {
   public constructor() {
-    super('The reCAPTCAH token parameter is missing.');
+    super('The reCAPTCHA token parameter is missing.');
     this.name = 'missing-input-response';
   }
 }
 
 export class InvalidToken extends reCaptchaClientError {
   public constructor() {
-    super(`The eCAPTCAH token (response parameter) is invalid or malformed.`);
+    super(`The reCAPTCHA token (response parameter) is invalid or malformed.`);
     this.name = 'invalid-input-response';
   }
 }
@@ -48,7 +48,7 @@ export class BadRequest extends reCaptchaServerError {
 export class TimeoutOrDuplicate extends reCaptchaClientError {
   public constructor() {
     super(
-      `The eCAPTCAH token is no longer valid: either is too old or has been used previously.`,
+      `The reCAPTCHA token is no longer valid: either is too old or has been used previously.`,
     );
     this.name = 'timeout-or-duplicate';
   }

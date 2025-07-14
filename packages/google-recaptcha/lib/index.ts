@@ -1,2 +1,2 @@
-export { GooglereCaptcha } from './GoogleRecaptcha';
+export { GoogleRecaptcha } from './GoogleRecaptcha';
 export * from './googleRecaptchaErrors';

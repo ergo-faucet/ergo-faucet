@@ -7,8 +7,8 @@ import {
   throwRecaptchaError,
 } from './googleRecaptchaErrors';
 
-class GooglereCaptcha {
-  private static instance: GooglereCaptcha;
+class GoogleRecaptcha {
+  private static instance: GoogleRecaptcha;
   private logger: AbstractLogger;
   private readonly recaptchaKey: string;
   private readonly threshold: number;
@@ -18,7 +18,6 @@ class GooglereCaptcha {
    *
    * @param recaptchaKey - Your reCAPTCHA secret key.
    * @param threshold - Optional risk score threshold, defaults to 0.5.
-   * @param verifyURL - The URL endpoint to verify the reCAPTCHA token.
    * @param logger - Optional custom logger, defaults to DummyLogger.
    */
   private constructor(
@@ -35,13 +34,13 @@ class GooglereCaptcha {
    * Returns the singleton instance of `GooglereCaptcha`.
    *
    * @throws Error if the instance has not been initialized.
-   * @returns The initialized `GooglereCaptcha` instance.
+   * @returns The initialized `GoogleRecaptcha` instance.
    */
-  public static getInstance = (): GooglereCaptcha => {
+  public static getInstance = (): GoogleRecaptcha => {
     if (!this.instance) {
       throw new Error('GooglereCaptcha instance has not been initialized.');
     }
-    return GooglereCaptcha.instance;
+    return GoogleRecaptcha.instance;
   };
 
   /**
@@ -49,8 +48,10 @@ class GooglereCaptcha {
    *
    * @param recaptchaKey - Site key for reCAPTCHA.
    * @param threshold - Optional risk score threshold.
-   * @param verifyURL - The URL endpoint to verify the reCAPTCHA token.
    * @param logger - Optional custom logger.
+   *
+   * @throws Error if the instance has already been initialized.
+   * @returns The `GoogleRecaptcha` instance.
    */
   public static initialize = async (
     recaptchaKey: string,
@@ -60,7 +61,7 @@ class GooglereCaptcha {
     if (this.instance) {
       throw new Error('GooglereCaptcha instance has already been initialized.');
     }
-    this.instance = new GooglereCaptcha(recaptchaKey, threshold, logger);
+    this.instance = new GoogleRecaptcha(recaptchaKey, threshold, logger);
   };
 
   /**
@@ -129,4 +130,4 @@ class GooglereCaptcha {
   };
 }
 
-export { GooglereCaptcha };
+export { GoogleRecaptcha };
