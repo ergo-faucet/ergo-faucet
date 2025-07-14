@@ -1,6 +1,6 @@
 {
   "name": "@ergo-faucet/google-recaptcha",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "google reCaptcha utilities for ergo-faucet",
   "repository": " https://github.com/TechStack-BlockChain/ergo-faucet.git",
   "license": "GPL-3.0",
