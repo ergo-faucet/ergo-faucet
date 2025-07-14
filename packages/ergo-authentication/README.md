@@ -1,4 +1,4 @@
-# ergo_authentication
+# @ergo-faucet/ergo-authentication
 
 ## Table of contents
 
@@ -12,11 +12,11 @@
 npm:
 
 ```sh
-npm i ergo_authentication
+npm i @ergo-faucet/ergo-authentication
 ```
 
 yarn:
 
 ```sh
-yarn add ergo_authentication
+yarn add @ergo-faucet/ergo-authentication
 ```
