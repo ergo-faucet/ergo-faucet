@@ -3,42 +3,62 @@ import { v4 as uuidv4 } from 'uuid';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ChallengeRecord, VerifySignatureParams } from './types';
 import { verifySignature } from './utils';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
-type RedisConfig = string | RedisOptions;
+type RedisConfig = RedisOptions;
+const ERGO_AUTH_PREFIX = '/ergo-auth';
 
 export class ErgoAuth {
   private static instance: ErgoAuth;
   private redis!: Redis;
   private logger: AbstractLogger;
+  private fastifyServer: FastifyAPIServer;
+  private redisExpirySeconds: number;
 
   /**
    * Private constructor to enforce singleton pattern.
    * @param redisConfig - Redis connection string or options.
+   * @param fastifyServer - Fastify server instance for API integration.
+   * @param redisExpirySeconds - Optional expiry time for challenges in seconds (default:
    * @param logger - Optional logger instance.
    */
-  private constructor(redisConfig: RedisConfig, logger?: AbstractLogger) {
+  private constructor(
+    redisConfig: RedisConfig,
+    fastifyServer: FastifyAPIServer,
+    logger?: AbstractLogger,
+    redisExpirySeconds = 300,
+  ) {
     this.logger = logger ?? new DummyLogger();
-    this.redis =
-      typeof redisConfig === 'string'
-        ? new Redis(redisConfig)
-        : new Redis(redisConfig);
+    this.redis = new Redis(redisConfig);
+    this.fastifyServer = fastifyServer;
+    this.redisExpirySeconds = redisExpirySeconds;
     this.logger.info('[ErgoAuth] Redis connection initialized.');
+    this.registerRoutes(ERGO_AUTH_PREFIX);
   }
 
   /**
    * Initializes the singleton instance.
    * @param redisConfig - Redis connection string or options.
+   * @param fastifyServer - Fastify server instance for API integration.
    * @param logger - Optional logger instance.
+   * @param redisExpirySeconds - Optional expiry time for challenges in seconds (default:
    * @throws Error if already initialized.
    */
   public static initialize = (
     redisConfig: RedisConfig,
+    fastifyServer: FastifyAPIServer,
     logger?: AbstractLogger,
+    redisExpirySeconds?: number,
   ): void => {
     if (this.instance) {
       throw new Error('ErgoAuth has already been initialized.');
     }
-    this.instance = new ErgoAuth(redisConfig, logger);
+    this.instance = new ErgoAuth(
+      redisConfig,
+      fastifyServer,
+      logger,
+      redisExpirySeconds,
+    );
   };
 
   /**
@@ -67,8 +87,8 @@ export class ErgoAuth {
       `challenge:${address}`,
       JSON.stringify(value),
       'EX',
-      300,
-    ); // TODO: make expiry configurable
+      this.redisExpirySeconds,
+    );
     this.logger.debug(`[ErgoAuth] Created challenge for ${address}`);
 
     return challenge;
@@ -107,6 +127,37 @@ export class ErgoAuth {
     this.logger.info(`[ErgoAuth] Signature valid: ${isValid} for ${address}`);
 
     return isValid ?? false;
+  };
+
+  /**
+   * Registers the API routes for ErgoAuth.
+   * @param prefix - URL prefix for the routes
+   */
+  private registerRoutes = async (prefix: string): Promise<void> => {
+    await this.fastifyServer.register(async (fastify) => {
+      fastify.post('/challenge', async (request) => {
+        const { address } = request.body as { address: string };
+        const challenge = await this.createChallenge(address);
+        return { challenge };
+      });
+    }, prefix);
+
+    await this.fastifyServer.register(async (fastify) => {
+      fastify.post('/verify', async (request) => {
+        const { address, signedMessage, proof } = request.body as {
+          address: string;
+          signedMessage: string;
+          proof: string;
+        };
+        const isValid = await this.verifyChallenge({
+          address,
+          signedMessage,
+          proof,
+        });
+        return { isValid };
+      });
+    }, prefix);
+    this.logger.info(`[ErgoAuth] Routes registered under prefix "${prefix}"`);
   };
 
   /**
