@@ -31,5 +31,13 @@
   },
   "engines": {
     "node": ">=20.11.0"
+  },
+  "dependencies": {
+    "@fleet-sdk/core": "^0.10.0",
+    "@fleet-sdk/crypto": "^0.10.0",
+    "@fleet-sdk/wallet": "^0.10.0",
+    "@rosen-bridge/abstract-logger": "^2.0.1",
+    "ioredis": "^5.6.1",
+    "uuid": "^11.1.0"
   }
 }
