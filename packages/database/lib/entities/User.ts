@@ -1,4 +1,5 @@
 import {
+  Column,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
@@ -21,4 +22,7 @@ export class User {
 
   @OneToMany(() => UserRequest, (request) => request.user)
   requests!: Relation<UserRequest[]>;
+
+  @Column({ type: 'date', nullable: true })
+  lastLogin!: Date | null;
 }
