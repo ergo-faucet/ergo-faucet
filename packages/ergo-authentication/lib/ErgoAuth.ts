@@ -33,7 +33,6 @@ export class ErgoAuth {
     this.fastifyServer = fastifyServer;
     this.redisExpirySeconds = redisExpirySeconds;
     this.logger.info('[ErgoAuth] Redis connection initialized.');
-    this.registerRoutes(ERGO_AUTH_PREFIX);
   }
 
   /**
@@ -44,12 +43,12 @@ export class ErgoAuth {
    * @param redisExpirySeconds - Optional expiry time for challenges in seconds (default:
    * @throws Error if already initialized.
    */
-  public static initialize = (
+  public static async initialize(
     redisConfig: RedisConfig,
     fastifyServer: FastifyAPIServer,
     logger?: AbstractLogger,
     redisExpirySeconds?: number,
-  ): void => {
+  ): Promise<void> {
     if (this.instance) {
       throw new Error('ErgoAuth has already been initialized.');
     }
@@ -59,7 +58,8 @@ export class ErgoAuth {
       logger,
       redisExpirySeconds,
     );
-  };
+    await this.instance.registerRoutes(ERGO_AUTH_PREFIX);
+  }
 
   /**
    * Returns the singleton instance after initialization.
@@ -124,7 +124,7 @@ export class ErgoAuth {
       proof,
     };
     const isValid = verifySignature({ ...verifyParam, logger: this.logger });
-    this.logger.info(`[ErgoAuth] Signature valid: ${isValid} for ${address}`);
+    this.logger.debug(`[ErgoAuth] Signature valid: ${isValid} for ${address}`);
 
     return isValid ?? false;
   };
