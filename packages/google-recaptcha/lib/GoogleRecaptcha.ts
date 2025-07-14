@@ -122,7 +122,8 @@ class GoogleRecaptcha {
         throw new TimeoutOrDuplicate();
       }
 
-      if (!this.hostnames.includes(response.hostname)) throw InvalidHostname;
+      if (!this.hostnames.includes(response.hostname))
+        throw new InvalidHostname();
 
       if (response.success) {
         if (response.score !== undefined && response.score > this.threshold) {
