@@ -1,4 +1,4 @@
-# google-recaptcha
+# @ergo-faucet/google-recaptcha
 
 ## Table of contents
 
@@ -7,18 +7,18 @@
 
 ## Introduction
 
-google reCaptcha utilities for ergo-faucet
+google reCAPTCHA utilities for ergo-faucet
 
 ## Installation
 
 npm:
 
 ```sh
-npm i google-recaptcha
+npm i @ergo-faucet/google-recaptcha
 ```
 
 yarn:
 
 ```sh
-yarn add google-recaptcha
+yarn add @ergo-faucet/google-recaptcha
 ```
