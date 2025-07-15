@@ -66,7 +66,10 @@ class UserAddressAction {
       value: address,
     });
 
-    return await this.UserAddressReposotory.save(userAddress);
+    const saved = await this.UserAddressReposotory.save(userAddress);
+    this.logger.debug(`New address [${address}] linked to user ID ${user.id}`);
+
+    return saved;
   };
 
   /**
@@ -75,10 +78,21 @@ class UserAddressAction {
    * @returns The User entity or undefind if not found
    */
   getUserByAddress = async (address: string): Promise<User | undefined> => {
+    this.logger.debug(`Looking for user by address: ${address}`);
+
     const userAddress = await this.UserAddressReposotory.findOne({
       where: { value: address },
       relations: ['user'],
     });
+
+    if (userAddress?.user) {
+      this.logger.debug(
+        `User ID ${userAddress.user.id} found for address: ${address}`,
+      );
+    } else {
+      this.logger.debug(`No user found for address: ${address}`);
+    }
+
     return userAddress?.user;
   };
 
@@ -89,13 +103,15 @@ class UserAddressAction {
    * @returns The existing or newly created User entity
    */
   findOrCreateUserWithAddress = async (address: string): Promise<User> => {
+    this.logger.debug(`Finding or creating user for address: ${address}`);
+
     const user = await this.getUserByAddress(address);
     const now = Date.now();
 
     if (user) {
       user.lastLogin = now;
       await this.UserRepository.save(user);
-      this.logger.debug('user found and updated lastLogin');
+      this.logger.debug(`Updated lastLogin for user ID ${user.id} at ${now}`);
       return user;
     }
 
@@ -105,7 +121,9 @@ class UserAddressAction {
     const savedUser = await this.UserRepository.save(newUser);
 
     await this.createUserAddress(savedUser, address);
-    this.logger.debug('user created and updated lastLogin');
+    this.logger.debug(
+      `Created new user ID ${savedUser.id} with address: ${address} at ${now}`,
+    );
 
     return savedUser;
   };
