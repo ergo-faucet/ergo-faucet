@@ -23,6 +23,6 @@ export class User {
   @OneToMany(() => UserRequest, (request) => request.user)
   requests!: Relation<UserRequest[]>;
 
-  @Column({ type: 'date', nullable: true })
-  lastLogin!: Date | null;
+  @Column({ type: 'bigint', nullable: true })
+  lastLogin!: number | null;
 }

@@ -1,39 +1,54 @@
 import { DataSource, Repository } from '@rosen-bridge/extended-typeorm';
-import { UserAddress } from '../entities/UserAddress';
-import { User } from '../entities/User';
+import { User, UserAddress } from '../entities';
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 class UserAddressAction {
   private static instance: UserAddressAction;
 
-  private dataSource: DataSource;
+  private logger: AbstractLogger;
   private UserAddressReposotory: Repository<UserAddress>;
   private UserRepository: Repository<User>;
 
-  protected constructor(dataSource: DataSource) {
-    this.dataSource = dataSource;
-    this.UserAddressReposotory = this.dataSource.getRepository(UserAddress);
-    this.UserRepository = this.dataSource.getRepository(User);
+  /**
+   * Private constructor to enforce singleton pattern.
+   * @param dataSource
+   * @param logger - Logger for the class to log. A DummyLogger by default
+   */
+  protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
+    this.logger = logger ?? new DummyLogger();
+    this.UserAddressReposotory = dataSource.getRepository(UserAddress);
+    this.UserRepository = dataSource.getRepository(User);
   }
 
   /**
    * Initialize singleton with data source
    * @param dataSource
+   * @param logger - The logger of the class
    */
-  static init = (dataSource: DataSource): UserAddressAction => {
-    if (!UserAddressAction.instance) {
-      UserAddressAction.instance = new UserAddressAction(dataSource);
+  public static initialize = (
+    dataSource: DataSource,
+    logger?: AbstractLogger,
+  ): void => {
+    if (this.instance) {
+      throw new Error(
+        'UserAddressAction instance has already been initialized.',
+      );
     }
-    return UserAddressAction.instance;
+
+    UserAddressAction.instance = new UserAddressAction(dataSource, logger);
   };
 
   /**
-   * gets instance of UserAddressAction (throws error if it doesn't exist)
-   * @returns UserAddressAction instance
+  /**
+   * Gets the singleton instance of UserAddressAction.
+   * @returns The singleton instance of UserAddressAction
+   * @throws {Error} If the instance has not been initialized
    */
-  static getInstance = (): UserAddressAction => {
-    if (!UserAddressAction.instance)
-      throw new Error('UserAddressAction is not initialized');
-    return UserAddressAction.instance;
+  public static getInstance = (): UserAddressAction => {
+    if (!this.instance) {
+      throw new Error('UserAddressAction instance has not been initialized.');
+    }
+    return this.instance;
   };
 
   /**
@@ -41,20 +56,13 @@ class UserAddressAction {
    * @param user - User entity or user ID to associate the address with
    * @param address - Ergo blockchain address to store
    * @returns The created UserAddress entity
-   * @throws If the user is not found when passing user ID
    */
   createUserAddress = async (
-    user: User | number,
+    user: User,
     address: string,
   ): Promise<UserAddress> => {
-    const userEntity =
-      typeof user === 'number'
-        ? await this.UserRepository.findOneBy({ id: user })
-        : user;
-    if (!userEntity) throw new Error('User not found');
-
     const userAddress = this.UserAddressReposotory.create({
-      user: userEntity,
+      user: user,
       value: address,
     });
 
@@ -64,25 +72,14 @@ class UserAddressAction {
   /**
    * Finds and returns the User entity associated with the given address.
    * @param address - Ergo address to search for
-   * @returns The User entity or null if not found
+   * @returns The User entity or undefind if not found
    */
-  getUserByAddress = async (address: string): Promise<User | null> => {
+  getUserByAddress = async (address: string): Promise<User | undefined> => {
     const userAddress = await this.UserAddressReposotory.findOne({
       where: { value: address },
       relations: ['user'],
     });
-    return userAddress?.user ?? null;
-  };
-
-  /**
-   * Returns all UserAddress records, optionally including their associated users.
-   * @param includeUser - Whether to include user relations (default: false)
-   * @returns An array of UserAddress entities
-   */
-  getAllUserAddresses = async (includeUser = false): Promise<UserAddress[]> => {
-    return await this.UserAddressReposotory.find({
-      relations: includeUser ? ['user'] : [],
-    });
+    return userAddress?.user;
   };
 
   /**
@@ -93,11 +90,12 @@ class UserAddressAction {
    */
   findOrCreateUserWithAddress = async (address: string): Promise<User> => {
     const user = await this.getUserByAddress(address);
-    const now = new Date();
+    const now = Date.now();
 
     if (user) {
       user.lastLogin = now;
       await this.UserRepository.save(user);
+      this.logger.debug('user found and updated lastLogin');
       return user;
     }
 
@@ -107,6 +105,7 @@ class UserAddressAction {
     const savedUser = await this.UserRepository.save(newUser);
 
     await this.createUserAddress(savedUser, address);
+    this.logger.debug('user created and updated lastLogin');
 
     return savedUser;
   };
