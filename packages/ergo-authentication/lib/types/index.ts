@@ -1,4 +1,7 @@
 import { ChallengeRecord } from './challengeRecordType';
-import { VerifySignatureParams } from './verifySignatureParamsType';
+import {
+  VerifyParams,
+  VerifySignatureParams,
+} from './verifySignatureParamsType';
 
-export { ChallengeRecord, VerifySignatureParams };
+export { ChallengeRecord, VerifySignatureParams, VerifyParams };

@@ -3,3 +3,8 @@ export interface VerifySignatureParams {
   signedMessage: string;
   proof: string;
 }
+
+export interface VerifyParams {
+  verifySignatureParams: VerifySignatureParams;
+  captchaToken: string;
+}
