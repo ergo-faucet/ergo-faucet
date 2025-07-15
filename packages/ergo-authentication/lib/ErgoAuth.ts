@@ -149,39 +149,54 @@ export class ErgoAuth {
   };
 
   /**
+   * Creates the /challenge route definition.
+   * @param fastify - Fastify instance
+   */
+  private createChallengeRoute = async (
+    fastify: FastifyInstance,
+  ): Promise<void> => {
+    fastify.post('/challenge', async (request: FastifyRequest) => {
+      const { address } = request.body as { address: string };
+      const challenge = await this.createChallenge(address);
+      return { challenge };
+    });
+  };
+
+  /**
+   * Creates the /verify route definition.
+   * @param fastify - Fastify instance
+   */
+  private createVerifyRoute = async (
+    fastify: FastifyInstance,
+  ): Promise<void> => {
+    fastify.post('/verify', async (request: FastifyRequest) => {
+      const { address, signedMessage, proof, captchaToken } = request.body as {
+        address: string;
+        signedMessage: string;
+        proof: string;
+        captchaToken: string;
+      };
+
+      const isValid = await this.verifyChallenge({
+        verifySignatureParams: {
+          address,
+          signedMessage,
+          proof,
+        },
+        captchaToken,
+      });
+
+      return { isValid };
+    });
+  };
+
+  /**
    * Registers the API routes for ErgoAuth.
    * @param prefix - URL prefix for the routes
    */
   private registerRoutes = async (prefix: string): Promise<void> => {
-    await this.fastifyServer.register(async (fastify: FastifyInstance) => {
-      fastify.post('/challenge', async (request: FastifyRequest) => {
-        const { address } = request.body as { address: string };
-        const challenge = await this.createChallenge(address);
-        return { challenge };
-      });
-    }, prefix);
-
-    await this.fastifyServer.register(async (fastify: FastifyInstance) => {
-      fastify.post('/verify', async (request: FastifyRequest) => {
-        const { address, signedMessage, proof, captchaToken } =
-          request.body as {
-            address: string;
-            signedMessage: string;
-            proof: string;
-            captchaToken: string;
-          };
-        const isValid = await this.verifyChallenge({
-          verifySignatureParams: {
-            address,
-            signedMessage,
-            proof,
-          },
-          captchaToken,
-        });
-        return { isValid };
-      });
-    }, prefix);
-
+    await this.fastifyServer.register(this.createChallengeRoute, prefix);
+    await this.fastifyServer.register(this.createVerifyRoute, prefix);
     this.logger.info(`[ErgoAuth] Routes registered under prefix "${prefix}"`);
   };
 
