@@ -1,1 +1,5 @@
-export { FastifySeverInstance, ServerConfig } from './fastifyAPIServer';
+export {
+  FastifySeverInstance,
+  ServerConfig,
+  CookieConfig,
+} from './fastifyAPIServer';

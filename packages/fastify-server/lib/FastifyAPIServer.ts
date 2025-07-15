@@ -3,10 +3,9 @@ import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { ServerConfig, FastifySeverInstance } from './types';
+import { ServerConfig, FastifySeverInstance, CookieConfig } from './types';
 import fastifyJwt from '@fastify/jwt';
 import fastifyCookie from '@fastify/cookie';
-import { CookieConfig } from './types/fastifyAPIServer';
 
 /**
  * Fastify-based API server implementation.
