@@ -22,6 +22,7 @@ export class FastifyAPIServer {
   private swagger: FastifyDynamicSwaggerOptions;
   private swaggerUi: FastifySwaggerUiOptions;
   private jwtSecret: string;
+  private jwtExpiration: string;
   private cookieConfig: CookieConfig;
   private logger: AbstractLogger;
 
@@ -38,6 +39,7 @@ export class FastifyAPIServer {
     this.swagger = config.swagger;
     this.swaggerUi = config.swaggerUi;
     this.jwtSecret = config.jwtSecret;
+    this.jwtExpiration = config.jwtExpiration;
     this.cookieConfig = config.cookie;
 
     this.fastify = fastify({
@@ -81,6 +83,7 @@ export class FastifyAPIServer {
 
     await this.instance.fastify.register(fastifyJwt, {
       secret: this.instance.jwtSecret,
+      sign: { algorithm: 'HS256', expiresIn: this.instance.jwtExpiration },
     });
 
     await this.instance.fastify.register(fastifyCookie);

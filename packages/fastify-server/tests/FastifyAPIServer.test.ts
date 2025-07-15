@@ -23,6 +23,7 @@ describe('FastifyAPIServer', () => {
     host: 'localhost',
     corsOrigins: '*',
     jwtSecret: 'test_secret',
+    jwtExpiration: '1h',
     swagger: {
       exposeHeadRoutes: true,
       openapi: {

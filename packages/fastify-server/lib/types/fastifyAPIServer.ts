@@ -12,6 +12,7 @@ export interface ServerConfig {
   swaggerUi: FastifySwaggerUiOptions;
   activeFastifyLogger: boolean;
   jwtSecret: string;
+  jwtExpiration: string;
   cookie: CookieConfig;
 }
 
