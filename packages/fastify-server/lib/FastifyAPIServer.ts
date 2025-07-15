@@ -1,10 +1,12 @@
-import fastify from 'fastify';
+import fastify, { FastifyReply } from 'fastify';
 import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig, FastifySeverInstance } from './types';
 import fastifyJwt from '@fastify/jwt';
+import fastifyCookie from '@fastify/cookie';
+import { CookieConfig } from './types/fastifyAPIServer';
 
 /**
  * Fastify-based API server implementation.
@@ -21,11 +23,12 @@ export class FastifyAPIServer {
   private swagger: FastifyDynamicSwaggerOptions;
   private swaggerUi: FastifySwaggerUiOptions;
   private jwtSecret: string;
+  private cookieConfig: CookieConfig;
   private logger: AbstractLogger;
 
   /**
    * Private constructor to enforce singleton pattern.
-   * @param config - Server configuration parameters including port, host,
+   * @param config - Server configuration parameters including port, host,..
    * @param logger - Logger for the class to log. A DummyLogger by default
    */
   private constructor(config: ServerConfig, logger?: AbstractLogger) {
@@ -36,6 +39,7 @@ export class FastifyAPIServer {
     this.swagger = config.swagger;
     this.swaggerUi = config.swaggerUi;
     this.jwtSecret = config.jwtSecret;
+    this.cookieConfig = config.cookie;
 
     this.fastify = fastify({
       logger: config.activeFastifyLogger,
@@ -70,6 +74,7 @@ export class FastifyAPIServer {
       );
     }
     this.instance = new FastifyAPIServer(config, logger);
+
     // Register CORS
     await this.instance.fastify.register(fastifyCors, {
       origin: this.instance.corsOrigins,
@@ -78,6 +83,8 @@ export class FastifyAPIServer {
     await this.instance.fastify.register(fastifyJwt, {
       secret: this.instance.jwtSecret,
     });
+
+    await this.instance.fastify.register(fastifyCookie);
 
     await this.instance.fastify.register(fastifySwagger, this.instance.swagger);
     await this.instance.fastify.register(
@@ -142,6 +149,23 @@ export class FastifyAPIServer {
    */
   public verifyJWT = <T extends object>(token: string): T => {
     return this.fastify.jwt.verify<T>(token);
+  };
+
+  /**
+   * Sets an authentication cookie in the response.
+   * @param reply - The Fastify reply object to set the cookie on.
+   * @param token - The JWT token to set in the cookie.
+   * @returns void
+   * @throws {Error} If the reply object is not provided or if the token is invalid.
+   */
+  public setAuthCookie = (reply: FastifyReply, token: string): void => {
+    reply.setCookie(this.cookieConfig.name, token, {
+      httpOnly: this.cookieConfig.httpOnly,
+      secure: this.cookieConfig.secure,
+      sameSite: this.cookieConfig.sameSite,
+      path: this.cookieConfig.path,
+      maxAge: this.cookieConfig.maxAge,
+    });
   };
 
   /**
