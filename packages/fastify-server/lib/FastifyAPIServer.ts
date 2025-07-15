@@ -4,6 +4,7 @@ import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig, FastifySeverInstance } from './types';
+import fastifyJwt from '@fastify/jwt';
 
 /**
  * Fastify-based API server implementation.
@@ -19,6 +20,7 @@ export class FastifyAPIServer {
   private corsOrigins: string | string[];
   private swagger: FastifyDynamicSwaggerOptions;
   private swaggerUi: FastifySwaggerUiOptions;
+  private jwtSecret: string;
   private logger: AbstractLogger;
 
   /**
@@ -33,6 +35,7 @@ export class FastifyAPIServer {
     this.corsOrigins = config.corsOrigins;
     this.swagger = config.swagger;
     this.swaggerUi = config.swaggerUi;
+    this.jwtSecret = config.jwtSecret;
 
     this.fastify = fastify({
       logger: config.activeFastifyLogger,
@@ -70,6 +73,10 @@ export class FastifyAPIServer {
     // Register CORS
     await this.instance.fastify.register(fastifyCors, {
       origin: this.instance.corsOrigins,
+    });
+
+    await this.instance.fastify.register(fastifyJwt, {
+      secret: this.instance.jwtSecret,
     });
 
     await this.instance.fastify.register(fastifySwagger, this.instance.swagger);
@@ -119,6 +126,22 @@ export class FastifyAPIServer {
     this.logger.info(
       `Swagger docs available at ${this.host}:${this.port}/docs`,
     );
+  };
+
+  /**
+   * Generate a signed JWT.
+   * @param payload - Payload to include in the JWT.
+   */
+  public signJWT = <T extends object>(payload: T): string => {
+    return this.fastify.jwt.sign(payload);
+  };
+
+  /**
+   * Verify a JWT and return the decoded payload.
+   * @param token - The JWT token string.
+   */
+  public verifyJWT = <T extends object>(token: string): T => {
+    return this.fastify.jwt.verify<T>(token);
   };
 
   /**

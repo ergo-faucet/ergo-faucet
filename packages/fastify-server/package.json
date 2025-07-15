@@ -12,7 +12,8 @@
     "build": "tsc --build tsconfig.build.json",
     "release": "npm run test -- --run && npm run build && npm publish --access public",
     "test": "NODE_OPTIONS=\"--import tsx\" vitest",
-    "test:coverage": "vitest run --coverage",
+    "coverage": "npm run test -- --coverage",
+    "type-check": "tsc --noEmit",
     "lint": "eslint --fix . && npm run prettify",
     "prettify": "prettier --write . --ignore-path ./.gitignore"
   },
@@ -33,6 +34,7 @@
   "homepage": "https://github.com/TechStack-BlockChain/ergo-faucet#readme",
   "dependencies": {
     "@fastify/cors": "^11.0.1",
+    "@fastify/jwt": "^9.1.0",
     "@fastify/swagger": "^9.5.1",
     "@fastify/swagger-ui": "^5.2.3",
     "@fastify/type-provider-typebox": "^5.1.0",
@@ -42,8 +44,8 @@
   "devDependencies": {
     "@types/node": "^20.11.9",
     "@vitest/coverage-istanbul": "^2.0.5",
-    "typescript": "^5.3.3",
     "prettier": "^3.2.4",
+    "typescript": "^5.3.3",
     "vitest": "^2.0.5"
   }
 }

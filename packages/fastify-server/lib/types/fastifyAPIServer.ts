@@ -11,6 +11,7 @@ export interface ServerConfig {
   swagger: FastifyDynamicSwaggerOptions;
   swaggerUi: FastifySwaggerUiOptions;
   activeFastifyLogger: boolean;
+  jwtSecret: string;
 }
 
 export type FastifySeverInstance = FastifyInstance<
