@@ -6,6 +6,7 @@ class UserAddressAction {
   private static instance: UserAddressAction;
 
   private logger: AbstractLogger;
+  private dataSource: DataSource;
   private UserAddressReposotory: Repository<UserAddress>;
   private UserRepository: Repository<User>;
 
@@ -16,6 +17,7 @@ class UserAddressAction {
    */
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
     this.logger = logger ?? new DummyLogger();
+    this.dataSource = dataSource;
     this.UserAddressReposotory = dataSource.getRepository(UserAddress);
     this.UserRepository = dataSource.getRepository(User);
   }
@@ -115,17 +117,28 @@ class UserAddressAction {
       return user;
     }
 
-    const newUser = this.UserRepository.create({
-      lastLogin: now,
-    });
-    const savedUser = await this.UserRepository.save(newUser);
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const userRepoTx = transactionalEntityManager.getRepository(User);
+        const userAddressRepoTx =
+          transactionalEntityManager.getRepository(UserAddress);
 
-    await this.createUserAddress(savedUser, address);
-    this.logger.debug(
-      `Created new user ID ${savedUser.id} with address: ${address} at ${now}`,
+        const newUser = userRepoTx.create({ lastLogin: now });
+        const savedUser = await userRepoTx.save(newUser);
+
+        const userAddress = userAddressRepoTx.create({
+          user: savedUser,
+          value: address,
+        });
+        await userAddressRepoTx.save(userAddress);
+
+        this.logger.debug(
+          `Created new user ID ${savedUser.id} and linked address ${address}`,
+        );
+
+        return savedUser;
+      },
     );
-
-    return savedUser;
   };
 }
 
