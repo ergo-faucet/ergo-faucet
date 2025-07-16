@@ -12,6 +12,8 @@ export interface ServerConfig {
   swaggerUi: FastifySwaggerUiOptions;
   activeFastifyLogger: boolean;
   jwtSecret: string;
+  jwtExpiration: number;
+  cookie: CookieConfig;
 }
 
 export type FastifySeverInstance = FastifyInstance<
@@ -22,3 +24,13 @@ export type FastifySeverInstance = FastifyInstance<
   FastifyBaseLogger,
   TypeBoxTypeProvider
 >;
+
+export interface CookieConfig {
+  name: string;
+  httpOnly: boolean;
+  secure: boolean;
+  sameSite: 'strict' | 'lax' | 'none';
+  path: string;
+  domain?: string;
+  maxAge?: number;
+}
