@@ -6,7 +6,6 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig, FastifySeverInstance, CookieConfig } from './types';
 import fastifyJwt from '@fastify/jwt';
 import fastifyCookie from '@fastify/cookie';
-import ms from 'ms';
 
 /**
  * Fastify-based API server implementation.
@@ -23,7 +22,7 @@ export class FastifyAPIServer {
   private swagger: FastifyDynamicSwaggerOptions;
   private swaggerUi: FastifySwaggerUiOptions;
   private jwtSecret: string;
-  private jwtExpiration: number | string;
+  private jwtExpiration: number;
   private cookieConfig: CookieConfig;
   private logger: AbstractLogger;
 
@@ -84,7 +83,7 @@ export class FastifyAPIServer {
 
     await this.instance.fastify.register(fastifyJwt, {
       secret: this.instance.jwtSecret,
-      sign: { algorithm: 'HS256', expiresIn: this.instance.jwtExpiration },
+      sign: { expiresIn: this.instance.jwtExpiration },
     });
 
     await this.instance.fastify.register(fastifyCookie);
@@ -169,34 +168,6 @@ export class FastifyAPIServer {
   };
 
   /**
-   * Get the maximum age for the authentication cookie.
-   * If maxAge is set in the cookieConfig, it returns that value.
-   * Otherwise, it calculates the maxAge based on jwtExpiration.
-   * @returns {number | undefined} The maximum age in seconds or undefined if not set.
-   */
-  private getCookieMaxAge(): number | undefined {
-    if (this.cookieConfig.maxAge) {
-      return this.cookieConfig.maxAge;
-    }
-
-    const exp = this.jwtExpiration;
-
-    if (!exp) return undefined;
-
-    if (typeof exp === 'number') {
-      return exp;
-    }
-
-    if (typeof exp === 'string') {
-      const msValue = ms(exp as ms.StringValue);
-      if (!msValue) return undefined;
-      return Math.floor(msValue / 1000);
-    }
-
-    return undefined;
-  }
-
-  /**
    * Sets an authentication cookie in the response.
    * @param reply - The Fastify reply object to set the cookie on.
    * @param token - The JWT token to set in the cookie.
@@ -209,8 +180,12 @@ export class FastifyAPIServer {
       secure: this.cookieConfig.secure,
       sameSite: this.cookieConfig.sameSite,
       path: this.cookieConfig.path,
-      maxAge: this.getCookieMaxAge(),
+      domain: this.cookieConfig.domain,
+      maxAge: this.cookieConfig.maxAge || this.jwtExpiration,
     });
+    this.logger.debug(
+      `Authentication cookie set with name: ${this.cookieConfig.name}`,
+    );
   };
 
   /**

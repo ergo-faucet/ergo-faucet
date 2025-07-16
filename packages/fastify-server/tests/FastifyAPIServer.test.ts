@@ -23,7 +23,7 @@ describe('FastifyAPIServer', () => {
     host: 'localhost',
     corsOrigins: '*',
     jwtSecret: 'test_secret',
-    jwtExpiration: '1h',
+    jwtExpiration: 300,
     swagger: {
       exposeHeadRoutes: true,
       openapi: {
@@ -45,6 +45,7 @@ describe('FastifyAPIServer', () => {
       sameSite: 'strict',
       path: '/',
       maxAge: 3600,
+      domain: 'localhost',
     },
   };
   /**

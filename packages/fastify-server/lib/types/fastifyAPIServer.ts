@@ -12,7 +12,7 @@ export interface ServerConfig {
   swaggerUi: FastifySwaggerUiOptions;
   activeFastifyLogger: boolean;
   jwtSecret: string;
-  jwtExpiration: string;
+  jwtExpiration: number;
   cookie: CookieConfig;
 }
 
@@ -31,5 +31,6 @@ export interface CookieConfig {
   secure: boolean;
   sameSite: 'strict' | 'lax' | 'none';
   path: string;
+  domain?: string;
   maxAge?: number;
 }
