@@ -31,5 +31,5 @@ export interface CookieConfig {
   secure: boolean;
   sameSite: 'strict' | 'lax' | 'none';
   path: string;
-  maxAge: number;
+  maxAge?: number;
 }
