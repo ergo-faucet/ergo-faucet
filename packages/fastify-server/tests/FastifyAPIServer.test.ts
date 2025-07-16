@@ -23,6 +23,7 @@ describe('FastifyAPIServer', () => {
     host: 'localhost',
     corsOrigins: '*',
     jwtSecret: 'test_secret',
+    jwtExpiration: 300,
     swagger: {
       exposeHeadRoutes: true,
       openapi: {
@@ -37,8 +38,16 @@ describe('FastifyAPIServer', () => {
       routePrefix: '/docs',
     },
     activeFastifyLogger: false,
+    cookie: {
+      name: 'auth_token',
+      httpOnly: true,
+      secure: false,
+      sameSite: 'strict',
+      path: '/',
+      maxAge: 3600,
+      domain: 'localhost',
+    },
   };
-
   /**
    * Test case to initialize the server properly.
    */
@@ -133,5 +142,35 @@ describe('FastifyAPIServer', () => {
 
     expect(verified.user).toBe('test_user');
     expect(verified.role).toBe('admin');
+  });
+
+  /**
+   * Test to verify that the auth cookie is set correctly.
+   * This test checks that the cookie is set with the correct name, options, and value.
+   */
+  it('should set auth cookie correctly', async () => {
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+
+    await instance.register(async (fastify) => {
+      fastify.get('/set-cookie', async (req, reply) => {
+        const token = instance.signJWT({ userId: 123 });
+        instance.setAuthCookie(reply, token);
+        return { ok: true };
+      });
+    }, '/cookie');
+
+    const response = await instance['fastify'].inject({
+      method: 'GET',
+      url: '/cookie/set-cookie',
+    });
+
+    expect(response.statusCode).toBe(200);
+    const setCookie = response.cookies[0];
+    expect(setCookie.name).toBe('auth_token');
+    expect(setCookie.value).toBeDefined();
+    expect(setCookie.httpOnly).toBe(true);
+
+    await instance.close();
   });
 });
