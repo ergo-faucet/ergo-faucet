@@ -155,6 +155,20 @@ export class FastifyAPIServer {
   };
 
   /**
+   * Refresh a JWT by verifying it and issuing a new one with the same payload.
+   * @param token - The old JWT token.
+   * @returns A new signed JWT token.
+   * @throws Error if the token is invalid or expired.
+   */
+  public refreshJWT = <T extends object>(token: string): string => {
+    const decoded = this.verifyJWT<T>(token);
+
+    const newToken = this.signJWT(decoded);
+
+    return newToken;
+  };
+
+  /**
    * Get the maximum age for the authentication cookie.
    * If maxAge is set in the cookieConfig, it returns that value.
    * Otherwise, it calculates the maxAge based on jwtExpiration.
