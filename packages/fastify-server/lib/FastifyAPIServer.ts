@@ -4,8 +4,8 @@ import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig, FastifySeverInstance, CookieConfig } from './types';
-import fastifyJwt from '@fastify/jwt';
-import fastifyCookie from '@fastify/cookie';
+import jwt from '@fastify/jwt';
+import cookie from '@fastify/cookie';
 
 /**
  * Fastify-based API server implementation.
@@ -80,13 +80,16 @@ export class FastifyAPIServer {
     await this.instance.fastify.register(fastifyCors, {
       origin: this.instance.corsOrigins,
     });
+    await this.instance.fastify.register(cookie);
 
-    await this.instance.fastify.register(fastifyJwt, {
+    await this.instance.fastify.register(jwt, {
       secret: this.instance.jwtSecret,
+      cookie: {
+        cookieName: this.instance.cookieConfig.name,
+        signed: this.instance.cookieConfig.signed,
+      },
       sign: { expiresIn: this.instance.jwtExpiration },
     });
-
-    await this.instance.fastify.register(fastifyCookie);
 
     await this.instance.fastify.register(fastifySwagger, this.instance.swagger);
     await this.instance.fastify.register(
@@ -135,36 +138,6 @@ export class FastifyAPIServer {
     this.logger.info(
       `Swagger docs available at ${this.host}:${this.port}/docs`,
     );
-  };
-
-  /**
-   * Generate a signed JWT.
-   * @param payload - Payload to include in the JWT.
-   */
-  public signJWT = <T extends object>(payload: T): string => {
-    return this.fastify.jwt.sign(payload);
-  };
-
-  /**
-   * Verify a JWT and return the decoded payload.
-   * @param token - The JWT token string.
-   */
-  public verifyJWT = <T extends object>(token: string): T => {
-    return this.fastify.jwt.verify<T>(token);
-  };
-
-  /**
-   * Refresh a JWT by verifying it and issuing a new one with the same payload.
-   * @param token - The old JWT token.
-   * @returns A new signed JWT token.
-   * @throws Error if the token is invalid or expired.
-   */
-  public refreshJWT = <T extends object>(token: string): string => {
-    const decoded = this.verifyJWT<T>(token);
-
-    const newToken = this.signJWT(decoded);
-
-    return newToken;
   };
 
   /**

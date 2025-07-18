@@ -4,4 +4,6 @@ import {
   VerifySignatureParams,
 } from './verifySignatureParamsType';
 
-export { ChallengeRecord, VerifySignatureParams, VerifyParams };
+import { payloadJWT } from './payloadJWTType';
+
+export { ChallengeRecord, VerifySignatureParams, VerifyParams, payloadJWT };

@@ -3,6 +3,8 @@ import { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { Server, IncomingMessage, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import fastifyJwt from '@fastify/jwt';
+import fastifyCookie from '@fastify/cookie';
 
 export interface ServerConfig {
   port: number;
@@ -17,15 +19,17 @@ export interface ServerConfig {
 }
 
 export type FastifySeverInstance = FastifyInstance<
-  // eslint-disable-next-line
-  Server<any, any>,
+  Server<typeof IncomingMessage, typeof ServerResponse>,
   IncomingMessage,
   ServerResponse<IncomingMessage>,
   FastifyBaseLogger,
   TypeBoxTypeProvider
->;
+> &
+  Partial<typeof fastifyJwt> &
+  Partial<typeof fastifyCookie>;
 
 export interface CookieConfig {
+  signed: boolean;
   name: string;
   httpOnly: boolean;
   secure: boolean;

@@ -46,6 +46,7 @@ describe('FastifyAPIServer', () => {
       path: '/',
       maxAge: 3600,
       domain: 'localhost',
+      signed: false,
     },
   };
   /**
@@ -130,21 +131,6 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test to verify that JWT signing and verification work as expected.
-   */
-  it('should sign and verify JWT correctly', async () => {
-    await FastifyAPIServer.initialize(config);
-    const instance = FastifyAPIServer.getInstance();
-
-    const payload = { user: 'test_user', role: 'admin' };
-    const token = instance.signJWT(payload);
-    const verified = instance.verifyJWT<typeof payload>(token);
-
-    expect(verified.user).toBe('test_user');
-    expect(verified.role).toBe('admin');
-  });
-
-  /**
    * Test to verify that the auth cookie is set correctly.
    * This test checks that the cookie is set with the correct name, options, and value.
    */
@@ -154,7 +140,7 @@ describe('FastifyAPIServer', () => {
 
     await instance.register(async (fastify) => {
       fastify.get('/set-cookie', async (req, reply) => {
-        const token = instance.signJWT({ userId: 123 });
+        const token = await reply.jwtSign({ userId: 123 });
         instance.setAuthCookie(reply, token);
         return { ok: true };
       });
