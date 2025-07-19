@@ -316,12 +316,4 @@ export class ErgoAuth {
     await this.fastifyServer.register(this.createRefreshTokenRoute, prefix);
     this.logger.info(`[ErgoAuth] Routes registered under prefix "${prefix}"`);
   };
-
-  /**
-   * Close Redis connection.
-   */
-  public close = async (): Promise<void> => {
-    await this.redis.quit();
-    this.logger.info('[ErgoAuth] Redis connection closed');
-  };
 }
