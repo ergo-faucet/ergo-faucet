@@ -2,21 +2,32 @@ import Redis, { RedisOptions } from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
+  AuthenticationBody,
+  AuthenticationResponse200,
+  AuthenticationResponseError,
+  ChallengeBody,
+  ChallengeErrorResponse,
   ChallengeRecord,
-  VerifyParams,
-  VerifySignatureParams,
+  ChallengeResponse200,
+  ChallengeVerificationResult,
   payloadJWT,
+  RefreshTokenBody,
+  RefreshTokenResponse200,
+  RefreshTokenResponse401,
 } from './types';
-import { verifySignature } from './utils';
 import {
   FastifyAPIServer,
   FastifySeverInstance,
-  FastifyRequest,
-  FastifyReply,
 } from '@ergo-faucet/fastify-server';
-import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
 import { UserAddressAction } from '@ergo-faucet/database';
+import { hex } from '@fleet-sdk/crypto';
+import { ErgoAddress, ErgoMessage } from '@fleet-sdk/core';
+import { Prover } from '@fleet-sdk/wallet';
+import { Static } from '@sinclair/typebox';
 
+type AuthenticationBodyType = Static<typeof AuthenticationBody>;
+type RefreshTokenBodyType = Static<typeof RefreshTokenBody>;
+type ChallengeBodyType = Static<typeof ChallengeBody>;
 type RedisConfig = RedisOptions;
 const ERGO_AUTH_PREFIX = '/ergo-auth';
 
@@ -25,7 +36,6 @@ export class ErgoAuth {
   private redis!: Redis;
   private logger: AbstractLogger;
   private fastifyServer: FastifyAPIServer;
-  private googleRecaptcha: GoogleRecaptcha;
   private userAddressAction: UserAddressAction;
   private redisExpirySeconds: number;
   private refreshTokenExpirySeconds: number;
@@ -34,7 +44,6 @@ export class ErgoAuth {
   /**
    * Private constructor to enforce singleton pattern.
    * @param redisConfig - Redis connection string or options.
-   * @param googleRecaptcha - Google Recaptcha instance for challenge verification.
    * @param fastifyServer - Fastify server instance for API integration.
    * @param userAddressAction - User address action instance for database interactions.
    * @param redisExpirySeconds - Optional expiry time for challenges in seconds (default: 300s)
@@ -45,7 +54,6 @@ export class ErgoAuth {
   private constructor(
     redisConfig: RedisConfig,
     fastifyServer: FastifyAPIServer,
-    googleRecaptcha: GoogleRecaptcha,
     userAddressAction: UserAddressAction,
     logger?: AbstractLogger,
     redisExpirySeconds = 300,
@@ -55,7 +63,6 @@ export class ErgoAuth {
     this.logger = logger ?? new DummyLogger();
     this.redis = new Redis(redisConfig);
     this.fastifyServer = fastifyServer;
-    this.googleRecaptcha = googleRecaptcha;
     this.userAddressAction = userAddressAction;
     this.redisExpirySeconds = redisExpirySeconds;
     this.refreshTokenExpirySeconds = refreshTokenExpirySeconds;
@@ -67,7 +74,6 @@ export class ErgoAuth {
    * Initializes the singleton instance.
    * @param redisConfig - Redis connection string or options.
    * @param fastifyServer - Fastify server instance for API integration.
-   * @param googleRecaptcha - Google Recaptcha instance for challenge verification.
    * @param userAddressAction - User address action instance for database interactions.
    * @param logger - Optional logger instance.
    * @param redisExpirySeconds - Optional expiry time for challenges in seconds (default: 300s)
@@ -78,7 +84,6 @@ export class ErgoAuth {
   public static async initialize(
     redisConfig: RedisConfig,
     fastifyServer: FastifyAPIServer,
-    googleRecaptcha: GoogleRecaptcha,
     userAddressAction: UserAddressAction,
     logger?: AbstractLogger,
     redisExpirySeconds?: number,
@@ -91,7 +96,6 @@ export class ErgoAuth {
     this.instance = new ErgoAuth(
       redisConfig,
       fastifyServer,
-      googleRecaptcha,
       userAddressAction,
       logger,
       redisExpirySeconds,
@@ -114,11 +118,61 @@ export class ErgoAuth {
   };
 
   /**
+   * Retrieves a saved challenge record for a given address from Redis.
+   *
+   * @param address - The user's address
+   * @returns `ChallengeRecord | null` if found, otherwise `null`
+   */
+  private async getChallengeRecord(
+    address: string,
+  ): Promise<ChallengeRecord | null> {
+    const raw = await this.redis.get(`challenge:${address}`);
+
+    if (!raw) {
+      this.logger.debug(`No challenge found for ${address}`);
+      return null;
+    }
+
+    try {
+      const record: ChallengeRecord = JSON.parse(raw);
+      return record;
+    } catch (err) {
+      this.logger.debug(`Failed to parse challenge for ${address}: ${err}`);
+      return null;
+    }
+  }
+
+  /**
+   * Verifies a signed Ergo message using a public key derived from an Ergo address.
+   *
+   * @param address - The Ergo address to verify against.
+   * @param signedMessage - The signed message in base58 format.
+   * @param proof - The signature proof in hex format.
+   * @returns `true` if signature is valid, otherwise `false`
+   */
+  private verifySignature = (
+    address: string,
+    signedMessage: string,
+    proof: string,
+  ): boolean => {
+    try {
+      const message = ErgoMessage.fromData(signedMessage);
+      const [publicKey] = ErgoAddress.fromBase58(address).getPublicKeys();
+      const proofBytes = hex.decode(proof);
+      const prover = new Prover();
+      return prover.verify(message, proofBytes, publicKey);
+    } catch (err) {
+      this.logger.debug(`Failed to verify signature: ${err}`);
+      return false;
+    }
+  };
+
+  /**
    * Creates a new UUID challenge for a given address and stores it in Redis with expiry.
    * @param address - Ergo blockchain address
    * @returns challenge string (UUID)
    */
-  public createChallenge = async (address: string): Promise<string> => {
+  private createChallenge = async (address: string): Promise<string> => {
     const challenge = uuidv4();
     const createdAt = Math.floor(Date.now() / 1000);
     const value: ChallengeRecord = { address, challenge, createdAt };
@@ -129,114 +183,168 @@ export class ErgoAuth {
       'EX',
       this.redisExpirySeconds,
     );
-    this.logger.debug(`[ErgoAuth] Created challenge for ${address}`);
+    this.logger.debug(`Created challenge for ${address}`);
 
     return challenge;
   };
 
   /**
    * Verifies the challenge proof against the stored challenge and address.
-   * @param verifySignatureParams - Parameters containing address, signedMessage, proof
-   * @param captchaToken - Google Recaptcha token for additional security
-   * @throws Error if challenge expired/not found or mismatch
-   * @throws Error if captcha verification fails
-   * @throws Error if signature verification fails
-   * @returns true if valid, false otherwise
+   * @param address - The user's wallet address used as the Redis key.
+   * @param challenge - The challenge string provided by the client.
+   * @param proof - The cryptographic proof/signature for the challenge.
+   * @returns {Promise<ChallengeVerificationResult>}
+   *  `{ success: true }` if the challenge is valid and the proof matches.
+   *  `{ success: false, code, message }` with an error code if validation fails.
    */
-  public verifyChallenge = async ({
-    verifySignatureParams,
-    captchaToken,
-  }: VerifyParams): Promise<boolean> => {
-    const { address, signedMessage: challenge, proof } = verifySignatureParams;
-
-    // Verify Google Recaptcha first
-    const isCaptchaValid = await this.googleRecaptcha.verifyToken(captchaToken);
-    if (!isCaptchaValid) {
-      this.logger.debug(`[ErgoAuth] Invalid captcha token for ${address}`);
-      throw new Error('Invalid captcha token');
+  private async verifyChallenge(
+    address: string,
+    challenge: string,
+    proof: string,
+  ): Promise<ChallengeVerificationResult> {
+    const saved = await this.getChallengeRecord(address);
+    if (!saved) {
+      return {
+        success: false,
+        code: 'challenge-not-found',
+        message: 'Challenge expired, not found, or invalid data',
+      };
     }
-
-    const raw = await this.redis.get(`challenge:${address}`);
-    if (!raw) {
-      this.logger.warn(`[ErgoAuth] No challenge found for ${address}`);
-      throw new Error('Challenge expired or not found');
-    }
-
-    const saved: ChallengeRecord = JSON.parse(raw);
 
     if (saved.challenge !== challenge) {
-      this.logger.warn(`[ErgoAuth] Challenge mismatch for ${address}`);
-      throw new Error('Challenge mismatch');
+      this.logger.debug(`Challenge mismatch for ${address}`);
+      return {
+        success: false,
+        code: 'challenge-mismatch',
+        message: 'Challenge mismatch',
+      };
     }
 
-    const verifyParam: VerifySignatureParams = {
-      address,
-      signedMessage: challenge,
-      proof,
-    };
-    const isValid = verifySignature({ ...verifyParam, logger: this.logger });
-    this.logger.debug(`[ErgoAuth] Signature valid: ${isValid} for ${address}`);
+    const isValidSignature = this.verifySignature(address, challenge, proof);
+    this.logger.debug(`Signature valid: ${isValidSignature} for ${address}`);
 
-    return isValid;
-  };
+    if (!isValidSignature) {
+      return {
+        success: false,
+        code: 'invalid-signature',
+        message: 'Invalid signature proof',
+      };
+    }
 
-  /**
-   * Creates the /challenge route definition.
-   * @param fastify - Fastify instance
-   * @return Promise<void>
-   * This route allows users to initiate a challenge.
-   * It expects the address in the request body.
-   * It generates a challenge and stores it in Redis with an expiry time.
-   * @throws 400 if the address is not provided.
-   * @returns { challenge: string } if successful.
-   */
-  private createChallengeRoute = async (
-    fastify: FastifySeverInstance,
-  ): Promise<void> => {
-    fastify.post('/challenge', async (request: FastifyRequest) => {
-      const { address } = request.body as { address: string };
-      const challenge = await this.createChallenge(address);
-      return { challenge };
-    });
-  };
+    return { success: true };
+  }
 
   /**
-   * Creates the /verify route definition.
-   * @param fastify - Fastify instance
-   * This route allows users to verify their challenge response.
-   * It expects the address, signedMessage (challenge), proof, and captchaToken in the
-   * request body.
-   * It verifies the challenge, checks the captcha token, and if valid,
-   * it creates or retrieves the user based on the address.
-   * If successful, it issues a JWT token and sets it in the auth_token cookie.
-   * @throws 401 if the challenge is invalid, captcha verification fails, or signature verification fails.
-   * @returns { success: true, userId: number, accessToken : accessToken } if successful.
+   * Creates the `/challenge` route definition.
+   *
+   * @param fastify - Fastify instance.
+   * @returns Promise<void>
+   *
+   * **Description:**
+   * This route allows users to initiate a challenge for authentication.
+   *
+   * **Request Body:**
+   * - `address` (string) → The user wallet address.
+   *
+   * **Behavior:**
+   * - Validates that the address is provided and not empty.
+   * - Generates a challenge string.
+   * - Stores the challenge in Redis with an expiry time.
+   *
+   * **Responses:**
+   * - `200 OK` → `{ challenge: string }`
+   * - `400 Bad Request` → `{ error: 'Invalid address', code: 'invalid-address' }`
+   *
+   * **Throws:**
+   * - `400` if the address is missing or invalid.
    */
-  private createVerifyRoute = async (
+  private challengeRoute = async (
     fastify: FastifySeverInstance,
   ): Promise<void> => {
-    fastify.post(
-      '/verify',
-      async (request: FastifyRequest, reply: FastifyReply) => {
-        const { address, signedMessage, proof, captchaToken } =
-          request.body as {
-            address: string;
-            signedMessage: string;
-            proof: string;
-            captchaToken: string;
-          };
-
-        const isValid = await this.verifyChallenge({
-          verifySignatureParams: {
-            address,
-            signedMessage,
-            proof,
+    fastify.post<{ Body: ChallengeBodyType }>(
+      '/challenge',
+      {
+        schema: {
+          body: ChallengeBody,
+          response: {
+            200: ChallengeResponse200,
+            400: ChallengeErrorResponse,
           },
-          captchaToken,
-        });
+        },
+      },
+      async (request, reply) => {
+        const { address } = request.body;
+
+        if (!address || address.trim() === '') {
+          return reply.status(400).send({
+            error: 'Invalid address',
+            code: 'invalid-address',
+          });
+        }
+
+        const challenge = await this.createChallenge(address);
+        return reply.send({ challenge });
+      },
+    );
+  };
+
+  /**
+   * Creates the `/auth` route definition.
+   *
+   * @param fastify - Fastify instance.
+   * @returns Promise<void>
+   *
+   * **Description:**
+   * This route allows users to verify their challenge response and complete authentication.
+   *
+   * **Request Body:**
+   * - `address` (string) → Wallet address of the user.
+   * - `challenge` (string) → The original challenge string signed by the user.
+   * - `proof` (string) → The signature proof of the challenge.
+   * - `captchaToken` (string) → reCAPTCHA token for bot protection.
+   *
+   * **Behavior:**
+   * - Runs the `captchaPreHandler` to verify the captcha token.
+   * - Verifies the provided challenge and proof.
+   * - Creates or retrieves the user from the database.
+   * - Issues a `refreshToken` (stored in `auth_token` cookie) and an `accessToken`.
+   *
+   * **Responses:**
+   * - `200 OK` → `{ success: true, userId: number, accessToken: string }`
+   * - `400 Bad Request` → `{ error: string, code: string }` (captcha or malformed input)
+   * - `401 Unauthorized` → `{ error: 'Invalid challenge', code: 'challenge-verification-failed' }`
+   *
+   * **Throws:**
+   * - `401` if the challenge verification fails.
+   * - `401` if the captcha verification fails.
+   */
+  private authenticationRoute = async (
+    fastify: FastifySeverInstance,
+  ): Promise<void> => {
+    fastify.post<{ Body: AuthenticationBodyType }>(
+      '/auth',
+      {
+        schema: {
+          body: AuthenticationBody,
+          response: {
+            200: AuthenticationResponse200,
+            400: AuthenticationResponseError,
+            401: AuthenticationResponseError,
+          },
+        },
+        preHandler: this.fastifyServer.captchaPreHandler,
+      },
+
+      async (request, reply) => {
+        const { address, challenge, proof } = request.body;
+
+        const isValid = await this.verifyChallenge(address, challenge, proof);
 
         if (!isValid) {
-          return reply.status(401).send({ error: 'Invalid challenge' });
+          return reply.status(401).send({
+            error: 'Invalid challenge',
+            code: 'challenge-verification-failed',
+          });
         }
 
         const user =
@@ -244,7 +352,7 @@ export class ErgoAuth {
 
         const payload: payloadJWT = {
           userId: user.id,
-          address: address,
+          address,
         };
 
         const refreshToken = await reply.jwtSign(payload, {
@@ -259,27 +367,51 @@ export class ErgoAuth {
         return reply.send({
           success: true,
           userId: user.id,
-          accessToken: accessToken,
+          accessToken,
         });
       },
     );
   };
 
   /**
-   * Creates the /refresh-token route definition.
-   * @param fastify - Fastify instance
-   * @return Promise<void>
-   * This route allows users to refresh their JWT token using the existing auth_token cookie.
-   * It checks for the presence of the auth_token cookie, verifies it, and issues a new
-   * token if valid.
-   * @throws 401 if no token is provided or if the token is invalid/expired.
-   * */
-  private createRefreshTokenRoute = async (
+   * Creates the `/refresh-token` route definition.
+   *
+   * @param fastify - Fastify instance.
+   * @returns Promise<void>
+   *
+   * **Description:**
+   * This route allows users to refresh their JWT `accessToken`
+   * using the `auth_token` cookie (refresh token).
+   *
+   * **Request Body:**
+   * - (none) – Uses `auth_token` cookie for authentication.
+   *
+   * **Behavior:**
+   * - Verifies the `auth_token` cookie using `jwtVerify`.
+   * - If valid, issues a new `accessToken` with a fresh expiry time.
+   *
+   * **Responses:**
+   * - `200 OK` → `{ success: true, newToken: string }`
+   * - `401 Unauthorized` → `{ error: 'Invalid or expired token' }`
+   *
+   * **Throws:**
+   * - `401` if no cookie is present, or if the token is invalid/expired.
+   */
+  private refreshTokenRoute = async (
     fastify: FastifySeverInstance,
   ): Promise<void> => {
-    fastify.post(
+    fastify.post<{ Body: RefreshTokenBodyType }>(
       '/refresh-token',
-      async (request: FastifyRequest, reply: FastifyReply) => {
+      {
+        schema: {
+          body: RefreshTokenBody,
+          response: {
+            200: RefreshTokenResponse200,
+            401: RefreshTokenResponse401,
+          },
+        },
+      },
+      async (request, reply) => {
         try {
           const decoded = (await request.jwtVerify({
             onlyCookie: true,
@@ -294,7 +426,7 @@ export class ErgoAuth {
             expiresIn: this.accessTokenExpirySeconds,
           });
 
-          return reply.send({ success: true, newToken: newToken });
+          return reply.send({ success: true, newToken });
         } catch (err) {
           this.logger.debug(`[RefreshToken] Token refresh failed: ${err}`);
           return reply.status(401).send({ error: 'Invalid or expired token' });
@@ -311,9 +443,9 @@ export class ErgoAuth {
    * under the specified prefix.
    */
   private registerRoutes = async (prefix: string): Promise<void> => {
-    await this.fastifyServer.register(this.createChallengeRoute, prefix);
-    await this.fastifyServer.register(this.createVerifyRoute, prefix);
-    await this.fastifyServer.register(this.createRefreshTokenRoute, prefix);
+    await this.fastifyServer.register(this.challengeRoute, prefix);
+    await this.fastifyServer.register(this.authenticationRoute, prefix);
+    await this.fastifyServer.register(this.refreshTokenRoute, prefix);
     this.logger.info(`[ErgoAuth] Routes registered under prefix "${prefix}"`);
   };
 }

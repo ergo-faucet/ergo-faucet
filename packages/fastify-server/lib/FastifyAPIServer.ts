@@ -1,4 +1,4 @@
-import fastify, { FastifyReply } from 'fastify';
+import fastify, { FastifyReply, FastifyRequest } from 'fastify';
 import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
@@ -6,6 +6,13 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig, FastifySeverInstance, CookieConfig } from './types';
 import jwt from '@fastify/jwt';
 import cookie from '@fastify/cookie';
+import {
+  GoogleRecaptcha,
+  InvalidHostname,
+  RecaptchaClientError,
+  TimeoutOrDuplicate,
+} from '@ergo-faucet/google-recaptcha';
+import { HookHandlerDoneFunction } from 'fastify/types/hooks';
 
 /**
  * Fastify-based API server implementation.
@@ -25,6 +32,7 @@ export class FastifyAPIServer {
   private jwtExpiration: number;
   private cookieConfig: CookieConfig;
   private logger: AbstractLogger;
+  private googleRecaptcha: GoogleRecaptcha;
 
   /**
    * Private constructor to enforce singleton pattern.
@@ -41,6 +49,7 @@ export class FastifyAPIServer {
     this.jwtSecret = config.jwtSecret;
     this.jwtExpiration = config.jwtExpiration;
     this.cookieConfig = config.cookie;
+    this.googleRecaptcha = config.googleRecaptcha;
 
     this.fastify = fastify({
       logger: config.activeFastifyLogger,
@@ -161,6 +170,81 @@ export class FastifyAPIServer {
     );
   };
 
+  /**
+   * Verifies the captcha token using the Google Recaptcha instance.
+   * @param captchaToken - The captcha token from the client.
+   * @returns Promise that resolves to a boolean indicating if the token is valid
+   * @throws Error with statusCode and code if verification fails.
+   */
+  public verifyCaptcha = async (captchaToken: string): Promise<boolean> => {
+    if (!this.googleRecaptcha) {
+      throw Error('GoogleRecaptcha instance is not set.');
+    }
+    const isValid = await this.googleRecaptcha.verifyToken(captchaToken);
+    return isValid;
+  };
+
+  /**
+   * Pre-handler hook that verifies captcha before executing the route handler.
+   * If captcha validation fails, it sends an error response.
+   * @param req - FastifyRequest (expects `captchaToken` inside request body)
+   * @param res - FastifyReply (used to send early error responses)
+   * @param next - HookHandlerDoneFunction to continue request if captcha is valid
+   *
+   */
+  public captchaPreHandler = async <
+    T extends FastifyRequest,
+    U extends FastifyReply,
+  >(
+    req: T,
+    res: U,
+    next: HookHandlerDoneFunction,
+  ) => {
+    const { captchaToken } = (req.body as { captchaToken?: string }) ?? {};
+
+    try {
+      if (!captchaToken) {
+        return res.status(400).send({
+          code: 'missing-captcha-token',
+          message: 'Captcha token is required',
+        });
+      }
+
+      const isValid = await this.verifyCaptcha(captchaToken);
+      if (isValid) {
+        next();
+      } else {
+        return res.status(400).send({
+          code: 'invalid-captcha-token',
+          message: 'Invalid captcha token',
+        });
+      }
+    } catch (err) {
+      if (err instanceof TimeoutOrDuplicate) {
+        return res.status(400).send({
+          code: 'captcha-timeout-or-duplicate',
+          message: 'Captcha token expired or already used',
+        });
+      }
+      if (err instanceof InvalidHostname) {
+        return res.status(400).send({
+          code: 'invalid-hostname',
+          message: 'Invalid hostname for captcha verification',
+        });
+      }
+      if (err instanceof RecaptchaClientError) {
+        return res.status(400).send({
+          code: 'captcha-client-error',
+          message: 'Client error in captcha verification',
+          details: err.message,
+        });
+      }
+      return res.status(500).send({
+        code: 'captcha-verification-failed',
+        message: 'Internal server error during captcha verification',
+      });
+    }
+  };
   /**
    * Closes the already running server
    * @returns Promise that resolves when the server is closed

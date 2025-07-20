@@ -3,3 +3,11 @@ export interface ChallengeRecord {
   challenge: string;
   createdAt: number;
 }
+
+export type ChallengeVerificationResult =
+  | { success: true }
+  | {
+      success: false;
+      code: 'challenge-not-found' | 'challenge-mismatch' | 'invalid-signature';
+      message: string;
+    };

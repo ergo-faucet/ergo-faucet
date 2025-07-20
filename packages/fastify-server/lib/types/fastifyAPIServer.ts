@@ -5,6 +5,7 @@ import { Server, IncomingMessage, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import fastifyJwt from '@fastify/jwt';
 import fastifyCookie from '@fastify/cookie';
+import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
 
 export interface ServerConfig {
   port: number;
@@ -16,10 +17,12 @@ export interface ServerConfig {
   jwtSecret: string;
   jwtExpiration: number;
   cookie: CookieConfig;
+  googleRecaptcha: GoogleRecaptcha;
 }
 
 export type FastifySeverInstance = FastifyInstance<
-  Server<typeof IncomingMessage, typeof ServerResponse>,
+  // eslint-disable-next-line
+  Server<any, any>,
   IncomingMessage,
   ServerResponse<IncomingMessage>,
   FastifyBaseLogger,
