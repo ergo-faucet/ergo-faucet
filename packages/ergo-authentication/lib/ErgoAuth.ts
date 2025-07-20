@@ -33,38 +33,39 @@ const ERGO_AUTH_PREFIX = '/ergo-auth';
 
 export class ErgoAuth {
   private static instance: ErgoAuth;
-  private redis!: Redis;
-  private logger: AbstractLogger;
-  private fastifyServer: FastifyAPIServer;
-  private userAddressAction: UserAddressAction;
-  private redisExpirySeconds: number;
-  private refreshTokenExpirySeconds: number;
-  private accessTokenExpirySeconds: number;
+  private readonly redis: Redis;
+  private readonly logger: AbstractLogger;
+  private readonly fastifyServer: FastifyAPIServer;
+  private readonly userAddressAction: UserAddressAction;
+
+  private readonly challengeExpirySeconds: number;
+  private readonly refreshTokenExpirySeconds: number;
+  private readonly accessTokenExpirySeconds: number;
 
   /**
    * Private constructor to enforce singleton pattern.
    * @param redisConfig - Redis connection string or options.
    * @param fastifyServer - Fastify server instance for API integration.
    * @param userAddressAction - User address action instance for database interactions.
-   * @param redisExpirySeconds - Optional expiry time for challenges in seconds (default: 300s)
-   * @param refreshTokenExpirySeconds - Optional expiry time for refresh token in seconds (default: 86400s)
-   * @param accessTokenExpirySeconds - Optional expiry time for access token in seconds (default: 3600s)
+   * @param challengeExpirySeconds - Optional expiry time for challenges in seconds
+   * @param refreshTokenExpirySeconds - Optional expiry time for refresh token in seconds
+   * @param accessTokenExpirySeconds - Optional expiry time for access token in seconds
    * @param logger - Optional logger instance.
    */
   private constructor(
     redisConfig: RedisConfig,
     fastifyServer: FastifyAPIServer,
     userAddressAction: UserAddressAction,
+    challengeExpirySeconds: number,
+    refreshTokenExpirySeconds: number,
+    accessTokenExpirySeconds: number,
     logger?: AbstractLogger,
-    redisExpirySeconds = 300,
-    refreshTokenExpirySeconds = 86400,
-    accessTokenExpirySeconds = 3600,
   ) {
     this.logger = logger ?? new DummyLogger();
     this.redis = new Redis(redisConfig);
     this.fastifyServer = fastifyServer;
     this.userAddressAction = userAddressAction;
-    this.redisExpirySeconds = redisExpirySeconds;
+    this.challengeExpirySeconds = challengeExpirySeconds;
     this.refreshTokenExpirySeconds = refreshTokenExpirySeconds;
     this.accessTokenExpirySeconds = accessTokenExpirySeconds;
     this.logger.info('[ErgoAuth] Redis connection initialized.');
@@ -75,20 +76,20 @@ export class ErgoAuth {
    * @param redisConfig - Redis connection string or options.
    * @param fastifyServer - Fastify server instance for API integration.
    * @param userAddressAction - User address action instance for database interactions.
-   * @param logger - Optional logger instance.
-   * @param redisExpirySeconds - Optional expiry time for challenges in seconds (default: 300s)
+   * @param challengeExpirySeconds - Optional expiry time for challenges in seconds (default: 300s)
    * @param refreshTokenExpirySeconds - Optional expiry time for refresh token in seconds (default: 86400s)
    * @param accessTokenExpirySeconds - Optional expiry time for access token in seconds (default: 3600s)
+   * @param logger - Optional logger instance.
    * @throws Error if already initialized.
    */
   public static async initialize(
     redisConfig: RedisConfig,
     fastifyServer: FastifyAPIServer,
     userAddressAction: UserAddressAction,
+    challengeExpirySeconds: number,
+    refreshTokenExpirySeconds: number,
+    accessTokenExpirySeconds: number,
     logger?: AbstractLogger,
-    redisExpirySeconds?: number,
-    refreshTokenExpirySeconds?: number,
-    accessTokenExpirySeconds?: number,
   ): Promise<void> {
     if (this.instance) {
       throw new Error('ErgoAuth has already been initialized.');
@@ -97,10 +98,10 @@ export class ErgoAuth {
       redisConfig,
       fastifyServer,
       userAddressAction,
-      logger,
-      redisExpirySeconds,
+      challengeExpirySeconds,
       refreshTokenExpirySeconds,
       accessTokenExpirySeconds,
+      logger,
     );
     await this.instance.registerRoutes(ERGO_AUTH_PREFIX);
   }
@@ -123,7 +124,7 @@ export class ErgoAuth {
    * @param address - The user's address
    * @returns `ChallengeRecord | null` if found, otherwise `null`
    */
-  private async getChallengeRecord(
+  public async getChallengeRecord(
     address: string,
   ): Promise<ChallengeRecord | null> {
     const raw = await this.redis.get(`challenge:${address}`);
@@ -150,7 +151,7 @@ export class ErgoAuth {
    * @param proof - The signature proof in hex format.
    * @returns `true` if signature is valid, otherwise `false`
    */
-  private verifySignature = (
+  public verifySignature = (
     address: string,
     signedMessage: string,
     proof: string,
@@ -172,7 +173,7 @@ export class ErgoAuth {
    * @param address - Ergo blockchain address
    * @returns challenge string (UUID)
    */
-  private createChallenge = async (address: string): Promise<string> => {
+  public createChallenge = async (address: string): Promise<string> => {
     const challenge = uuidv4();
     const createdAt = Math.floor(Date.now() / 1000);
     const value: ChallengeRecord = { address, challenge, createdAt };
@@ -181,7 +182,7 @@ export class ErgoAuth {
       `challenge:${address}`,
       JSON.stringify(value),
       'EX',
-      this.redisExpirySeconds,
+      this.challengeExpirySeconds,
     );
     this.logger.debug(`Created challenge for ${address}`);
 
@@ -197,7 +198,7 @@ export class ErgoAuth {
    *  `{ success: true }` if the challenge is valid and the proof matches.
    *  `{ success: false, code, message }` with an error code if validation fails.
    */
-  private async verifyChallenge(
+  public async verifyChallenge(
     address: string,
     challenge: string,
     proof: string,
@@ -442,7 +443,7 @@ export class ErgoAuth {
    * This method registers the challenge, verify, and refresh-token routes
    * under the specified prefix.
    */
-  private registerRoutes = async (prefix: string): Promise<void> => {
+  public registerRoutes = async (prefix: string): Promise<void> => {
     await this.fastifyServer.register(this.challengeRoute, prefix);
     await this.fastifyServer.register(this.authenticationRoute, prefix);
     await this.fastifyServer.register(this.refreshTokenRoute, prefix);

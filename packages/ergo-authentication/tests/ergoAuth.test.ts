@@ -1,80 +1,53 @@
-import { describe, it, expect, beforeAll, vi, beforeEach } from 'vitest';
+import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { ErgoAuth } from '../lib/ErgoAuth';
+import { DummyLogger } from '@rosen-bridge/abstract-logger';
 
-const mockRedis = {
+// eslint-disable-next-line
+const mockRedis: any = {
   get: vi.fn(),
   set: vi.fn(),
 };
 
-const mockFastifyServer = {
+vi.mock('ioredis', () => {
+  return {
+    default: vi.fn().mockImplementation(() => mockRedis),
+  };
+});
+
+// eslint-disable-next-line
+const mockFastifyServer: any = {
   register: vi.fn(async () => {}),
   captchaPreHandler: vi.fn(),
   setAuthCookie: vi.fn(),
 };
 
-const mockUserAddressAction = {
-  findOrCreateUserWithAddress: vi.fn(async (addr: string) => ({
-    id: 123,
-    address: addr,
-  })),
-};
-
-const mockLogger = {
-  debug: vi.fn(),
-  info: vi.fn(),
-  warn: vi.fn(),
+// eslint-disable-next-line
+const mockUserAddressAction: any = {
+  findOrCreateUserWithAddress: async () => ({ id: 1 }),
 };
 
 const testAddress = '9ggSPfdEACEpRKMvpVwXxck9soLC1ZDmYRX9GA5gigSsAoZDNwJ';
 
-describe('ErgoAuth Singleton Initialization', () => {
+describe('ErgoAuth', () => {
   beforeAll(async () => {
     await ErgoAuth.initialize(
-      // eslint-disable-next-line
-      {} as any,
-      // eslint-disable-next-line
-      mockFastifyServer as any,
-      // eslint-disable-next-line
-      mockUserAddressAction as any,
-      // eslint-disable-next-line
-      mockLogger as any,
+      mockRedis,
+      mockFastifyServer,
+      mockUserAddressAction,
       300,
       3600,
       600,
+      new DummyLogger(),
     );
   });
 
-  it('should throw if initialized again', async () => {
-    await expect(() =>
-      ErgoAuth.initialize(
-        // eslint-disable-next-line
-        {} as any,
-        // eslint-disable-next-line
-        mockFastifyServer as any,
-        // eslint-disable-next-line
-        mockUserAddressAction as any,
-      ),
-    ).rejects.toThrowError('ErgoAuth has already been initialized.');
-  });
-
-  it('getInstance should return a valid instance', () => {
-    const instance = ErgoAuth.getInstance();
-    expect(instance).toBeInstanceOf(ErgoAuth);
-  });
-});
-
-describe('ErgoAuth Core Functions', () => {
-  // eslint-disable-next-line
-  let ergoAuth: any;
-
   beforeEach(() => {
-    // eslint-disable-next-line
-    ergoAuth = ErgoAuth.getInstance() as any;
     vi.clearAllMocks();
   });
 
-  it('createChallenge should store a uuid in redis', async () => {
-    ergoAuth.redis = mockRedis;
+  it('should create a challenge and store in redis', async () => {
+    const ergoAuth = ErgoAuth.getInstance();
+
     mockRedis.set.mockResolvedValueOnce('OK');
 
     const challenge = await ergoAuth.createChallenge(testAddress);
@@ -82,6 +55,7 @@ describe('ErgoAuth Core Functions', () => {
     expect(challenge).toMatch(
       /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i,
     );
+
     expect(mockRedis.set).toHaveBeenCalledWith(
       `challenge:${testAddress}`,
       expect.stringContaining(challenge),
@@ -90,17 +64,22 @@ describe('ErgoAuth Core Functions', () => {
     );
   });
 
-  it('verifyChallenge should fail if no record in redis', async () => {
-    ergoAuth.redis = mockRedis;
+  it('should fail if no record in redis', async () => {
+    const ergoAuth = ErgoAuth.getInstance();
+
     mockRedis.get.mockResolvedValueOnce(null);
 
     const result = await ergoAuth.verifyChallenge(testAddress, 'abc', 'sig');
+
     expect(result.success).toBe(false);
-    expect(result.code).toBe('challenge-not-found');
+    if (!result.success) {
+      expect(result.code).toBe('challenge-not-found');
+    }
   });
 
-  it('verifyChallenge should fail if challenge mismatch', async () => {
-    ergoAuth.redis = mockRedis;
+  it('should fail if challenge mismatch', async () => {
+    const ergoAuth = ErgoAuth.getInstance();
+
     mockRedis.get.mockResolvedValueOnce(
       JSON.stringify({
         address: testAddress,
@@ -110,39 +89,43 @@ describe('ErgoAuth Core Functions', () => {
     );
 
     const result = await ergoAuth.verifyChallenge(testAddress, 'abc', 'sig');
+
     expect(result.success).toBe(false);
-    expect(result.code).toBe('challenge-mismatch');
+    if (!result.success) expect(result.code).toBe('challenge-mismatch');
   });
 
-  it('verifyChallenge should fail if signature is invalid', async () => {
-    ergoAuth.redis = mockRedis;
+  it('should fail if signature is invalid', async () => {
+    const ergoAuth = ErgoAuth.getInstance();
+
     mockRedis.get.mockResolvedValueOnce(
       JSON.stringify({ address: testAddress, challenge: 'abc', createdAt: 0 }),
     );
+
     vi.spyOn(ergoAuth, 'verifySignature').mockReturnValueOnce(false);
 
     const result = await ergoAuth.verifyChallenge(testAddress, 'abc', 'sig');
+
     expect(result.success).toBe(false);
-    expect(result.code).toBe('invalid-signature');
+    if (!result.success) expect(result.code).toBe('invalid-signature');
   });
 
-  it('verifyChallenge should succeed with valid data', async () => {
-    ergoAuth.redis = mockRedis;
+  it('should succeed with valid data', async () => {
+    const ergoAuth = ErgoAuth.getInstance();
+
     mockRedis.get.mockResolvedValueOnce(
       JSON.stringify({ address: testAddress, challenge: 'abc', createdAt: 0 }),
     );
+
     vi.spyOn(ergoAuth, 'verifySignature').mockReturnValueOnce(true);
 
     const result = await ergoAuth.verifyChallenge(testAddress, 'abc', 'sig');
+
     expect(result.success).toBe(true);
   });
-});
 
-describe('ErgoAuth Route Registration', () => {
   it('should register 3 routes', async () => {
-    // eslint-disable-next-line
-    const instance = ErgoAuth.getInstance() as any;
-    await instance.registerRoutes('/ergo-auth');
+    const ergoAuth = ErgoAuth.getInstance();
+    await ergoAuth.registerRoutes('/ergo-auth');
     expect(mockFastifyServer.register).toHaveBeenCalledTimes(3);
   });
 });

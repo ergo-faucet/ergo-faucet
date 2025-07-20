@@ -19,6 +19,9 @@ beforeAll(async () => {
     mockRedisConfig,
     mockFastifyServer,
     mockUserAddressAction,
+    300,
+    86400,
+    3600,
     new DummyLogger(),
   );
   ergoAuth = ErgoAuth.getInstance();
