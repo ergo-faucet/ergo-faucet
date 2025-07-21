@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  beforeEach,
+  vi,
+  afterAll,
+} from 'vitest';
 import { ErgoAuth } from '../lib/ErgoAuth';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
@@ -30,6 +38,10 @@ describe('ErgoAuth', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+  });
+
+  afterAll(() => {
+    vi.resetAllMocks();
   });
 
   /**
