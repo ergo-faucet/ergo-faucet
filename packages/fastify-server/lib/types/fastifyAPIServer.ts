@@ -32,6 +32,7 @@ export type FastifySeverInstance = FastifyInstance<
   Partial<typeof fastifyCookie>;
 
 export interface CookieConfig {
+  secret: string;
   signed: boolean;
   name: string;
   httpOnly: boolean;

@@ -14,3 +14,8 @@ export {
   ChallengeResponse200,
 } from './schemas';
 export { payloadJWT } from './payloadJWTType';
+export {
+  AuthenticationBodyType,
+  RefreshTokenBodyType,
+  ChallengeBodyType,
+} from './routeBodyType';

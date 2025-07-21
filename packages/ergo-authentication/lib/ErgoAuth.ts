@@ -3,15 +3,18 @@ import { v4 as uuidv4 } from 'uuid';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   AuthenticationBody,
+  AuthenticationBodyType,
   AuthenticationResponse200,
   AuthenticationResponseError,
   ChallengeBody,
+  ChallengeBodyType,
   ChallengeErrorResponse,
   ChallengeRecord,
   ChallengeResponse200,
   ChallengeVerificationResult,
   payloadJWT,
   RefreshTokenBody,
+  RefreshTokenBodyType,
   RefreshTokenResponse200,
   RefreshTokenResponse401,
 } from './types';
@@ -23,13 +26,6 @@ import { UserAddressAction } from '@ergo-faucet/database';
 import { hex } from '@fleet-sdk/crypto';
 import { ErgoAddress, ErgoMessage } from '@fleet-sdk/core';
 import { Prover } from '@fleet-sdk/wallet';
-import { Static } from '@sinclair/typebox';
-
-type AuthenticationBodyType = Static<typeof AuthenticationBody>;
-type RefreshTokenBodyType = Static<typeof RefreshTokenBody>;
-type ChallengeBodyType = Static<typeof ChallengeBody>;
-type RedisConfig = RedisOptions;
-const ERGO_AUTH_PREFIX = '/ergo-auth';
 
 export class ErgoAuth {
   private static instance: ErgoAuth;
@@ -41,24 +37,28 @@ export class ErgoAuth {
   private readonly challengeExpirySeconds: number;
   private readonly refreshTokenExpirySeconds: number;
   private readonly accessTokenExpirySeconds: number;
+  private readonly NETWORK_ADDRESS: 'MAINNET' | 'TESTNET' = 'MAINNET';
+  private readonly ERGO_AUTH_PREFIX = '/ergo-auth';
 
   /**
    * Private constructor to enforce singleton pattern.
    * @param redisConfig - Redis connection string or options.
    * @param fastifyServer - Fastify server instance for API integration.
    * @param userAddressAction - User address action instance for database interactions.
-   * @param challengeExpirySeconds - Optional expiry time for challenges in seconds
-   * @param refreshTokenExpirySeconds - Optional expiry time for refresh token in seconds
-   * @param accessTokenExpirySeconds - Optional expiry time for access token in seconds
+   * @param challengeExpirySeconds -  expiry time for challenges in seconds
+   * @param refreshTokenExpirySeconds -  expiry time for refresh token in seconds
+   * @param accessTokenExpirySeconds -  expiry time for access token in seconds
+   * @param networkAddress - The network address (MAINNET or TESTNET).
    * @param logger - Optional logger instance.
    */
   private constructor(
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
     fastifyServer: FastifyAPIServer,
     userAddressAction: UserAddressAction,
     challengeExpirySeconds: number,
     refreshTokenExpirySeconds: number,
     accessTokenExpirySeconds: number,
+    networkAddress: 'MAINNET' | 'TESTNET' = 'MAINNET',
     logger?: AbstractLogger,
   ) {
     this.logger = logger ?? new DummyLogger();
@@ -68,7 +68,7 @@ export class ErgoAuth {
     this.challengeExpirySeconds = challengeExpirySeconds;
     this.refreshTokenExpirySeconds = refreshTokenExpirySeconds;
     this.accessTokenExpirySeconds = accessTokenExpirySeconds;
-    this.logger.info('[ErgoAuth] Redis connection initialized.');
+    this.NETWORK_ADDRESS = networkAddress;
   }
 
   /**
@@ -76,19 +76,21 @@ export class ErgoAuth {
    * @param redisConfig - Redis connection string or options.
    * @param fastifyServer - Fastify server instance for API integration.
    * @param userAddressAction - User address action instance for database interactions.
-   * @param challengeExpirySeconds - Optional expiry time for challenges in seconds (default: 300s)
-   * @param refreshTokenExpirySeconds - Optional expiry time for refresh token in seconds (default: 86400s)
-   * @param accessTokenExpirySeconds - Optional expiry time for access token in seconds (default: 3600s)
+   * @param challengeExpirySeconds -  expiry time for challenges in seconds
+   * @param refreshTokenExpirySeconds -  expiry time for refresh token in seconds
+   * @param accessTokenExpirySeconds -  expiry time for access token in seconds
+   * @param networkAddress - The network address (MAINNET or TESTNET).
    * @param logger - Optional logger instance.
    * @throws Error if already initialized.
    */
   public static async initialize(
-    redisConfig: RedisConfig,
+    redisConfig: RedisOptions,
     fastifyServer: FastifyAPIServer,
     userAddressAction: UserAddressAction,
     challengeExpirySeconds: number,
     refreshTokenExpirySeconds: number,
     accessTokenExpirySeconds: number,
+    networkAddress: 'MAINNET' | 'TESTNET',
     logger?: AbstractLogger,
   ): Promise<void> {
     if (this.instance) {
@@ -101,9 +103,10 @@ export class ErgoAuth {
       challengeExpirySeconds,
       refreshTokenExpirySeconds,
       accessTokenExpirySeconds,
+      networkAddress,
       logger,
     );
-    await this.instance.registerRoutes(ERGO_AUTH_PREFIX);
+    await this.instance.registerRoutes(this.instance.ERGO_AUTH_PREFIX);
   }
 
   /**
@@ -116,6 +119,25 @@ export class ErgoAuth {
       throw new Error('ErgoAuth instance has not been initialized.');
     }
     return this.instance;
+  };
+
+  /**
+   * Validates if the provided Ergo address is valid for the configured network.
+   * @param address - The Ergo address to validate.
+   * @returns `true` if valid, otherwise `false`.
+   */
+  public isvalidErgoAddress = (address: string): boolean => {
+    try {
+      const network = ErgoAddress.fromBase58(address).network;
+      return this.NETWORK_ADDRESS === 'MAINNET'
+        ? network === 0
+        : network === 16;
+    } catch (err) {
+      this.logger.debug(
+        `Invalid Ergo address Network: ${address} with error: ${err}`,
+      );
+      return false;
+    }
   };
 
   /**
@@ -248,6 +270,7 @@ export class ErgoAuth {
    * - `address` (string) → The user wallet address.
    *
    * **Behavior:**
+   * - Validates the provided address against the configured network.
    * - Validates that the address is provided and not empty.
    * - Generates a challenge string.
    * - Stores the challenge in Redis with an expiry time.
@@ -272,17 +295,19 @@ export class ErgoAuth {
             400: ChallengeErrorResponse,
           },
         },
+        preHandler: async (req, res) => {
+          const { address } = req.body;
+          if (!this.isvalidErgoAddress(address)) {
+            return res.status(400).send({
+              error: 'Invalid Ergo address',
+              code: 'invalid-address-network',
+            });
+          }
+        },
       },
+
       async (request, reply) => {
         const { address } = request.body;
-
-        if (!address || address.trim() === '') {
-          return reply.status(400).send({
-            error: 'Invalid address',
-            code: 'invalid-address',
-          });
-        }
-
         const challenge = await this.createChallenge(address);
         return reply.send({ challenge });
       },
@@ -306,12 +331,13 @@ export class ErgoAuth {
    *
    * **Behavior:**
    * - Runs the `captchaPreHandler` to verify the captcha token.
+   * - Validates the provided address against the configured network.
    * - Verifies the provided challenge and proof.
    * - Creates or retrieves the user from the database.
    * - Issues a `refreshToken` (stored in `auth_token` cookie) and an `accessToken`.
    *
    * **Responses:**
-   * - `200 OK` → `{ success: true, userId: number, accessToken: string }`
+   * - `200 OK` → `{ success: true, payload: {address , userId }, accessToken: string }`
    * - `400 Bad Request` → `{ error: string, code: string }` (captcha or malformed input)
    * - `401 Unauthorized` → `{ error: 'Invalid challenge', code: 'challenge-verification-failed' }`
    *
@@ -333,7 +359,18 @@ export class ErgoAuth {
             401: AuthenticationResponseError,
           },
         },
-        preHandler: this.fastifyServer.captchaPreHandler,
+        preHandler: [
+          this.fastifyServer.captchaPreHandler,
+          async (req, res) => {
+            const { address } = req.body;
+            if (!this.isvalidErgoAddress(address)) {
+              return res.status(400).send({
+                error: 'Invalid Ergo address',
+                code: 'invalid-address-network',
+              });
+            }
+          },
+        ],
       },
 
       async (request, reply) => {
@@ -341,10 +378,10 @@ export class ErgoAuth {
 
         const isValid = await this.verifyChallenge(address, challenge, proof);
 
-        if (!isValid) {
+        if (!isValid.success) {
           return reply.status(401).send({
-            error: 'Invalid challenge',
-            code: 'challenge-verification-failed',
+            error: isValid.message,
+            code: isValid.code,
           });
         }
 
@@ -367,7 +404,7 @@ export class ErgoAuth {
 
         return reply.send({
           success: true,
-          userId: user.id,
+          payload: payload,
           accessToken,
         });
       },
@@ -414,22 +451,17 @@ export class ErgoAuth {
       },
       async (request, reply) => {
         try {
-          const decoded = (await request.jwtVerify({
+          const decoded = await request.jwtVerify<payloadJWT>({
             onlyCookie: true,
-          })) as payloadJWT;
+          });
 
-          const payload: payloadJWT = {
-            userId: decoded.userId,
-            address: decoded.address,
-          };
-
-          const newToken = await reply.jwtSign(payload, {
+          const newToken = await reply.jwtSign(decoded, {
             expiresIn: this.accessTokenExpirySeconds,
           });
 
           return reply.send({ success: true, newToken });
         } catch (err) {
-          this.logger.debug(`[RefreshToken] Token refresh failed: ${err}`);
+          this.logger.debug(`Token refresh failed: ${err}`);
           return reply.status(401).send({ error: 'Invalid or expired token' });
         }
       },
@@ -447,6 +479,6 @@ export class ErgoAuth {
     await this.fastifyServer.register(this.challengeRoute, prefix);
     await this.fastifyServer.register(this.authenticationRoute, prefix);
     await this.fastifyServer.register(this.refreshTokenRoute, prefix);
-    this.logger.info(`[ErgoAuth] Routes registered under prefix "${prefix}"`);
+    this.logger.info(`Routes registered under prefix "${prefix}"`);
   };
 }

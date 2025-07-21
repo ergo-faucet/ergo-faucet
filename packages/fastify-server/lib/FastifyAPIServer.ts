@@ -8,9 +8,8 @@ import jwt from '@fastify/jwt';
 import cookie from '@fastify/cookie';
 import {
   GoogleRecaptcha,
-  InvalidHostname,
   RecaptchaClientError,
-  TimeoutOrDuplicate,
+  RecaptchaServerError,
 } from '@ergo-faucet/google-recaptcha';
 import { HookHandlerDoneFunction } from 'fastify/types/hooks';
 
@@ -89,7 +88,9 @@ export class FastifyAPIServer {
     await this.instance.fastify.register(fastifyCors, {
       origin: this.instance.corsOrigins,
     });
-    await this.instance.fastify.register(cookie);
+    await this.instance.fastify.register(cookie, {
+      secret: this.instance.cookieConfig.secret,
+    });
 
     await this.instance.fastify.register(jwt, {
       secret: this.instance.jwtSecret,
@@ -177,9 +178,6 @@ export class FastifyAPIServer {
    * @throws Error with statusCode and code if verification fails.
    */
   public verifyCaptcha = async (captchaToken: string): Promise<boolean> => {
-    if (!this.googleRecaptcha) {
-      throw Error('GoogleRecaptcha instance is not set.');
-    }
     const isValid = await this.googleRecaptcha.verifyToken(captchaToken);
     return isValid;
   };
@@ -200,7 +198,7 @@ export class FastifyAPIServer {
     res: U,
     next: HookHandlerDoneFunction,
   ) => {
-    const { captchaToken } = (req.body as { captchaToken?: string }) ?? {};
+    const { captchaToken } = req.body as { captchaToken: string };
 
     try {
       if (!captchaToken) {
@@ -210,7 +208,8 @@ export class FastifyAPIServer {
         });
       }
 
-      const isValid = await this.verifyCaptcha(captchaToken);
+      const isValid = await this.googleRecaptcha.verifyToken(captchaToken);
+
       if (isValid) {
         next();
       } else {
@@ -220,29 +219,17 @@ export class FastifyAPIServer {
         });
       }
     } catch (err) {
-      if (err instanceof TimeoutOrDuplicate) {
-        return res.status(400).send({
-          code: 'captcha-timeout-or-duplicate',
-          message: 'Captcha token expired or already used',
-        });
-      }
-      if (err instanceof InvalidHostname) {
-        return res.status(400).send({
-          code: 'invalid-hostname',
-          message: 'Invalid hostname for captcha verification',
-        });
-      }
       if (err instanceof RecaptchaClientError) {
         return res.status(400).send({
-          code: 'captcha-client-error',
-          message: 'Client error in captcha verification',
-          details: err.message,
+          code: 'captcha-verification-failed',
+          message: err.message,
+        });
+      } else if (err instanceof RecaptchaServerError) {
+        return res.status(400).send({
+          code: 'captcha-verification-failed',
+          message: 'Internal server error during captcha verification',
         });
       }
-      return res.status(500).send({
-        code: 'captcha-verification-failed',
-        message: 'Internal server error during captcha verification',
-      });
     }
   };
   /**

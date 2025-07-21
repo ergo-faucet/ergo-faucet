@@ -1,10 +1,10 @@
 {
   "name": "@ergo-faucet/ergo-authentication",
-  "version": "0.0.0",
-  "description": "",
-  "repository": "",
+  "version": "0.1.0",
+  "description": "ergo authentication utilities for ergo-faucet",
+  "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
   "license": "GPL-3.0",
-  "author": "",
+  "author": "TechStack-BlockChain",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -35,7 +35,6 @@
   "dependencies": {
     "@ergo-faucet/database": "^0.1.0",
     "@ergo-faucet/fastify-server": "^0.1.0",
-    "@ergo-faucet/google-recaptcha": "^0.1.0",
     "@fleet-sdk/core": "^0.10.0",
     "@fleet-sdk/crypto": "^0.10.0",
     "@fleet-sdk/wallet": "^0.10.0",

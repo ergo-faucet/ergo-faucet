@@ -1,16 +1,11 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { ErgoAuth } from '../lib/ErgoAuth';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
-
-const mockRedisConfig = { host: 'localhost', port: 6379 };
-// eslint-disable-next-line
-const mockFastifyServer: any = {
-  register: async () => {},
-};
-// eslint-disable-next-line
-const mockUserAddressAction: any = {
-  findOrCreateUserWithAddress: async () => ({ id: 1 }),
-};
+import {
+  mockFastifyServer,
+  mockRedisConfig,
+  mockUserAddressAction,
+} from './ergoAuth.mock';
 
 let ergoAuth: ErgoAuth;
 
@@ -22,12 +17,16 @@ beforeAll(async () => {
     300,
     86400,
     3600,
+    'MAINNET',
     new DummyLogger(),
   );
   ergoAuth = ErgoAuth.getInstance();
 });
 
 describe('ErgoAuth.verifySignature', () => {
+  /**
+   * Tests the `verifySignature` method of ErgoAuth with an invalid signature.
+   */
   it('should return false for an invalid signature', () => {
     const result = ergoAuth['verifySignature'](
       '9hFQ6qGc9HnGpnyRyExV5eWh9YdNMGDNfPfqcTTegN1ctuWD1Bw',
@@ -38,6 +37,9 @@ describe('ErgoAuth.verifySignature', () => {
     expect(result).toBe(false);
   });
 
+  /**
+   * Tests the `verifySignature` method of ErgoAuth with a valid signature.
+   */
   it('should return true for a valid signature (real data required)', () => {
     const result = ergoAuth['verifySignature'](
       '9ggSPfdEACEpRKMvpVwXxck9soLC1ZDmYRX9GA5gigSsAoZDNwJ',

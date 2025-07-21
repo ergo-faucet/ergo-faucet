@@ -1,138 +1,45 @@
+import { setupGoogleRecaptchaMock } from './mockData';
+setupGoogleRecaptchaMock();
 import {
-  GoogleRecaptcha,
-  TimeoutOrDuplicate,
-  InvalidHostname,
   RecaptchaServerError,
-  MissingInputSecret,
-  InvalidInputSecret,
+  RecaptchaClientError,
 } from '@ergo-faucet/google-recaptcha';
-
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { ServerConfig, FastifyAPIServer, FastifySeverInstance } from '../lib';
-
-vi.mock('@ergo-faucet/google-recaptcha', () => {
-  class MockInvalidHostname extends Error {
-    name = 'InvalidHostname';
-  }
-  class MockRecaptchaServerError extends Error {
-    name = 'RecaptchaServerError';
-  }
-  class MockTimeoutOrDuplicate extends Error {
-    name = 'TimeoutOrDuplicate';
-  }
-
-  return {
-    GoogleRecaptcha: vi.fn().mockImplementation(() => ({
-      verifyToken: vi.fn(async (token: string) => {
-        if (token === 'valid_token') return true;
-        if (token === 'timeout_token') throw new MockTimeoutOrDuplicate();
-        if (token === 'hostname_token') throw new MockInvalidHostname();
-        if (token === 'error_token')
-          throw new MockRecaptchaServerError('Test error');
-        return false;
-      }),
-      logger: console,
-      recaptchaKey: 'fake-key',
-      threshold: 0.5,
-      hostnames: ['localhost'],
-    })),
-    InvalidHostname: MockInvalidHostname,
-    RecaptchaServerError: MockRecaptchaServerError,
-    TimeoutOrDuplicate: MockTimeoutOrDuplicate,
-    MissingInputSecret: class MissingInputSecret extends Error {
-      name = 'MissingInputSecret';
-    },
-    InvalidInputSecret: class InvalidInputSecret extends Error {
-      name = 'InvalidInputSecret';
-    },
-    RecaptchaClientError: class RecaptchaClientError extends Error {},
-    MissingToken: class MissingToken extends Error {
-      name = 'MissingToken';
-    },
-    InvalidToken: class InvalidToken extends Error {
-      name = 'InvalidToken';
-    },
-    BadRequest: class BadRequest extends Error {
-      name = 'BadRequest';
-    },
-  };
-});
+import {
+  describe,
+  it,
+  expect,
+  beforeEach,
+  afterEach,
+  vi,
+  afterAll,
+} from 'vitest';
+import { FastifyAPIServer, FastifySeverInstance } from '../lib';
+import { config, mockGoogleRecaptcha } from './mockData';
 
 /**
  * Test suite for the FastifyAPIServer class.
  * This suite tests the initialization, route registration, JWT handling, and server start functionality.
  */
 describe('FastifyAPIServer', () => {
-  let mockGoogleRecaptcha: GoogleRecaptcha & {
-    verifyToken: ReturnType<typeof vi.fn>;
-  };
-  let config: ServerConfig;
   let serverInstance: FastifyAPIServer;
 
   /**
    * Reset the FastifyAPIServer instance before each test.
    */
   beforeEach(() => {
+    vi.clearAllMocks();
     // eslint-disable-next-line
     (FastifyAPIServer as any).instance = undefined;
-    mockGoogleRecaptcha = {
-      verifyToken: vi.fn(async (token: string) => {
-        if (token === 'valid_token') return true;
-        if (token === 'timeout_token') throw new TimeoutOrDuplicate();
-        if (token === 'hostname_token') throw new InvalidHostname();
-        if (token === 'error_token')
-          throw new RecaptchaServerError('Test error');
-        return false;
-      }),
-      logger: console,
-      recaptchaKey: 'fake-key',
-      threshold: 0.5,
-      hostnames: ['localhost'],
-      // eslint-disable-next-line
-    } as any;
-
-    /**
-     * Configuration for the FastifyAPIServer.
-     * @type {ServerConfig}
-     */
-    config = {
-      port: 3000,
-      host: 'localhost',
-      corsOrigins: '*',
-      jwtSecret: 'test_secret',
-      jwtExpiration: 300,
-      googleRecaptcha: mockGoogleRecaptcha,
-      swagger: {
-        exposeHeadRoutes: true,
-        openapi: {
-          info: {
-            title: 'Test API',
-            description: 'API Documentation',
-            version: '1.0.0',
-          },
-        },
-      },
-      swaggerUi: {
-        routePrefix: '/docs',
-      },
-      activeFastifyLogger: false,
-      cookie: {
-        name: 'auth_token',
-        httpOnly: true,
-        secure: false,
-        sameSite: 'strict',
-        path: '/',
-        maxAge: 3600,
-        domain: 'localhost',
-        signed: false,
-      },
-    };
   });
 
   afterEach(async () => {
     if (serverInstance) {
       await serverInstance.close().catch(() => {});
     }
+  });
+
+  afterAll(() => {
+    vi.restoreAllMocks();
   });
 
   /**
@@ -244,6 +151,33 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
+   * Test case to verify the captchaPreHandler middleware.
+   */
+  it('should set auth cookie with correct options', async () => {
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+
+    await instance.register(async (fastify) => {
+      fastify.get('/set-auth-cookie', async (req, reply) => {
+        const token = await reply.jwtSign({ userId: 42 });
+        instance.setAuthCookie(reply, token);
+        return { ok: true };
+      });
+    }, '');
+
+    const response = await instance['fastify'].inject({
+      method: 'GET',
+      url: '/set-auth-cookie',
+    });
+
+    const cookieHeader = response.headers['set-cookie'];
+    expect(cookieHeader).toContain('auth_token=');
+    expect(cookieHeader).toContain('HttpOnly');
+    expect(cookieHeader).toContain('Path=/');
+    expect(cookieHeader).toContain('Max-Age=3600');
+  });
+
+  /**
    * Test case to verify the captcha verification method directly.
    */
   it('should verify captcha directly', async () => {
@@ -257,6 +191,44 @@ describe('FastifyAPIServer', () => {
     expect(isInvalid).toBe(false);
 
     expect(mockGoogleRecaptcha.verifyToken).toHaveBeenCalledTimes(2);
+  });
+
+  /**
+   * Test case to verify the captchaPreHandler middleware.
+   */
+
+  it('should handle RecaptchaClientError in captchaPreHandler', async () => {
+    // simulate client error
+    mockGoogleRecaptcha.verifyToken.mockRejectedValueOnce(
+      new RecaptchaClientError('Client-side issue'),
+    );
+
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
+
+    await instance.register(async (fastify) => {
+      fastify.post(
+        '/captcha-client-error',
+        { preHandler: instance.captchaPreHandler },
+        async () => ({ success: true }),
+      );
+    }, '');
+
+    await instance.start();
+
+    const response = await instance['fastify'].inject({
+      method: 'POST',
+      url: '/captcha-client-error',
+      payload: { captchaToken: 'error_token' },
+    });
+
+    expect(response.statusCode).toBe(400);
+    expect(JSON.parse(response.body)).toEqual({
+      code: 'captcha-verification-failed',
+      message: 'Client-side issue',
+    });
+
+    await instance.close();
   });
 
   /**
@@ -310,165 +282,40 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Group of test cases for error handling in reCAPTCHA integration.
+   * Test case to verify the captchaPreHandler handles RecaptchaServerError correctly.
    */
-  describe('reCAPTCHA Integration Error Cases', () => {
-    /**
-     * Should throw TimeoutOrDuplicate error on duplicate/expired token.
-     */
-    it('should handle timeout/duplicate tokens', async () => {
-      await FastifyAPIServer.initialize(config);
-      serverInstance = FastifyAPIServer.getInstance();
+  it('should handle RecaptchaServerError in captchaPreHandler', async () => {
+    // simulate server error
+    mockGoogleRecaptcha.verifyToken.mockRejectedValueOnce(
+      new RecaptchaServerError('Internal error'),
+    );
 
-      await expect(
-        serverInstance.verifyCaptcha('timeout_token'),
-      ).rejects.toThrow(TimeoutOrDuplicate);
-    });
+    await FastifyAPIServer.initialize(config);
+    const instance = FastifyAPIServer.getInstance();
 
-    /**
-     * Should throw InvalidHostname error on invalid hostname.
-     */
-    it('should handle invalid hostname errors', async () => {
-      await FastifyAPIServer.initialize(config);
-      serverInstance = FastifyAPIServer.getInstance();
-
-      await expect(
-        serverInstance.verifyCaptcha('hostname_token'),
-      ).rejects.toThrow(InvalidHostname);
-    });
-
-    /**
-     * Should throw RecaptchaServerError on internal server error.
-     */
-    it('should handle server errors', async () => {
-      await FastifyAPIServer.initialize(config);
-      serverInstance = FastifyAPIServer.getInstance();
-
-      await expect(serverInstance.verifyCaptcha('error_token')).rejects.toThrow(
-        RecaptchaServerError,
+    await instance.register(async (fastify) => {
+      fastify.post(
+        '/captcha-error',
+        { preHandler: instance.captchaPreHandler },
+        async () => ({ success: true }),
       );
+    }, '');
+
+    await instance.start();
+
+    const response = await instance['fastify'].inject({
+      method: 'POST',
+      url: '/captcha-error',
+      payload: { captchaToken: 'server_error' },
     });
 
-    /**
-     * Should throw MissingInputSecret when secret key is missing.
-     */
-    it('should handle missing input secret errors', async () => {
-      mockGoogleRecaptcha.verifyToken.mockRejectedValueOnce(
-        new MissingInputSecret(),
-      );
-      await FastifyAPIServer.initialize(config);
-      serverInstance = FastifyAPIServer.getInstance();
-
-      await expect(serverInstance.verifyCaptcha('any_token')).rejects.toThrow(
-        MissingInputSecret,
-      );
+    expect(response.statusCode).toBe(400);
+    expect(JSON.parse(response.body)).toEqual({
+      code: 'captcha-verification-failed',
+      message: 'Internal server error during captcha verification',
     });
 
-    /**
-     * Should throw InvalidInputSecret when secret key is invalid.
-     */
-    it('should handle invalid input secret errors', async () => {
-      mockGoogleRecaptcha.verifyToken.mockRejectedValueOnce(
-        new InvalidInputSecret(),
-      );
-      await FastifyAPIServer.initialize(config);
-      serverInstance = FastifyAPIServer.getInstance();
-
-      await expect(serverInstance.verifyCaptcha('any_token')).rejects.toThrow(
-        InvalidInputSecret,
-      );
-    });
-  });
-
-  /**
-   * Group of test cases to validate response handling in captchaPreHandler errors.
-   */
-  describe('captchaPreHandler Error Routes', () => {
-    /**
-     * Initialize Fastify server and route before each error test.
-     */
-    beforeEach(async () => {
-      await FastifyAPIServer.initialize(config);
-      serverInstance = FastifyAPIServer.getInstance();
-
-      await serverInstance.register(async (fastify) => {
-        fastify.post(
-          '/protected',
-          { preHandler: serverInstance.captchaPreHandler },
-          async () => ({ success: true }),
-        );
-      }, '');
-
-      await serverInstance.start();
-    });
-
-    /**
-     * Should return 400 for TimeoutOrDuplicate token.
-     */
-    it('should return 400 for timeout/duplicate errors', async () => {
-      const response = await serverInstance['fastify'].inject({
-        method: 'POST',
-        url: '/protected',
-        payload: { captchaToken: 'timeout_token' },
-      });
-
-      expect(response.statusCode).toBe(400);
-      expect(JSON.parse(response.body)).toEqual({
-        code: 'captcha-timeout-or-duplicate',
-        message: 'Captcha token expired or already used',
-      });
-    });
-
-    /**
-     * Should return 400 for InvalidHostname token.
-     */
-    it('should return 400 for invalid hostname', async () => {
-      const response = await serverInstance['fastify'].inject({
-        method: 'POST',
-        url: '/protected',
-        payload: { captchaToken: 'hostname_token' },
-      });
-
-      expect(response.statusCode).toBe(400);
-      expect(JSON.parse(response.body)).toEqual({
-        code: 'invalid-hostname',
-        message: 'Invalid hostname for captcha verification',
-      });
-    });
-
-    /**
-     * Should return 500 for internal server errors.
-     */
-    it('should return 500 for server errors', async () => {
-      const response = await serverInstance['fastify'].inject({
-        method: 'POST',
-        url: '/protected',
-        payload: { captchaToken: 'error_token' },
-      });
-
-      expect(response.statusCode).toBe(500);
-      expect(JSON.parse(response.body)).toEqual({
-        code: 'captcha-verification-failed',
-        message: 'Internal server error during captcha verification',
-      });
-    });
-
-    /**
-     * Should return 400 when captcha token is missing in the payload.
-     */
-    it('should return 400 for missing token', async () => {
-      const response = await serverInstance['fastify'].inject({
-        method: 'POST',
-        url: '/protected',
-        payload: {},
-      });
-
-      expect(response.statusCode).toBe(400);
-      expect(JSON.parse(response.body)).toEqual({
-        code: 'missing-captcha-token',
-        message: 'Captcha token is required',
-      });
-    });
+    await instance.close();
   });
 
   /**

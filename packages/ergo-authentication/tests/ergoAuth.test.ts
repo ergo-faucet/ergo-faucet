@@ -1,32 +1,18 @@
 import { describe, it, expect, beforeAll, beforeEach, vi } from 'vitest';
 import { ErgoAuth } from '../lib/ErgoAuth';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
-
-// eslint-disable-next-line
-const mockRedis: any = {
-  get: vi.fn(),
-  set: vi.fn(),
-};
+import {
+  mockFastifyServer,
+  mockRedis,
+  mockUserAddressAction,
+  testAddress,
+} from './ergoAuth.mock';
 
 vi.mock('ioredis', () => {
   return {
     default: vi.fn().mockImplementation(() => mockRedis),
   };
 });
-
-// eslint-disable-next-line
-const mockFastifyServer: any = {
-  register: vi.fn(async () => {}),
-  captchaPreHandler: vi.fn(),
-  setAuthCookie: vi.fn(),
-};
-
-// eslint-disable-next-line
-const mockUserAddressAction: any = {
-  findOrCreateUserWithAddress: async () => ({ id: 1 }),
-};
-
-const testAddress = '9ggSPfdEACEpRKMvpVwXxck9soLC1ZDmYRX9GA5gigSsAoZDNwJ';
 
 describe('ErgoAuth', () => {
   beforeAll(async () => {
@@ -37,6 +23,7 @@ describe('ErgoAuth', () => {
       300,
       3600,
       600,
+      'MAINNET',
       new DummyLogger(),
     );
   });
@@ -45,6 +32,9 @@ describe('ErgoAuth', () => {
     vi.clearAllMocks();
   });
 
+  /**
+   * Tests the `createChallenge` and `verifyChallenge` methods of ErgoAuth.
+   */
   it('should create a challenge and store in redis', async () => {
     const ergoAuth = ErgoAuth.getInstance();
 
@@ -64,6 +54,9 @@ describe('ErgoAuth', () => {
     );
   });
 
+  /**
+   * Tests the `verifyChallenge` method of ErgoAuth with various scenarios.
+   */
   it('should fail if no record in redis', async () => {
     const ergoAuth = ErgoAuth.getInstance();
 
@@ -77,6 +70,9 @@ describe('ErgoAuth', () => {
     }
   });
 
+  /**
+   * Tests the `verifyChallenge` method of ErgoAuth with a challenge mismatch scenario.
+   */
   it('should fail if challenge mismatch', async () => {
     const ergoAuth = ErgoAuth.getInstance();
 
@@ -94,6 +90,9 @@ describe('ErgoAuth', () => {
     if (!result.success) expect(result.code).toBe('challenge-mismatch');
   });
 
+  /**
+   * Tests the `verifyChallenge` method of ErgoAuth with an invalid signature scenario.
+   */
   it('should fail if signature is invalid', async () => {
     const ergoAuth = ErgoAuth.getInstance();
 
@@ -109,6 +108,9 @@ describe('ErgoAuth', () => {
     if (!result.success) expect(result.code).toBe('invalid-signature');
   });
 
+  /**
+   * Tests the `verifyChallenge` method of ErgoAuth with a valid challenge and signature.
+   */
   it('should succeed with valid data', async () => {
     const ergoAuth = ErgoAuth.getInstance();
 
@@ -123,6 +125,9 @@ describe('ErgoAuth', () => {
     expect(result.success).toBe(true);
   });
 
+  /**
+   * Tests the `registerRoutes` method of ErgoAuth to ensure it registers the expected routes.
+   */
   it('should register 3 routes', async () => {
     const ergoAuth = ErgoAuth.getInstance();
     await ergoAuth.registerRoutes('/ergo-auth');
