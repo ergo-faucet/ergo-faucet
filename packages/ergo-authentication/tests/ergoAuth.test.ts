@@ -45,7 +45,7 @@ describe('ErgoAuth', () => {
   });
 
   /**
-   * Tests the `createChallenge` and `verifyChallenge` methods of ErgoAuth.
+   * Tests `createChallenge` stores proper UUID in Redis
    */
   it('should create a challenge and store in redis', async () => {
     const ergoAuth = ErgoAuth.getInstance();
@@ -67,7 +67,7 @@ describe('ErgoAuth', () => {
   });
 
   /**
-   * Tests the `verifyChallenge` method of ErgoAuth with various scenarios.
+   * Should fail if no record found in Redis
    */
   it('should fail if no record in redis', async () => {
     const ergoAuth = ErgoAuth.getInstance();
@@ -83,7 +83,7 @@ describe('ErgoAuth', () => {
   });
 
   /**
-   * Tests the `verifyChallenge` method of ErgoAuth with a challenge mismatch scenario.
+   * Should fail on challenge mismatch
    */
   it('should fail if challenge mismatch', async () => {
     const ergoAuth = ErgoAuth.getInstance();
@@ -103,7 +103,7 @@ describe('ErgoAuth', () => {
   });
 
   /**
-   * Tests the `verifyChallenge` method of ErgoAuth with an invalid signature scenario.
+   * Should fail if signature invalid
    */
   it('should fail if signature is invalid', async () => {
     const ergoAuth = ErgoAuth.getInstance();
@@ -121,7 +121,7 @@ describe('ErgoAuth', () => {
   });
 
   /**
-   * Tests the `verifyChallenge` method of ErgoAuth with a valid challenge and signature.
+   *  Should succeed with valid challenge & valid signature
    */
   it('should succeed with valid data', async () => {
     const ergoAuth = ErgoAuth.getInstance();
@@ -138,7 +138,43 @@ describe('ErgoAuth', () => {
   });
 
   /**
-   * Tests the `registerRoutes` method of ErgoAuth to ensure it registers the expected routes.
+   *  Should gracefully handle JSON parse errors in getChallengeRecord
+   */
+  it('should return null if redis data is malformed JSON', async () => {
+    const ergoAuth = ErgoAuth.getInstance();
+
+    mockRedis.get.mockResolvedValueOnce('INVALID_JSON');
+
+    const record = await ergoAuth.getChallengeRecord(testAddress);
+
+    expect(record).toBeNull();
+  });
+
+  /**
+   * Should validate MAINNET vs TESTNET correctly
+   */
+  it('should reject TESTNET address when running on MAINNET', () => {
+    const ergoAuth = ErgoAuth.getInstance();
+
+    // This is a valid TESTNET prefix address (network byte 0x10)
+    const testnetAddress =
+      '3WxrAftnTJSGP91VEhRQWYviUG26XQNoPKciqqcBD86VPVS5Zn13';
+    const isValid = ergoAuth.isvalidErgoAddress(testnetAddress);
+
+    expect(isValid).toBe(false);
+  });
+
+  it('should accept valid MAINNET address', () => {
+    const ergoAuth = ErgoAuth.getInstance();
+
+    const mainnetAddr = '9fq3mgbL6UgzV33dC4R2n8L3CFSrBUytME8JKD8xDKgj8BDTLX7';
+    const isValid = ergoAuth.isvalidErgoAddress(mainnetAddr);
+
+    expect(isValid).toBe(true);
+  });
+
+  /**
+   * Should register exactly 3 routes (/challenge, /auth, /refresh-token)
    */
   it('should register 3 routes', async () => {
     const ergoAuth = ErgoAuth.getInstance();
