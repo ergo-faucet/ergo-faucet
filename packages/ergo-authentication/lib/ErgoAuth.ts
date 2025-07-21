@@ -133,9 +133,12 @@ export class ErgoAuth {
         ? network === 0
         : network === 16;
     } catch (err) {
-      this.logger.debug(
-        `Invalid Ergo address Network: ${address} with error: ${err}`,
-      );
+      if (err instanceof Error) {
+        this.logger.debug(`Invalid Ergo address Network: ${address}`, {
+          message: err.message,
+          stack: err.stack,
+        });
+      }
       return false;
     }
   };
@@ -160,7 +163,12 @@ export class ErgoAuth {
       const record: ChallengeRecord = JSON.parse(raw);
       return record;
     } catch (err) {
-      this.logger.debug(`Failed to parse challenge for ${address}: ${err}`);
+      if (err instanceof Error) {
+        this.logger.debug(`Failed to parse challenge for ${address}`, {
+          message: err.message,
+          stack: err.stack,
+        });
+      }
       return null;
     }
   }
@@ -185,7 +193,12 @@ export class ErgoAuth {
       const prover = new Prover();
       return prover.verify(message, proofBytes, publicKey);
     } catch (err) {
-      this.logger.debug(`Failed to verify signature: ${err}`);
+      if (err instanceof Error) {
+        this.logger.debug(`Failed to verify signature`, {
+          message: err.message,
+          stack: err.stack,
+        });
+      }
       return false;
     }
   };
