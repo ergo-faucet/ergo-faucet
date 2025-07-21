@@ -18,13 +18,14 @@ import { config, mockGoogleRecaptcha } from './mockData';
 
 /**
  * Test suite for the FastifyAPIServer class.
- * This suite tests the initialization, route registration, JWT handling, and server start functionality.
+ * This suite validates initialization, route registration, cookie handling, reCAPTCHA verification,
+ * and general server lifecycle (start/stop).
  */
 describe('FastifyAPIServer', () => {
   let serverInstance: FastifyAPIServer;
 
   /**
-   * Reset the FastifyAPIServer instance before each test.
+   * Reset FastifyAPIServer singleton before each test to ensure a clean state.
    */
   beforeEach(() => {
     vi.clearAllMocks();
@@ -43,7 +44,13 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to initialize the server properly.
+   * Test for initializing the FastifyAPIServer successfully
+   * @target FastifyAPIServer.initialize
+   * @scenario
+   * - Call initialize with valid config
+   * - Retrieve instance via getInstance
+   * @expected
+   * - getInstance returns an instance of FastifyAPIServer
    */
   it('should initialize the server instance', async () => {
     await FastifyAPIServer.initialize(config);
@@ -52,7 +59,12 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify that an error is thrown if the instance is not initialized.
+   * Test for accessing FastifyAPIServer before initialization
+   * @target FastifyAPIServer.getInstance
+   * @scenario
+   * - Directly call getInstance without calling initialize
+   * @expected
+   * - should throw "FastifyAPIServer instance has not been initialized."
    */
   it('should throw an error if instance is not initialized', () => {
     expect(() => FastifyAPIServer.getInstance()).toThrow(
@@ -61,7 +73,13 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify that an error is thrown if trying to initialize the server twice.
+   * Test for double initialization of FastifyAPIServer
+   * @target FastifyAPIServer.initialize
+   * @scenario
+   * - Initialize once successfully
+   * - Try to initialize again
+   * @expected
+   * - should reject with "FastifyAPIServer instance has already been initialized."
    */
   it('should throw an error if trying to initialize twice', async () => {
     await FastifyAPIServer.initialize(config);
@@ -71,7 +89,15 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify that routes are registered with a prefix and respond to requests.
+   * Test for route registration and HTTP response
+   * @target FastifyAPIServer.register
+   * @scenario
+   * - Initialize server
+   * - Register a test route with a prefix
+   * - Start server and inject request
+   * @expected
+   * - route is called
+   * - server responds 200 with "Hello World"
    */
   it('should register routes with a prefix and respond to requests', async () => {
     await FastifyAPIServer.initialize(config);
@@ -81,14 +107,11 @@ describe('FastifyAPIServer', () => {
       fastify.get('/', async () => 'Hello World');
     });
 
-    // Register the route
     await instance.register(routeCallback, '/test');
     expect(routeCallback).toHaveBeenCalled();
 
-    // Start the server
     await instance.start();
 
-    // A request to the server
     const response = await instance['fastify'].inject({
       method: 'GET',
       url: `/test`,
@@ -97,23 +120,33 @@ describe('FastifyAPIServer', () => {
     expect(response.statusCode).toBe(200);
     expect(response.body).toBe('Hello World');
 
-    // free the host and port
     await instance.close();
   });
 
   /**
-   * Test case to verify that the server starts with no errors.
+   * Test for starting the server with correct config
+   * @target FastifyAPIServer.start
+   * @scenario
+   * - Initialize server with valid port
+   * - Call start()
+   * @expected
+   * - should resolve without throwing errors
    */
   it('should start the server with no errors', async () => {
     await FastifyAPIServer.initialize(config);
     const instance = FastifyAPIServer.getInstance();
     await expect(instance.start()).resolves.not.toThrow();
-    // free the host and port
     await instance.close();
   });
 
   /**
-   * Test case to verify that an error is thrown when starting the server on a wrong port number.
+   * Test for starting the server with invalid port
+   * @target FastifyAPIServer.start
+   * @scenario
+   * - Initialize server with invalid port (-1)
+   * - Call start()
+   * @expected
+   * - should throw RangeError
    */
   it('should throw an error when starting on wrong port', async () => {
     const errorConfig = { ...config, port: -1 };
@@ -123,7 +156,14 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify that the authentication cookie is set correctly.
+   * Test for auth cookie creation
+   * @target FastifyAPIServer.setAuthCookie
+   * @scenario
+   * - Register a route that sets auth cookie after JWT sign
+   * - Call the route and inspect cookie
+   * @expected
+   * - Cookie name is "auth_token"
+   * - It’s httpOnly and has a value
    */
   it('should set auth cookie correctly', async () => {
     await FastifyAPIServer.initialize(config);
@@ -151,7 +191,13 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify the captchaPreHandler middleware.
+   * Test for cookie options correctness
+   * @target FastifyAPIServer.setAuthCookie
+   * @scenario
+   * - Register a route and set cookie
+   * - Inspect Set-Cookie header
+   * @expected
+   * - header includes auth_token, HttpOnly, Path=/, Max-Age
    */
   it('should set auth cookie with correct options', async () => {
     await FastifyAPIServer.initialize(config);
@@ -178,7 +224,13 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify the captcha verification method directly.
+   * Test for verifying captcha directly
+   * @target FastifyAPIServer.verifyCaptcha
+   * @scenario
+   * - mock verifyToken returns true for valid_token, false for bad_token
+   * @expected
+   * - returns true for valid_token
+   * - returns false for bad_token
    */
   it('should verify captcha directly', async () => {
     await FastifyAPIServer.initialize(config);
@@ -194,11 +246,15 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify the captchaPreHandler middleware.
+   * Test for captchaPreHandler catching RecaptchaClientError
+   * @target FastifyAPIServer.captchaPreHandler
+   * @scenario
+   * - mock verifyToken throws RecaptchaClientError
+   * - call route protected by captchaPreHandler
+   * @expected
+   * - responds with 400 and code captcha-verification-failed
    */
-
   it('should handle RecaptchaClientError in captchaPreHandler', async () => {
-    // simulate client error
     mockGoogleRecaptcha.verifyToken.mockRejectedValueOnce(
       new RecaptchaClientError('Client-side issue'),
     );
@@ -232,7 +288,17 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify the captchaPreHandler middleware protects a route correctly.
+   * Test for protecting route with captchaPreHandler
+   * @target FastifyAPIServer.captchaPreHandler
+   * @scenario
+   * - Register POST route with captchaPreHandler
+   * - Send empty payload → missing token
+   * - Send invalid token → invalid-captcha-token
+   * - Send valid token → success
+   * @expected
+   * - returns 400 with missing-captcha-token
+   * - returns 400 with invalid-captcha-token
+   * - returns 200 with { success: true }
    */
   it('should protect a route using captchaPreHandler', async () => {
     await FastifyAPIServer.initialize(config);
@@ -282,10 +348,15 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test case to verify the captchaPreHandler handles RecaptchaServerError correctly.
+   * Test for captchaPreHandler catching RecaptchaServerError
+   * @target FastifyAPIServer.captchaPreHandler
+   * @scenario
+   * - mock verifyToken throws RecaptchaServerError
+   * - call route protected by captchaPreHandler
+   * @expected
+   * - responds with 500 and internal server error message
    */
   it('should handle RecaptchaServerError in captchaPreHandler', async () => {
-    // simulate server error
     mockGoogleRecaptcha.verifyToken.mockRejectedValueOnce(
       new RecaptchaServerError('Internal error'),
     );
@@ -309,7 +380,7 @@ describe('FastifyAPIServer', () => {
       payload: { captchaToken: 'server_error' },
     });
 
-    expect(response.statusCode).toBe(400);
+    expect(response.statusCode).toBe(500);
     expect(JSON.parse(response.body)).toEqual({
       code: 'captcha-verification-failed',
       message: 'Internal server error during captcha verification',
@@ -319,11 +390,16 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Group of tests to verify reCAPTCHA score threshold behavior.
+   * Test group for reCAPTCHA score threshold behavior
    */
   describe('reCAPTCHA Score Threshold', () => {
     /**
-     * Should reject tokens that are below the acceptable score threshold.
+     * Test for rejecting low-score tokens
+     * @target FastifyAPIServer.verifyCaptcha
+     * @scenario
+     * - mock verifyToken resolves false
+     * @expected
+     * - verifyCaptcha returns false
      */
     it('should reject tokens below score threshold', async () => {
       mockGoogleRecaptcha.verifyToken.mockResolvedValueOnce(false);
@@ -336,7 +412,12 @@ describe('FastifyAPIServer', () => {
     });
 
     /**
-     * Should accept tokens that are above the acceptable score threshold.
+     * Test for accepting high-score tokens
+     * @target FastifyAPIServer.verifyCaptcha
+     * @scenario
+     * - mock verifyToken resolves true
+     * @expected
+     * - verifyCaptcha returns true
      */
     it('should accept tokens above score threshold', async () => {
       mockGoogleRecaptcha.verifyToken.mockResolvedValueOnce(true);

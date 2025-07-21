@@ -225,7 +225,16 @@ export class FastifyAPIServer {
           message: err.message,
         });
       } else if (err instanceof RecaptchaServerError) {
-        return res.status(400).send({
+        return res.status(500).send({
+          code: 'captcha-verification-failed',
+          message: 'Internal server error during captcha verification',
+        });
+      } else if (err instanceof Error) {
+        this.logger.debug('captcha-verification-failed', {
+          message: err.message,
+          stack: err.stack,
+        });
+        return res.status(500).send({
           code: 'captcha-verification-failed',
           message: 'Internal server error during captcha verification',
         });

@@ -24,7 +24,7 @@ import {
 } from '@ergo-faucet/fastify-server';
 import { UserAddressAction } from '@ergo-faucet/database';
 import { hex } from '@fleet-sdk/crypto';
-import { ErgoAddress, ErgoMessage } from '@fleet-sdk/core';
+import { ErgoAddress, ErgoMessage, Network } from '@fleet-sdk/core';
 import { Prover } from '@fleet-sdk/wallet';
 
 export class ErgoAuth {
@@ -37,7 +37,7 @@ export class ErgoAuth {
   private readonly challengeExpirySeconds: number;
   private readonly refreshTokenExpirySeconds: number;
   private readonly accessTokenExpirySeconds: number;
-  private readonly NETWORK_ADDRESS: 'MAINNET' | 'TESTNET' = 'MAINNET';
+  private readonly NETWORK_ADDRESS: Network;
   private readonly ERGO_AUTH_PREFIX = '/ergo-auth';
 
   /**
@@ -45,9 +45,9 @@ export class ErgoAuth {
    * @param redisConfig - Redis connection string or options.
    * @param fastifyServer - Fastify server instance for API integration.
    * @param userAddressAction - User address action instance for database interactions.
-   * @param challengeExpirySeconds -  expiry time for challenges in seconds
-   * @param refreshTokenExpirySeconds -  expiry time for refresh token in seconds
-   * @param accessTokenExpirySeconds -  expiry time for access token in seconds
+   * @param challengeExpirySeconds - Expiry time for challenges in seconds
+   * @param refreshTokenExpirySeconds - Expiry time for refresh token in seconds
+   * @param accessTokenExpirySeconds -  Expiry time for access token in seconds
    * @param networkAddress - The network address (MAINNET or TESTNET).
    * @param logger - Optional logger instance.
    */
@@ -58,7 +58,7 @@ export class ErgoAuth {
     challengeExpirySeconds: number,
     refreshTokenExpirySeconds: number,
     accessTokenExpirySeconds: number,
-    networkAddress: 'MAINNET' | 'TESTNET' = 'MAINNET',
+    networkAddress: Network,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ?? new DummyLogger();
@@ -76,12 +76,11 @@ export class ErgoAuth {
    * @param redisConfig - Redis connection string or options.
    * @param fastifyServer - Fastify server instance for API integration.
    * @param userAddressAction - User address action instance for database interactions.
-   * @param challengeExpirySeconds -  expiry time for challenges in seconds
-   * @param refreshTokenExpirySeconds -  expiry time for refresh token in seconds
-   * @param accessTokenExpirySeconds -  expiry time for access token in seconds
+   * @param challengeExpirySeconds - Expiry time for challenges in seconds
+   * @param refreshTokenExpirySeconds - Expiry time for refresh token in seconds
+   * @param accessTokenExpirySeconds - Expiry time for access token in seconds
    * @param networkAddress - The network address (MAINNET or TESTNET).
    * @param logger - Optional logger instance.
-   * @throws Error if already initialized.
    */
   public static async initialize(
     redisConfig: RedisOptions,
@@ -90,7 +89,7 @@ export class ErgoAuth {
     challengeExpirySeconds: number,
     refreshTokenExpirySeconds: number,
     accessTokenExpirySeconds: number,
-    networkAddress: 'MAINNET' | 'TESTNET',
+    networkAddress: Network,
     logger?: AbstractLogger,
   ): Promise<void> {
     if (this.instance) {
@@ -107,6 +106,7 @@ export class ErgoAuth {
       logger,
     );
     await this.instance.registerRoutes(this.instance.ERGO_AUTH_PREFIX);
+    this.instance.logger.debug('ergoAuth initialized');
   }
 
   /**
@@ -129,9 +129,7 @@ export class ErgoAuth {
   public isvalidErgoAddress = (address: string): boolean => {
     try {
       const network = ErgoAddress.fromBase58(address).network;
-      return this.NETWORK_ADDRESS === 'MAINNET'
-        ? network === 0
-        : network === 16;
+      return this.NETWORK_ADDRESS === network;
     } catch (err) {
       if (err instanceof Error) {
         this.logger.debug(`Invalid Ergo address Network: ${address}`, {
@@ -257,7 +255,9 @@ export class ErgoAuth {
     }
 
     const isValidSignature = this.verifySignature(address, challenge, proof);
-    this.logger.debug(`Signature valid: ${isValidSignature} for ${address}`);
+    this.logger.debug(
+      `Signature valid: ${isValidSignature} for address: ${address} with challenge: ${challenge} and proof: ${proof} `,
+    );
 
     if (!isValidSignature) {
       return {
@@ -275,25 +275,7 @@ export class ErgoAuth {
    *
    * @param fastify - Fastify instance.
    * @returns Promise<void>
-   *
-   * **Description:**
-   * This route allows users to initiate a challenge for authentication.
-   *
-   * **Request Body:**
-   * - `address` (string) → The user wallet address.
-   *
-   * **Behavior:**
-   * - Validates the provided address against the configured network.
-   * - Validates that the address is provided and not empty.
-   * - Generates a challenge string.
-   * - Stores the challenge in Redis with an expiry time.
-   *
-   * **Responses:**
-   * - `200 OK` → `{ challenge: string }`
-   * - `400 Bad Request` → `{ error: 'Invalid address', code: 'invalid-address' }`
-   *
-   * **Throws:**
-   * - `400` if the address is missing or invalid.
+   * - `200 OK `{ challenge: string , address: stting }`
    */
   private challengeRoute = async (
     fastify: FastifySeverInstance,
@@ -322,41 +304,16 @@ export class ErgoAuth {
       async (request, reply) => {
         const { address } = request.body;
         const challenge = await this.createChallenge(address);
-        return reply.send({ challenge });
+        return reply.status(200).send({ challenge, address });
       },
     );
   };
 
   /**
    * Creates the `/auth` route definition.
-   *
    * @param fastify - Fastify instance.
    * @returns Promise<void>
-   *
-   * **Description:**
-   * This route allows users to verify their challenge response and complete authentication.
-   *
-   * **Request Body:**
-   * - `address` (string) → Wallet address of the user.
-   * - `challenge` (string) → The original challenge string signed by the user.
-   * - `proof` (string) → The signature proof of the challenge.
-   * - `captchaToken` (string) → reCAPTCHA token for bot protection.
-   *
-   * **Behavior:**
-   * - Runs the `captchaPreHandler` to verify the captcha token.
-   * - Validates the provided address against the configured network.
-   * - Verifies the provided challenge and proof.
-   * - Creates or retrieves the user from the database.
-   * - Issues a `refreshToken` (stored in `auth_token` cookie) and an `accessToken`.
-   *
-   * **Responses:**
-   * - `200 OK` → `{ success: true, payload: {address , userId }, accessToken: string }`
-   * - `400 Bad Request` → `{ error: string, code: string }` (captcha or malformed input)
-   * - `401 Unauthorized` → `{ error: 'Invalid challenge', code: 'challenge-verification-failed' }`
-   *
-   * **Throws:**
-   * - `401` if the challenge verification fails.
-   * - `401` if the captcha verification fails.
+   * - `200 OK `{ success: true, payload: {address: string , userId: number }, accessToken: string }`
    */
   private authenticationRoute = async (
     fastify: FastifySeverInstance,
@@ -426,27 +383,9 @@ export class ErgoAuth {
 
   /**
    * Creates the `/refresh-token` route definition.
-   *
    * @param fastify - Fastify instance.
    * @returns Promise<void>
-   *
-   * **Description:**
-   * This route allows users to refresh their JWT `accessToken`
-   * using the `auth_token` cookie (refresh token).
-   *
-   * **Request Body:**
-   * - (none) – Uses `auth_token` cookie for authentication.
-   *
-   * **Behavior:**
-   * - Verifies the `auth_token` cookie using `jwtVerify`.
-   * - If valid, issues a new `accessToken` with a fresh expiry time.
-   *
-   * **Responses:**
-   * - `200 OK` → `{ success: true, newToken: string }`
-   * - `401 Unauthorized` → `{ error: 'Invalid or expired token' }`
-   *
-   * **Throws:**
-   * - `401` if no cookie is present, or if the token is invalid/expired.
+   * - `200 OK `{ success: true, newToken: string }`
    */
   private refreshTokenRoute = async (
     fastify: FastifySeverInstance,
@@ -474,7 +413,12 @@ export class ErgoAuth {
 
           return reply.send({ success: true, newToken });
         } catch (err) {
-          this.logger.debug(`Token refresh failed: ${err}`);
+          if (err instanceof Error) {
+            this.logger.debug(`Token refresh failed:`, {
+              message: err.message,
+              stack: err.stack,
+            });
+          }
           return reply.status(401).send({ error: 'Invalid or expired token' });
         }
       },
