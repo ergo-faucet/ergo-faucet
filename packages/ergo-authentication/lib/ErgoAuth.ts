@@ -106,7 +106,7 @@ export class ErgoAuth {
       logger,
     );
     await this.instance.registerRoutes(this.instance.ERGO_AUTH_PREFIX);
-    this.instance.logger.debug('ergoAuth initialized');
+    this.instance.logger.info(`ErgoAuth initialized successfully.`);
   }
 
   /**

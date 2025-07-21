@@ -22,7 +22,7 @@ import { config, mockGoogleRecaptcha } from './mockData';
  * and general server lifecycle (start/stop).
  */
 describe('FastifyAPIServer', () => {
-  let serverInstance: FastifyAPIServer;
+  let serverInstance: FastifyAPIServer | undefined;
 
   /**
    * Reset FastifyAPIServer singleton before each test to ensure a clean state.
@@ -36,6 +36,7 @@ describe('FastifyAPIServer', () => {
   afterEach(async () => {
     if (serverInstance) {
       await serverInstance.close().catch(() => {});
+      serverInstance = undefined;
     }
   });
 
@@ -224,28 +225,6 @@ describe('FastifyAPIServer', () => {
   });
 
   /**
-   * Test for verifying captcha directly
-   * @target FastifyAPIServer.verifyCaptcha
-   * @scenario
-   * - mock verifyToken returns true for valid_token, false for bad_token
-   * @expected
-   * - returns true for valid_token
-   * - returns false for bad_token
-   */
-  it('should verify captcha directly', async () => {
-    await FastifyAPIServer.initialize(config);
-    const instance = FastifyAPIServer.getInstance();
-
-    const isValid = await instance.verifyCaptcha('valid_token');
-    expect(isValid).toBe(true);
-
-    const isInvalid = await instance.verifyCaptcha('some_bad_token');
-    expect(isInvalid).toBe(false);
-
-    expect(mockGoogleRecaptcha.verifyToken).toHaveBeenCalledTimes(2);
-  });
-
-  /**
    * Test for captchaPreHandler catching RecaptchaClientError
    * @target FastifyAPIServer.captchaPreHandler
    * @scenario
@@ -387,46 +366,5 @@ describe('FastifyAPIServer', () => {
     });
 
     await instance.close();
-  });
-
-  /**
-   * Test group for reCAPTCHA score threshold behavior
-   */
-  describe('reCAPTCHA Score Threshold', () => {
-    /**
-     * Test for rejecting low-score tokens
-     * @target FastifyAPIServer.verifyCaptcha
-     * @scenario
-     * - mock verifyToken resolves false
-     * @expected
-     * - verifyCaptcha returns false
-     */
-    it('should reject tokens below score threshold', async () => {
-      mockGoogleRecaptcha.verifyToken.mockResolvedValueOnce(false);
-
-      await FastifyAPIServer.initialize(config);
-      serverInstance = FastifyAPIServer.getInstance();
-
-      const isValid = await serverInstance.verifyCaptcha('low_score_token');
-      expect(isValid).toBe(false);
-    });
-
-    /**
-     * Test for accepting high-score tokens
-     * @target FastifyAPIServer.verifyCaptcha
-     * @scenario
-     * - mock verifyToken resolves true
-     * @expected
-     * - verifyCaptcha returns true
-     */
-    it('should accept tokens above score threshold', async () => {
-      mockGoogleRecaptcha.verifyToken.mockResolvedValueOnce(true);
-
-      await FastifyAPIServer.initialize(config);
-      serverInstance = FastifyAPIServer.getInstance();
-
-      const isValid = await serverInstance.verifyCaptcha('high_score_token');
-      expect(isValid).toBe(true);
-    });
   });
 });

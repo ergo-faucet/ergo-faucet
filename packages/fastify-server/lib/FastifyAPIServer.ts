@@ -172,17 +172,6 @@ export class FastifyAPIServer {
   };
 
   /**
-   * Verifies the captcha token using the Google Recaptcha instance.
-   * @param captchaToken - The captcha token from the client.
-   * @returns Promise that resolves to a boolean indicating if the token is valid
-   * @throws Error with statusCode and code if verification fails.
-   */
-  public verifyCaptcha = async (captchaToken: string): Promise<boolean> => {
-    const isValid = await this.googleRecaptcha.verifyToken(captchaToken);
-    return isValid;
-  };
-
-  /**
    * Pre-handler hook that verifies captcha before executing the route handler.
    * If captcha validation fails, it sends an error response.
    * @param req - FastifyRequest (expects `captchaToken` inside request body)
