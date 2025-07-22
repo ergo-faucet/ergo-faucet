@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1752565759115 implements MigrationInterface {
-  name = 'Migration1752565759115';
+export class Migration1753177845495 implements MigrationInterface {
+  name = 'Migration1753177845495';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -25,6 +25,9 @@ export class Migration1752565759115 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "discord_id" bigint,
+                "name" varchar,
+                "metadata" text,
                 "lastLogin" bigint
             )
         `);
@@ -34,7 +37,7 @@ export class Migration1752565759115 implements MigrationInterface {
                 "verifiedAt" date NOT NULL,
                 "status" text NOT NULL,
                 "expiresAt" date,
-                "authMetaData" text,
+                "metadata" text,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer NOT NULL
@@ -146,7 +149,7 @@ export class Migration1752565759115 implements MigrationInterface {
                 "verifiedAt" date NOT NULL,
                 "status" text NOT NULL,
                 "expiresAt" date,
-                "authMetaData" text,
+                "metadata" text,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer NOT NULL,
@@ -161,7 +164,7 @@ export class Migration1752565759115 implements MigrationInterface {
                     "verifiedAt",
                     "status",
                     "expiresAt",
-                    "authMetaData",
+                    "metadata",
                     "userId",
                     "authMethodId",
                     "packageId"
@@ -170,7 +173,7 @@ export class Migration1752565759115 implements MigrationInterface {
                 "verifiedAt",
                 "status",
                 "expiresAt",
-                "authMetaData",
+                "metadata",
                 "userId",
                 "authMethodId",
                 "packageId"
@@ -321,7 +324,7 @@ export class Migration1752565759115 implements MigrationInterface {
                 "verifiedAt" date NOT NULL,
                 "status" text NOT NULL,
                 "expiresAt" date,
-                "authMetaData" text,
+                "metadata" text,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer NOT NULL
@@ -333,7 +336,7 @@ export class Migration1752565759115 implements MigrationInterface {
                     "verifiedAt",
                     "status",
                     "expiresAt",
-                    "authMetaData",
+                    "metadata",
                     "userId",
                     "authMethodId",
                     "packageId"
@@ -342,7 +345,7 @@ export class Migration1752565759115 implements MigrationInterface {
                 "verifiedAt",
                 "status",
                 "expiresAt",
-                "authMetaData",
+                "metadata",
                 "userId",
                 "authMethodId",
                 "packageId"
