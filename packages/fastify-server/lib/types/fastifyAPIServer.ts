@@ -3,6 +3,9 @@ import { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { Server, IncomingMessage, ServerResponse } from 'http';
 import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
+import fastifyJwt from '@fastify/jwt';
+import fastifyCookie from '@fastify/cookie';
+import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
 
 export interface ServerConfig {
   port: number;
@@ -14,6 +17,7 @@ export interface ServerConfig {
   jwtSecret: string;
   jwtExpiration: number;
   cookie: CookieConfig;
+  googleRecaptcha: GoogleRecaptcha;
 }
 
 export type FastifySeverInstance = FastifyInstance<
@@ -23,9 +27,13 @@ export type FastifySeverInstance = FastifyInstance<
   ServerResponse<IncomingMessage>,
   FastifyBaseLogger,
   TypeBoxTypeProvider
->;
+> &
+  Partial<typeof fastifyJwt> &
+  Partial<typeof fastifyCookie>;
 
 export interface CookieConfig {
+  secret: string;
+  signed: boolean;
   name: string;
   httpOnly: boolean;
   secure: boolean;

@@ -1,11 +1,17 @@
-import fastify, { FastifyReply } from 'fastify';
+import fastify, { FastifyReply, FastifyRequest } from 'fastify';
 import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig, FastifySeverInstance, CookieConfig } from './types';
-import fastifyJwt from '@fastify/jwt';
-import fastifyCookie from '@fastify/cookie';
+import jwt from '@fastify/jwt';
+import cookie from '@fastify/cookie';
+import {
+  GoogleRecaptcha,
+  RecaptchaClientError,
+  RecaptchaServerError,
+} from '@ergo-faucet/google-recaptcha';
+import { HookHandlerDoneFunction } from 'fastify/types/hooks';
 
 /**
  * Fastify-based API server implementation.
@@ -25,6 +31,7 @@ export class FastifyAPIServer {
   private jwtExpiration: number;
   private cookieConfig: CookieConfig;
   private logger: AbstractLogger;
+  private googleRecaptcha: GoogleRecaptcha;
 
   /**
    * Private constructor to enforce singleton pattern.
@@ -41,6 +48,7 @@ export class FastifyAPIServer {
     this.jwtSecret = config.jwtSecret;
     this.jwtExpiration = config.jwtExpiration;
     this.cookieConfig = config.cookie;
+    this.googleRecaptcha = config.googleRecaptcha;
 
     this.fastify = fastify({
       logger: config.activeFastifyLogger,
@@ -80,13 +88,18 @@ export class FastifyAPIServer {
     await this.instance.fastify.register(fastifyCors, {
       origin: this.instance.corsOrigins,
     });
-
-    await this.instance.fastify.register(fastifyJwt, {
-      secret: this.instance.jwtSecret,
-      sign: { expiresIn: this.instance.jwtExpiration },
+    await this.instance.fastify.register(cookie, {
+      secret: this.instance.cookieConfig.secret,
     });
 
-    await this.instance.fastify.register(fastifyCookie);
+    await this.instance.fastify.register(jwt, {
+      secret: this.instance.jwtSecret,
+      cookie: {
+        cookieName: this.instance.cookieConfig.name,
+        signed: this.instance.cookieConfig.signed,
+      },
+      sign: { expiresIn: this.instance.jwtExpiration },
+    });
 
     await this.instance.fastify.register(fastifySwagger, this.instance.swagger);
     await this.instance.fastify.register(
@@ -138,36 +151,6 @@ export class FastifyAPIServer {
   };
 
   /**
-   * Generate a signed JWT.
-   * @param payload - Payload to include in the JWT.
-   */
-  public signJWT = <T extends object>(payload: T): string => {
-    return this.fastify.jwt.sign(payload);
-  };
-
-  /**
-   * Verify a JWT and return the decoded payload.
-   * @param token - The JWT token string.
-   */
-  public verifyJWT = <T extends object>(token: string): T => {
-    return this.fastify.jwt.verify<T>(token);
-  };
-
-  /**
-   * Refresh a JWT by verifying it and issuing a new one with the same payload.
-   * @param token - The old JWT token.
-   * @returns A new signed JWT token.
-   * @throws Error if the token is invalid or expired.
-   */
-  public refreshJWT = <T extends object>(token: string): string => {
-    const decoded = this.verifyJWT<T>(token);
-
-    const newToken = this.signJWT(decoded);
-
-    return newToken;
-  };
-
-  /**
    * Sets an authentication cookie in the response.
    * @param reply - The Fastify reply object to set the cookie on.
    * @param token - The JWT token to set in the cookie.
@@ -188,6 +171,65 @@ export class FastifyAPIServer {
     );
   };
 
+  /**
+   * Pre-handler hook that verifies captcha before executing the route handler.
+   * If captcha validation fails, it sends an error response.
+   * @param req - FastifyRequest (expects `captchaToken` inside request body)
+   * @param res - FastifyReply (used to send early error responses)
+   * @param next - HookHandlerDoneFunction to continue request if captcha is valid
+   *
+   */
+  public captchaPreHandler = async <
+    T extends FastifyRequest,
+    U extends FastifyReply,
+  >(
+    req: T,
+    res: U,
+    next: HookHandlerDoneFunction,
+  ) => {
+    const { captchaToken } = req.body as { captchaToken: string };
+
+    try {
+      if (!captchaToken) {
+        return res.status(400).send({
+          code: 'missing-captcha-token',
+          message: 'Captcha token is required',
+        });
+      }
+
+      const isValid = await this.googleRecaptcha.verifyToken(captchaToken);
+
+      if (isValid) {
+        next();
+      } else {
+        return res.status(400).send({
+          code: 'invalid-captcha-token',
+          message: 'Invalid captcha token',
+        });
+      }
+    } catch (err) {
+      if (err instanceof RecaptchaClientError) {
+        return res.status(400).send({
+          code: 'captcha-verification-failed',
+          message: err.message,
+        });
+      } else if (err instanceof RecaptchaServerError) {
+        return res.status(500).send({
+          code: 'captcha-verification-failed',
+          message: 'Internal server error during captcha verification',
+        });
+      } else if (err instanceof Error) {
+        this.logger.debug('captcha-verification-failed', {
+          message: err.message,
+          stack: err.stack,
+        });
+        return res.status(500).send({
+          code: 'captcha-verification-failed',
+          message: 'Internal server error during captcha verification',
+        });
+      }
+    }
+  };
   /**
    * Closes the already running server
    * @returns Promise that resolves when the server is closed
