@@ -258,7 +258,7 @@ describe('FastifyAPIServer', () => {
     });
 
     expect(response.statusCode).toBe(400);
-    expect(JSON.parse(response.body)).toEqual({
+    expect(JSON.parse(response.body)).deep.equal({
       code: 'captcha-verification-failed',
       message: 'Client-side issue',
     });
@@ -299,7 +299,7 @@ describe('FastifyAPIServer', () => {
       payload: {},
     });
     expect(resMissing.statusCode).toBe(400);
-    expect(JSON.parse(resMissing.body)).toEqual({
+    expect(JSON.parse(resMissing.body)).deep.equal({
       code: 'missing-captcha-token',
       message: 'Captcha token is required',
     });
@@ -360,7 +360,7 @@ describe('FastifyAPIServer', () => {
     });
 
     expect(response.statusCode).toBe(500);
-    expect(JSON.parse(response.body)).toEqual({
+    expect(JSON.parse(response.body)).deep.equal({
       code: 'captcha-verification-failed',
       message: 'Internal server error during captcha verification',
     });
