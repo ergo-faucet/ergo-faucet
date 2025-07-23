@@ -82,7 +82,7 @@ export class ErgoAuth {
    * @param networkAddress - The network address (MAINNET or TESTNET).
    * @param logger - Optional logger instance.
    */
-  public static async initialize(
+  public static initialize = async (
     redisConfig: RedisOptions,
     fastifyServer: FastifyAPIServer,
     userAddressAction: UserAddressAction,
@@ -91,7 +91,7 @@ export class ErgoAuth {
     accessTokenExpirySeconds: number,
     networkAddress: Network,
     logger?: AbstractLogger,
-  ): Promise<void> {
+  ): Promise<void> => {
     if (this.instance) {
       throw new Error('ErgoAuth has already been initialized.');
     }
@@ -107,7 +107,7 @@ export class ErgoAuth {
     );
     await this.instance.registerRoutes(this.instance.ERGO_AUTH_PREFIX);
     this.instance.logger.info(`ErgoAuth initialized successfully.`);
-  }
+  };
 
   /**
    * Returns the singleton instance after initialization.

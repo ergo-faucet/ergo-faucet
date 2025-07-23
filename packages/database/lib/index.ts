@@ -1,5 +1,5 @@
 import { DatabaseConfig } from './types';
 import { DataSourceHandler } from './DataSourceHandler';
-import { UserAddressAction } from './actions';
+import { DiscordAction, UserAddressAction } from './actions';
 
-export { DatabaseConfig, DataSourceHandler, UserAddressAction };
+export { DatabaseConfig, DataSourceHandler, UserAddressAction, DiscordAction };
