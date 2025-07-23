@@ -26,6 +26,7 @@ export class DiscordAuth {
   private readonly clientSercret: string;
   private readonly redirectURL: string;
   private readonly scope: string;
+  private readonly expiresAt: Date;
 
   private readonly DISCORD_EPOCH = 1420070400000;
   private readonly GRANT_TYPE = 'authorization_code';
@@ -43,6 +44,7 @@ export class DiscordAuth {
    * @param clientSercret - Discord OAuth2 client secret
    * @param redirectURL - Redirect URL after OAuth2 authorization
    * @param scope - OAuth2 scopes requested for Discord
+   * @param expiresAt - The time taht discord token is not valid and expired
    * @param logger - Optional logger instance (defaults to DummyLogger)
    */
   private constructor(
@@ -52,6 +54,7 @@ export class DiscordAuth {
     clientSercret: string,
     redirectURL: string,
     scope: string,
+    expiresAt: Date,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ?? new DummyLogger();
@@ -61,6 +64,7 @@ export class DiscordAuth {
     this.clientSercret = clientSercret;
     this.redirectURL = redirectURL;
     this.scope = scope;
+    this.expiresAt = expiresAt;
   }
 
   /**
@@ -72,6 +76,7 @@ export class DiscordAuth {
    * @param clientSercret - Discord OAuth2 client secret
    * @param redirectURL - Redirect URL after OAuth2 authorization
    * @param scope - OAuth2 scopes requested for Discord
+   * @param expiresAt - The time taht discord token is not valid and expired
    * @param logger - Optional logger instance
    * @throws Error if already initialized
    */
@@ -82,6 +87,7 @@ export class DiscordAuth {
     clientSercret: string,
     redirectURL: string,
     scope: string,
+    expiresAt: Date,
     logger?: AbstractLogger,
   ): Promise<void> => {
     if (this.instance) {
@@ -94,6 +100,7 @@ export class DiscordAuth {
       clientSercret,
       redirectURL,
       scope,
+      expiresAt,
       logger,
     );
     await this.instance.discordAction.ensureDiscordAuthMethod();
@@ -263,6 +270,7 @@ export class DiscordAuth {
             discordUser.global_name ?? null,
             discordUser.email ?? null,
             discordUser.first_join,
+            this.expiresAt,
             accessToken,
             refreshToken,
           );

@@ -92,6 +92,7 @@ class DiscordAction {
     global_name: string | null,
     email: string | null,
     first_join: Date,
+    expiresAt: Date,
     access_token: string,
     refresh_token: string,
   ): Promise<void> => {
@@ -119,6 +120,7 @@ class DiscordAction {
 
     await this.saveOrUpdateDiscordAuthStatus(
       savedUser,
+      expiresAt,
       access_token,
       refresh_token,
     );
@@ -134,6 +136,7 @@ class DiscordAction {
    */
   private saveOrUpdateDiscordAuthStatus = async (
     user: User,
+    expiresAt: Date,
     accessToken: string,
     refreshToken: string,
   ): Promise<void> => {
@@ -158,6 +161,7 @@ class DiscordAction {
           authMethod: discordAuthMethod,
           verifiedAt: new Date(),
           status: 'passed',
+          expiresAt,
           metadata: {
             discord: {
               token: accessToken,
@@ -168,6 +172,7 @@ class DiscordAction {
       } else {
         authStatus.verifiedAt = new Date();
         authStatus.status = 'passed';
+        authStatus.expiresAt = expiresAt;
         authStatus.metadata = {
           discord: {
             token: accessToken,
