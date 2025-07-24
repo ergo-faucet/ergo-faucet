@@ -16,7 +16,7 @@ class PackageAction {
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.dataSource = dataSource;
-    this.PackageReposotory = dataSource.getRepository(Package);
+    this.PackageReposotory = this.dataSource.getRepository(Package);
   }
 
   public static initialize = (
