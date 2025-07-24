@@ -31,5 +31,9 @@
   },
   "engines": {
     "node": ">=20.11.0"
+  },
+  "dependencies": {
+    "@ergo-faucet/database": "^0.1.0",
+    "@ergo-faucet/fastify-server": "^0.1.0"
   }
 }
