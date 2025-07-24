@@ -1,5 +1,16 @@
 import { DatabaseConfig } from './types';
 import { DataSourceHandler } from './DataSourceHandler';
-import { DiscordAction, UserAddressAction } from './actions';
+import { UserAddressAction, PackageAction,DiscordAction } from './actions';
 
-export { DatabaseConfig, DataSourceHandler, UserAddressAction, DiscordAction };
+export {
+  Asset,
+  AuthMethod,
+  Package,
+  PackageAuthMethod,
+  User,
+  UserAddress,
+  UserAuthStatus,
+  UserRequest,
+} from './entities';
+
+export { DatabaseConfig, DataSourceHandler, UserAddressAction, PackageAction,DiscordAction };
