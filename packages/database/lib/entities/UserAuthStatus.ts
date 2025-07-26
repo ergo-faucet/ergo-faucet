@@ -44,9 +44,7 @@ export class UserAuthStatus {
 
   @Column({ type: 'simple-json', nullable: true })
   metadata!: {
-    discord?: {
-      token?: string;
-      refresh_token?: string;
-    };
+    token?: string;
+    refresh_token?: string;
   };
 }
