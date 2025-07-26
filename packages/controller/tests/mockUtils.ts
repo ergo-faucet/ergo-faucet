@@ -5,37 +5,19 @@ import {
   PackageAuthMethod,
 } from '@ergo-faucet/database';
 
-import { FastifySeverInstance } from '@ergo-faucet/fastify-server';
 import fastify from 'fastify';
 import { vi } from 'vitest';
 import { PackageDto } from '../lib/types/Dtos';
 
 export const mockedServer = fastify();
 
-export const setupFastifyAPIServerMock = () => {
-  vi.mock('@ergo-faucet/fastify-server', () => {
-    const mockFastify = fastify();
-    return {
-      FastifyAPIServer: vi.fn().mockImplementation(() => ({
-        fastify: mockFastify,
-        register: vi.fn(
-          async (
-            routeCallback: (fastify: FastifySeverInstance) => Promise<void>,
-            prefix: string,
-          ): Promise<void> => {
-            await mockFastify.register(routeCallback, { prefix });
-          },
-        ),
-      })),
-    };
-  });
-};
-
+/**
+ * A mocked PackageAction instance with a spyable getPackages method.
+ */
 export const mockedPackageAction: PackageAction & {
   getPackages: ReturnType<typeof vi.fn>;
 } = {
   getPackages: vi.fn(),
-
   // eslint-disable-next-line
 } as any;
 

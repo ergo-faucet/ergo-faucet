@@ -14,11 +14,21 @@ class PackageController {
   private readonly logger: AbstractLogger;
   private readonly packageAction: PackageAction;
 
+  /**
+   * Private constructor to enforce singleton pattern.
+   * @param packageAction - The PackageAction instance for data access.
+   * @param logger - Optional logger implementing AbstractLogger.
+   */
   private constructor(packageAction: PackageAction, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.packageAction = packageAction;
   }
 
+  /**
+   * Returns the singleton instance of PackageController.
+   * Throws an error if not yet initialized.
+   * @returns {PackageController} The singleton instance.
+   */
   public static getInstance = (): PackageController => {
     if (!this.instance) {
       throw new Error('PackageController instance has not been initialized.');
@@ -26,6 +36,12 @@ class PackageController {
     return PackageController.instance;
   };
 
+  /**
+   * Initializes the PackageController singleton with the given PackageAction and optional logger.
+   * Throws an error if already initialized.
+   * @param packageAction - The PackageAction instance for data access.
+   * @param logger - Optional logger implementing AbstractLogger.
+   */
   public static initialize = (
     packageAction: PackageAction,
     logger?: AbstractLogger,
@@ -39,6 +55,15 @@ class PackageController {
     this.instance.logger.info(`PackageController initialized successfully.`);
   };
 
+  /**
+   * Registers the /packages GET route on the provided Fastify instance.
+   * Handles query parameters for pagination and sorting, and returns a list of packages.
+   * Responds with 200 and a list of packages, 404 if no packages are found,
+   * or 500 if an internal server error occurs.
+   *
+   * @param fastify - The Fastify server instance to register the route on.
+   * @returns {Promise<void>}
+   */
   public fetchPackagesRoute = async (
     fastify: FastifySeverInstance,
   ): Promise<void> => {

@@ -1,6 +1,5 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-
 import { PackageController } from './PackageController';
 
 class ErgoFaucetController {
@@ -9,6 +8,12 @@ class ErgoFaucetController {
   private readonly fastifyServer: FastifyAPIServer;
   private readonly packageController: PackageController;
 
+  /**
+   * Private constructor to enforce singleton pattern.
+   * @param fastifyServer - The FastifyAPIServer instance.
+   * @param packageController - The PackageController instance.
+   * @param logger - Optional logger implementing AbstractLogger.
+   */
   private constructor(
     fastifyServer: FastifyAPIServer,
     packageController: PackageController,
@@ -19,6 +24,11 @@ class ErgoFaucetController {
     this.packageController = packageController;
   }
 
+  /**
+   * Returns the singleton instance of ErgoFaucetController.
+   * Throws an error if not yet initialized.
+   * @returns {ErgoFaucetController} The singleton instance.
+   */
   public static getInstance = (): ErgoFaucetController => {
     if (!this.instance) {
       throw new Error(
@@ -28,6 +38,13 @@ class ErgoFaucetController {
     return ErgoFaucetController.instance;
   };
 
+  /**
+   * Initializes the ErgoFaucetController singleton with the given Fastify server,
+   * PackageController, and optional logger. Throws an error if already initialized.
+   * @param fastifyServer - The FastifyAPIServer instance.
+   * @param packageController - The PackageController instance.
+   * @param logger - Optional logger implementing AbstractLogger.
+   */
   public static initialize = async (
     fastifyServer: FastifyAPIServer,
     packageController: PackageController,
@@ -46,6 +63,12 @@ class ErgoFaucetController {
     this.instance.logger.info(`ErgoFaucetController initialized successfully.`);
   };
 
+  /**
+   * Registers all API routes for the Ergo Faucet application under the specified prefix.
+   * Delegates route registration to the PackageController.
+   * @param prefix - The URL prefix under which to register the routes.
+   * @returns {Promise<void>}
+   */
   public registerRoutes = async (prefix: string): Promise<void> => {
     await this.fastifyServer.register(
       this.packageController.fetchPackagesRoute,
