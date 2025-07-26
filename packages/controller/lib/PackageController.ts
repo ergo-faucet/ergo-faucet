@@ -67,7 +67,7 @@ class PackageController {
             sort,
             order,
           );
-          if (!packages)
+          if (packages.length == 0)
             return reply.status(404).send({
               error: 'No packages found matching the query parameters.',
               code: 'NOT_FOUND',
