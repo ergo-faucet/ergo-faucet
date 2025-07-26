@@ -11,12 +11,12 @@ class PackageAction {
 
   private logger: AbstractLogger;
   private dataSource: DataSource;
-  private PackageReposotory: Repository<Package>;
+  private PackageRepository: Repository<Package>;
 
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.dataSource = dataSource;
-    this.PackageReposotory = this.dataSource.getRepository(Package);
+    this.PackageRepository = this.dataSource.getRepository(Package);
   }
 
   public static initialize = (
@@ -57,7 +57,7 @@ class PackageAction {
       else orderOption = { openAt: 'desc' };
     }
 
-    const packages = this.PackageReposotory.find({
+    const packages = this.PackageRepository.find({
       where: { status: 'show' },
       order: orderOption,
       skip: offset,
