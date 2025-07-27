@@ -9,6 +9,7 @@ class DiscordAction {
   private userRepository: Repository<User>;
   private userAuthStatusRepository: Repository<UserAuthStatus>;
   private authMethodRepository: Repository<AuthMethod>;
+  private discordAuthMethod!: AuthMethod;
 
   /**
    * Private constructor to enforce singleton usage.
@@ -66,7 +67,10 @@ class DiscordAction {
         name: 'discord',
         config: JSON.stringify({}),
       });
-      await this.authMethodRepository.save(discordMethod);
+      this.discordAuthMethod =
+        await this.authMethodRepository.save(discordMethod);
+    } else {
+      this.discordAuthMethod = discordMethod;
     }
     this.logger.debug('Seeded AuthMethod: discord');
   }
@@ -89,29 +93,66 @@ class DiscordAction {
     userId: number,
     discord_id: string,
     username: string,
-    global_name: string | null,
-    email: string | null,
     first_join: Date,
     expiresAt: Date,
     access_token: string,
     refresh_token: string,
+    email?: string,
+    global_name?: string,
   ): Promise<void> => {
     const discordIdNum = Number(discord_id);
 
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error(`User with ID ${userId} not found`);
-    if (user.discord_id != null)
-      throw new Error(`User with ID ${user.id} is already logged in discord`);
+
+    const existingUserWithDiscord = await this.userRepository.findOne({
+      where: { discord_id: discordIdNum },
+    });
+
+    if (existingUserWithDiscord && existingUserWithDiscord.id !== userId) {
+      throw new Error(
+        `This Discord account is already linked with another user (${existingUserWithDiscord.id})`,
+      );
+    }
+
+    if (user.discord_id != null) {
+      if (user.discord_id === discordIdNum) {
+        this.logger.debug(`Refreshing Discord auth for user ${userId}`);
+
+        user.metadata = {
+          ...user.metadata,
+          discord: {
+            username,
+            name: global_name ?? user.metadata.discord?.name,
+            email: email ?? user.metadata.discord?.email,
+            join_date: first_join,
+          },
+        };
+
+        await this.userRepository.save(user);
+        await this.saveOrUpdateDiscordAuthStatus(
+          user,
+          expiresAt,
+          access_token,
+          refresh_token,
+        );
+        return;
+      } else {
+        throw new Error(
+          `User ${userId} already linked a different Discord account`,
+        );
+      }
+    }
 
     user.discord_id = discordIdNum;
     user.name = user.name ?? global_name ?? undefined;
     user.metadata = {
       ...user.metadata,
       discord: {
-        username: username,
+        username,
         name: global_name ?? undefined,
         email: email ?? undefined,
-        first_join: first_join,
+        join_date: first_join,
       },
     };
 
@@ -140,52 +181,40 @@ class DiscordAction {
     accessToken: string,
     refreshToken: string,
   ): Promise<void> => {
-    const discordAuthMethod = await this.authMethodRepository.findOne({
-      where: { name: 'discord' },
+    let authStatus = await this.userAuthStatusRepository.findOne({
+      where: {
+        user: { id: user.id },
+        authMethod: { id: this.discordAuthMethod.id },
+      },
+      relations: ['authMethod', 'user'],
     });
 
-    if (!discordAuthMethod) {
-      throw new Error("There isn't any Auth method for discord in database");
-    } else {
-      let authStatus = await this.userAuthStatusRepository.findOne({
-        where: {
-          user: { id: user.id },
-          authMethod: { id: discordAuthMethod.id },
+    if (!authStatus) {
+      authStatus = this.userAuthStatusRepository.create({
+        user,
+        authMethod: this.discordAuthMethod,
+        verifiedAt: new Date(),
+        status: 'passed',
+        expiresAt,
+        metadata: {
+          token: accessToken,
+          refresh_token: refreshToken,
         },
-        relations: ['authMethod', 'user'],
       });
-
-      if (!authStatus) {
-        authStatus = this.userAuthStatusRepository.create({
-          user,
-          authMethod: discordAuthMethod,
-          verifiedAt: new Date(),
-          status: 'passed',
-          expiresAt,
-          metadata: {
-            discord: {
-              token: accessToken,
-              refresh_token: refreshToken,
-            },
-          },
-        });
-      } else {
-        authStatus.verifiedAt = new Date();
-        authStatus.status = 'passed';
-        authStatus.expiresAt = expiresAt;
-        authStatus.metadata = {
-          discord: {
-            token: accessToken,
-            refresh_token: refreshToken,
-          },
-        };
-      }
-
-      await this.userAuthStatusRepository.save(authStatus);
-      this.logger.debug(
-        `Saved/Updated Discord UserAuthStatus for user ID ${user.id}`,
-      );
+    } else {
+      authStatus.verifiedAt = new Date();
+      authStatus.status = 'passed';
+      authStatus.expiresAt = expiresAt;
+      authStatus.metadata = {
+        token: accessToken,
+        refresh_token: refreshToken,
+      };
     }
+
+    await this.userAuthStatusRepository.save(authStatus);
+    this.logger.debug(
+      `Saved/Updated Discord UserAuthStatus for user ID ${user.id}`,
+    );
   };
 }
 

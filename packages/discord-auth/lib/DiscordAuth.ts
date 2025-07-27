@@ -195,13 +195,7 @@ export class DiscordAuth {
     fastify.get(
       '/login',
       {
-        preHandler: async (req, rep) => {
-          try {
-            await req.jwtVerify();
-          } catch {
-            return rep.status(401).send({ error: 'Unauthorized' });
-          }
-        },
+        preHandler: this.fastifyServer.authPreHandler,
         schema: {
           response: {
             302: { description: 'Redirect to Discord OAuth2 login' },
@@ -230,13 +224,7 @@ export class DiscordAuth {
     fastify.get<{ Querystring: CallBackRouteQueryType }>(
       '/callback',
       {
-        preHandler: async (req, rep) => {
-          try {
-            await req.jwtVerify();
-          } catch {
-            return rep.status(401).send({ error: 'Unauthorized' });
-          }
-        },
+        preHandler: this.fastifyServer.authPreHandler,
         schema: {
           querystring: CallBackRouteQuery,
           response: {
@@ -267,12 +255,12 @@ export class DiscordAuth {
             Number(user.userId),
             discordUser.userId,
             discordUser.username,
-            discordUser.global_name ?? null,
-            discordUser.email ?? null,
             discordUser.first_join,
             this.expiresAt,
             accessToken,
             refreshToken,
+            discordUser.email,
+            discordUser.global_name,
           );
 
           return reply.status(200).send({
