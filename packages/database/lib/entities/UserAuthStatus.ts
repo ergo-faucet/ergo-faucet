@@ -42,6 +42,9 @@ export class UserAuthStatus {
   @Column({ type: 'date', nullable: true })
   expiresAt?: Date;
 
-  @Column({ type: 'text', nullable: true })
-  authMetaData?: string;
+  @Column({ type: 'simple-json', nullable: true })
+  metadata!: {
+    token?: string;
+    refresh_token?: string;
+  };
 }

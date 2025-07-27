@@ -24,5 +24,21 @@ export class User {
   requests!: Relation<UserRequest[]>;
 
   @Column({ type: 'bigint', nullable: true })
+  discord_id!: number;
+
+  @Column({ type: 'varchar', nullable: true })
+  name!: string;
+
+  @Column({ type: 'simple-json', nullable: true })
+  metadata!: {
+    discord?: {
+      name?: string;
+      username?: string;
+      email?: string;
+      join_date?: Date;
+    };
+  };
+
+  @Column({ type: 'bigint', nullable: true })
   lastLogin!: number | null;
 }
