@@ -1,4 +1,4 @@
-import { DataSource, Repository } from '@rosen-bridge/extended-typeorm';
+import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
 import { User, UserAuthStatus, AuthMethod } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
@@ -84,7 +84,7 @@ class DiscordAction {
    * @param username - Discord username
    * @param global_name - Discord global name (nullable)
    * @param email - User email from Discord (nullable)
-   * @param first_join - Calculated first join timestamp
+   * @param join_date - Calculated first join timestamp
    * @param access_token - Discord OAuth2 access token
    * @param refresh_token - Discord OAuth2 refresh token
    * @returns Promise<void>
@@ -93,7 +93,7 @@ class DiscordAction {
     userId: number,
     discord_id: string,
     username: string,
-    first_join: Date,
+    join_date: Date,
     expiresAt: Date,
     access_token: string,
     refresh_token: string,
@@ -105,43 +105,20 @@ class DiscordAction {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error(`User with ID ${userId} not found`);
 
-    const existingUserWithDiscord = await this.userRepository.findOne({
-      where: { discord_id: discordIdNum },
-    });
-
-    if (existingUserWithDiscord && existingUserWithDiscord.id !== userId) {
+    if (user.discord_id != null && user.discord_id !== discordIdNum) {
       throw new Error(
-        `This Discord account is already linked with another user (${existingUserWithDiscord.id})`,
+        `User ${userId} already linked a different Discord account`,
       );
     }
 
-    if (user.discord_id != null) {
-      if (user.discord_id === discordIdNum) {
-        this.logger.debug(`Refreshing Discord auth for user ${userId}`);
+    const existingUserWithDiscord = await this.userRepository.findOne({
+      where: { discord_id: discordIdNum, id: Not(userId) },
+    });
 
-        user.metadata = {
-          ...user.metadata,
-          discord: {
-            username,
-            name: global_name ?? user.metadata.discord?.name,
-            email: email ?? user.metadata.discord?.email,
-            join_date: first_join,
-          },
-        };
-
-        await this.userRepository.save(user);
-        await this.saveOrUpdateDiscordAuthStatus(
-          user,
-          expiresAt,
-          access_token,
-          refresh_token,
-        );
-        return;
-      } else {
-        throw new Error(
-          `User ${userId} already linked a different Discord account`,
-        );
-      }
+    if (existingUserWithDiscord) {
+      throw new Error(
+        `This Discord account is already linked with another user (${existingUserWithDiscord.id})`,
+      );
     }
 
     user.discord_id = discordIdNum;
@@ -152,7 +129,7 @@ class DiscordAction {
         username,
         name: global_name ?? undefined,
         email: email ?? undefined,
-        join_date: first_join,
+        join_date: join_date,
       },
     };
 

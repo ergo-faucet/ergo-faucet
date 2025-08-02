@@ -146,9 +146,7 @@ export class DiscordAuth {
       username: res.data.username,
       email: res.data.email,
       global_name: res.data.global_name,
-      first_join: new Date(
-        parseInt(res.data.id) / 4194304 + this.DISCORD_EPOCH,
-      ),
+      join_date: new Date(parseInt(res.data.id) / 4194304 + this.DISCORD_EPOCH),
     };
     return userData;
   };
@@ -255,7 +253,7 @@ export class DiscordAuth {
             Number(user.userId),
             discordUser.userId,
             discordUser.username,
-            discordUser.first_join,
+            discordUser.join_date,
             this.expiresAt,
             accessToken,
             refreshToken,
