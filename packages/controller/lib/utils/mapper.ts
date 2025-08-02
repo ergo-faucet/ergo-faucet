@@ -1,4 +1,4 @@
-import { Asset, PackageAuthMethod } from '@ergo-faucet/database/dist/entities';
+import { Asset, PackageAuthMethod } from '@ergo-faucet/database';
 import { Package } from '@ergo-faucet/database';
 import { AssetDto, AuthMethodDto, PackageDto } from '../types/Dtos';
 

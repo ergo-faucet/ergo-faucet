@@ -7,6 +7,7 @@ class ErgoFaucetController {
   private readonly logger: AbstractLogger;
   private readonly fastifyServer: FastifyAPIServer;
   private readonly packageController: PackageController;
+  private readonly CONTROLLER_PREFIX = '/api';
 
   /**
    * Private constructor to enforce singleton pattern.
@@ -60,6 +61,8 @@ class ErgoFaucetController {
       packageController,
       logger,
     );
+    await this.instance.registerRoutes(this.instance.CONTROLLER_PREFIX);
+    this.instance.logger.info(`ErgoAuth initialized successfully.`);
     this.instance.logger.info(`ErgoFaucetController initialized successfully.`);
   };
 
