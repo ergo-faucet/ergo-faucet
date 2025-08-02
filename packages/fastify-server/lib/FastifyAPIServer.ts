@@ -172,6 +172,30 @@ export class FastifyAPIServer {
   };
 
   /**
+   * Pre-handler hook that verifies JWT before executing the route handler.
+   * If JWT validation fails, it sends an error Unauthorized.
+   * @param req - FastifyRequest (expects `JWT token`)
+   * @param res - FastifyReply (used to send early error responses)
+   * @param next - HookHandlerDoneFunction to continue request if JWT is valid
+   *
+   */
+  public authPreHandler = async <
+    T extends FastifyRequest,
+    U extends FastifyReply,
+  >(
+    req: T,
+    res: U,
+    next: HookHandlerDoneFunction,
+  ) => {
+    try {
+      await req.jwtVerify();
+      next();
+    } catch {
+      return res.status(401).send({ error: 'Unauthorized' });
+    }
+  };
+
+  /**
    * Pre-handler hook that verifies captcha before executing the route handler.
    * If captcha validation fails, it sends an error response.
    * @param req - FastifyRequest (expects `captchaToken` inside request body)
