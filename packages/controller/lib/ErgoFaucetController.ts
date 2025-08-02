@@ -62,7 +62,6 @@ class ErgoFaucetController {
       logger,
     );
     await this.instance.registerRoutes(this.instance.CONTROLLER_PREFIX);
-    this.instance.logger.info(`ErgoAuth initialized successfully.`);
     this.instance.logger.info(`ErgoFaucetController initialized successfully.`);
   };
 
