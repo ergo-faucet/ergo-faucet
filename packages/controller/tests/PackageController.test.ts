@@ -50,7 +50,9 @@ describe('PackageController', () => {
      */
     beforeAll(async () => {
       const instance = PackageController.getInstance();
-      await mockedServer.register(instance.fetchPackagesRoute);
+      await mockedServer.register(instance.fetchPackagesRoute, {
+        prefix: '/packages',
+      });
     });
 
     // Default mock for getPackages to return a package

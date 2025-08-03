@@ -1,5 +1,8 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { FastifySeverInstance } from '@ergo-faucet/fastify-server';
+import {
+  FastifyAPIServer,
+  FastifySeverInstance,
+} from '@ergo-faucet/fastify-server';
 import {
   GetPackageErrorResponse,
   GetPackagesResponse200,
@@ -13,6 +16,7 @@ class PackageController {
   private static instance: PackageController;
   private readonly logger: AbstractLogger;
   private readonly packageAction: PackageAction;
+  private readonly PACKAGES_PREFIX = '/packages';
 
   /**
    * Private constructor to enforce singleton pattern.
@@ -68,7 +72,7 @@ class PackageController {
     fastify: FastifySeverInstance,
   ): Promise<void> => {
     fastify.get(
-      '/packages',
+      '',
       {
         schema: {
           querystring: PackagesRouteQuery,
@@ -110,6 +114,32 @@ class PackageController {
           });
         }
       },
+    );
+  };
+
+  /**
+   * Registers all package-related API routes under the specified prefix
+   * on the provided FastifyAPIServer instance.
+   * Currently, this registers the /packages GET route.
+   *
+   * @param fastifyServer - The FastifyAPIServer instance to register routes on.
+   * @param prefix - The URL prefix under which to register the routes (e.g., '/api').
+   * @returns {Promise<void>}
+   *
+   * @example
+   * await packageController.registerRoutes(fastifyServer, '/api');
+   * // Registers GET /api/packages route
+   */
+  public registerRoutes = async (
+    fastifyServer: FastifyAPIServer,
+    prefix: string,
+  ): Promise<void> => {
+    await fastifyServer.register(
+      this.fetchPackagesRoute,
+      prefix + this.PACKAGES_PREFIX,
+    );
+    this.logger.info(
+      `PackageController routes registered under prefix "${prefix + this.PACKAGES_PREFIX}"`,
     );
   };
 }

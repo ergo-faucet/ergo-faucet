@@ -7,7 +7,7 @@ class ErgoFaucetController {
   private readonly logger: AbstractLogger;
   private readonly fastifyServer: FastifyAPIServer;
   private readonly packageController: PackageController;
-  private readonly CONTROLLER_PREFIX = '/api';
+  private readonly CONTROLLER_PREFIX = '/controller';
 
   /**
    * Private constructor to enforce singleton pattern.
@@ -72,10 +72,7 @@ class ErgoFaucetController {
    * @returns {Promise<void>}
    */
   public registerRoutes = async (prefix: string): Promise<void> => {
-    await this.fastifyServer.register(
-      this.packageController.fetchPackagesRoute,
-      prefix,
-    );
+    await this.packageController.registerRoutes(this.fastifyServer, prefix);
     this.logger.info(
       `ErgoFaucetController routes registered under prefix "${prefix}"`,
     );
