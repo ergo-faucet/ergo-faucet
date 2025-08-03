@@ -19,3 +19,4 @@ export {
   RefreshTokenBodyType,
   ChallengeBodyType,
 } from './routeBodyType';
+export { ErgoAuthConfig } from './ergoAuthConfig';

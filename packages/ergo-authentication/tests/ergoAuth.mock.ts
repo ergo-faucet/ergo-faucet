@@ -1,6 +1,7 @@
 import { vi } from 'vitest';
 import fastify from 'fastify';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+import { ErgoAuthConfig } from '../lib/types';
 
 // eslint-disable-next-line
 export const mockRedis: any = {
@@ -48,4 +49,14 @@ export const createMockFastifyAPIServer = () => {
     start: vi.fn(),
     close: vi.fn(),
   } as unknown as FastifyAPIServer;
+};
+
+export const mockErgoAuthConfig: ErgoAuthConfig = {
+  redisConfig: { host: 'localhost', port: 6379 },
+  fastifyServer: mockFastifyServer,
+  userAddressAction: mockUserAddressAction,
+  challengeExpirySeconds: 300,
+  refreshTokenExpirySeconds: 3600,
+  accessTokenExpirySeconds: 600,
+  networkAddress: 0,
 };

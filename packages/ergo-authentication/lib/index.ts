@@ -1,3 +1,2 @@
-import { ErgoAuth } from './ErgoAuth';
-
-export { ErgoAuth };
+export { ErgoAuth } from './ErgoAuth';
+export { ErgoAuthConfig } from './types';

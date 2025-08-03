@@ -36,7 +36,8 @@ class DiscordAction {
     dataSource: DataSource,
     logger?: AbstractLogger,
   ): void => {
-    if (this.instance) throw new Error('DiscordAction already initialized');
+    if (this.instance)
+      throw new Error('DiscordAction instance has already been initialized.');
     this.instance = new DiscordAction(dataSource, logger);
   };
 
@@ -46,7 +47,8 @@ class DiscordAction {
    * @throws Error if not initialized
    */
   public static getInstance = (): DiscordAction => {
-    if (!this.instance) throw new Error('DiscordAction not initialized');
+    if (!this.instance)
+      throw new Error('DiscordAction instance has not been initialized.');
     return this.instance;
   };
 
