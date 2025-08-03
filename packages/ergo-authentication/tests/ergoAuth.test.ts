@@ -10,10 +10,9 @@ import {
 import { ErgoAuth } from '../lib/ErgoAuth';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
+  mockErgoAuthConfig,
   mockFastifyServer,
   mockRedis,
-  mockRedisConfig,
-  mockUserAddressAction,
   testAddress,
 } from './ergoAuth.mock';
 
@@ -27,16 +26,7 @@ describe('ErgoAuth', () => {
   let ergoAuth: ErgoAuth;
 
   beforeAll(async () => {
-    await ErgoAuth.initialize(
-      mockRedisConfig ?? mockRedis,
-      mockFastifyServer,
-      mockUserAddressAction,
-      300,
-      3600,
-      600,
-      0,
-      new DummyLogger(),
-    );
+    await ErgoAuth.initialize(mockErgoAuthConfig, new DummyLogger());
 
     ergoAuth = ErgoAuth.getInstance();
   });

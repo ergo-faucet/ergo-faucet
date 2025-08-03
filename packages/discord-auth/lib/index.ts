@@ -1,3 +1,2 @@
-import { DiscordAuth } from './DiscordAuth';
-
-export { DiscordAuth };
+export { DiscordAuth } from './DiscordAuth';
+export { DiscordAuthConfig } from './types';

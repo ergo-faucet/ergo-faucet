@@ -24,7 +24,7 @@ class UserAddressAction {
 
   /**
    * Initialize singleton with data source
-   * @param dataSource
+   * @param dataSource - TypeORM DataSource for database operations
    * @param logger - The logger of the class
    */
   public static initialize = (

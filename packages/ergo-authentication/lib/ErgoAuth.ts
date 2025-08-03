@@ -1,4 +1,4 @@
-import Redis, { RedisOptions } from 'ioredis';
+import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
@@ -12,6 +12,7 @@ import {
   ChallengeRecord,
   ChallengeResponse200,
   ChallengeVerificationResult,
+  ErgoAuthConfig,
   payloadJWT,
   RefreshTokenBody,
   RefreshTokenBodyType,
@@ -42,69 +43,33 @@ export class ErgoAuth {
 
   /**
    * Private constructor to enforce singleton pattern.
-   * @param redisConfig - Redis connection string or options.
-   * @param fastifyServer - Fastify server instance for API integration.
-   * @param userAddressAction - User address action instance for database interactions.
-   * @param challengeExpirySeconds - Expiry time for challenges in seconds
-   * @param refreshTokenExpirySeconds - Expiry time for refresh token in seconds
-   * @param accessTokenExpirySeconds -  Expiry time for access token in seconds
-   * @param networkAddress - The network address (MAINNET or TESTNET).
+   * @param config - Ergo Auth configuration parameters including redis, fastify, ...
    * @param logger - Optional logger instance.
    */
-  private constructor(
-    redisConfig: RedisOptions,
-    fastifyServer: FastifyAPIServer,
-    userAddressAction: UserAddressAction,
-    challengeExpirySeconds: number,
-    refreshTokenExpirySeconds: number,
-    accessTokenExpirySeconds: number,
-    networkAddress: Network,
-    logger?: AbstractLogger,
-  ) {
+  private constructor(config: ErgoAuthConfig, logger?: AbstractLogger) {
     this.logger = logger ?? new DummyLogger();
-    this.redis = new Redis(redisConfig);
-    this.fastifyServer = fastifyServer;
-    this.userAddressAction = userAddressAction;
-    this.challengeExpirySeconds = challengeExpirySeconds;
-    this.refreshTokenExpirySeconds = refreshTokenExpirySeconds;
-    this.accessTokenExpirySeconds = accessTokenExpirySeconds;
-    this.NETWORK_ADDRESS = networkAddress;
+    this.redis = new Redis(config.redisConfig);
+    this.fastifyServer = config.fastifyServer;
+    this.userAddressAction = config.userAddressAction;
+    this.challengeExpirySeconds = config.challengeExpirySeconds;
+    this.refreshTokenExpirySeconds = config.refreshTokenExpirySeconds;
+    this.accessTokenExpirySeconds = config.accessTokenExpirySeconds;
+    this.NETWORK_ADDRESS = config.networkAddress;
   }
 
   /**
    * Initializes the singleton instance.
-   * @param redisConfig - Redis connection string or options.
-   * @param fastifyServer - Fastify server instance for API integration.
-   * @param userAddressAction - User address action instance for database interactions.
-   * @param challengeExpirySeconds - Expiry time for challenges in seconds
-   * @param refreshTokenExpirySeconds - Expiry time for refresh token in seconds
-   * @param accessTokenExpirySeconds - Expiry time for access token in seconds
-   * @param networkAddress - The network address (MAINNET or TESTNET).
+   * @param config - Ergo Auth configuration parameters including redis, fastify, ...
    * @param logger - Optional logger instance.
    */
   public static initialize = async (
-    redisConfig: RedisOptions,
-    fastifyServer: FastifyAPIServer,
-    userAddressAction: UserAddressAction,
-    challengeExpirySeconds: number,
-    refreshTokenExpirySeconds: number,
-    accessTokenExpirySeconds: number,
-    networkAddress: Network,
+    config: ErgoAuthConfig,
     logger?: AbstractLogger,
   ): Promise<void> => {
     if (this.instance) {
       throw new Error('ErgoAuth has already been initialized.');
     }
-    this.instance = new ErgoAuth(
-      redisConfig,
-      fastifyServer,
-      userAddressAction,
-      challengeExpirySeconds,
-      refreshTokenExpirySeconds,
-      accessTokenExpirySeconds,
-      networkAddress,
-      logger,
-    );
+    this.instance = new ErgoAuth(config, logger);
     await this.instance.registerRoutes(this.instance.ERGO_AUTH_PREFIX);
     this.instance.logger.info(`ErgoAuth initialized successfully.`);
   };
