@@ -62,8 +62,7 @@ class PackageController {
   /**
    * Registers the /packages GET route on the provided Fastify instance.
    * Handles query parameters for pagination and sorting, and returns a list of packages.
-   * Responds with 200 and a list of packages, 404 if no packages are found,
-   * or 500 if an internal server error occurs.
+   * Responds with 200 and a list of packages or 500 if an internal server error occurs.
    *
    * @param fastify - The Fastify server instance to register the route on.
    * @returns {Promise<void>}
@@ -78,7 +77,6 @@ class PackageController {
           querystring: PackagesRouteQuery,
           response: {
             200: GetPackagesResponse200,
-            404: GetPackageErrorResponse,
             500: GetPackageErrorResponse,
           },
         },
@@ -96,11 +94,7 @@ class PackageController {
             sort,
             order,
           );
-          if (packages.length == 0)
-            return reply.status(404).send({
-              error: 'No packages found matching the query parameters.',
-              code: 'NOT_FOUND',
-            });
+
           const packageDtos: PackageDto[] = toPackageDto(packages);
 
           return reply.status(200).send(packageDtos);

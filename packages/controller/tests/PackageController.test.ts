@@ -71,7 +71,7 @@ describe('PackageController', () => {
     it('should returns packages successfully', async () => {
       const result = await mockedServer.inject({
         method: 'GET',
-        url: '/packages?offset=0&limit=10&sort=name&order=desc',
+        url: '/packages?offset=0&limit=100&sort=name&order=desc',
       });
 
       expect(result.statusCode).toEqual(200);
@@ -79,24 +79,25 @@ describe('PackageController', () => {
     });
 
     /**
-     * Test for GET /packages returning 404 when no packages found
+     * Test for Bad Request GET /packages
      * @target PackageController.fetchPackagesRoute
      * @scenario
-     * - GET /packages when getPackages returns []
+     * - GET /packages with invalid query params
      * @expected
-     * - returns 404 and error message
+     * - returns 400
      */
-    it('should return 404 if no packages found', async () => {
-      vi.spyOn(mockedPackageAction, 'getPackages').mockResolvedValue([]);
+    it('should returns Bad Request', async () => {
       const result = await mockedServer.inject({
         method: 'GET',
-        url: '/packages?offset=0&limit=10&sort=name&order=desc',
+        url: '/packages?offset=0&limit=200&sort=name&order=desc', //limit is greater than maximum 100
       });
 
-      expect(result.statusCode).toBe(404);
+      expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
-        error: 'No packages found matching the query parameters.',
-        code: 'NOT_FOUND',
+        code: 'FST_ERR_VALIDATION',
+        error: 'Bad Request',
+        message: 'querystring/limit must be <= 100',
+        statusCode: 400,
       });
     });
 

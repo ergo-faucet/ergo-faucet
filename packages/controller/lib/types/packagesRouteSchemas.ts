@@ -2,7 +2,7 @@ import { Type } from '@sinclair/typebox';
 
 export const PackagesRouteQuery = Type.Object({
   offset: Type.Number({ minimum: 0, default: 0 }),
-  limit: Type.Number({ minimum: 10, maximum: 100, default: 10 }),
+  limit: Type.Number({ minimum: 0, maximum: 100, default: 25 }),
   sort: Type.Union([Type.Literal('release'), Type.Literal('name')], {
     default: 'release',
   }),
