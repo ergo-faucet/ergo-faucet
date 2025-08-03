@@ -114,15 +114,10 @@ class PackageController {
   /**
    * Registers all package-related API routes under the specified prefix
    * on the provided FastifyAPIServer instance.
-   * Currently, this registers the /packages GET route.
    *
    * @param fastifyServer - The FastifyAPIServer instance to register routes on.
-   * @param prefix - The URL prefix under which to register the routes (e.g., '/api').
+   * @param prefix - The URL prefix under which to register the routes (e.g., '/controller').
    * @returns {Promise<void>}
-   *
-   * @example
-   * await packageController.registerRoutes(fastifyServer, '/api');
-   * // Registers GET /api/packages route
    */
   public registerRoutes = async (
     fastifyServer: FastifyAPIServer,
