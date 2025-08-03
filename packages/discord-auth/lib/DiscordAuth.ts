@@ -14,6 +14,7 @@ import {
   ErrorResponse,
   userRequestPayload,
   userDiscordData,
+  DiscordAuthConfig,
 } from './types';
 
 export class DiscordAuth {
@@ -38,71 +39,35 @@ export class DiscordAuth {
   /**
    * Private constructor to enforce singleton pattern.
    *
-   * @param fastifyServer - Fastify server instance for route registration
-   * @param discordAction - Database action class to store linked Discord accounts
-   * @param clientID - Discord OAuth2 client ID
-   * @param clientSercret - Discord OAuth2 client secret
-   * @param redirectURL - Redirect URL after OAuth2 authorization
-   * @param scope - OAuth2 scopes requested for Discord
-   * @param expiresAt - The time taht discord token is not valid and expired
+   * @param config - Discord configuration parameters including clientId, fastify, ...
    * @param logger - Optional logger instance (defaults to DummyLogger)
    */
-  private constructor(
-    fastifyServer: FastifyAPIServer,
-    discordAction: DiscordAction,
-    clientID: string,
-    clientSercret: string,
-    redirectURL: string,
-    scope: string,
-    expiresAt: Date,
-    logger?: AbstractLogger,
-  ) {
+  private constructor(config: DiscordAuthConfig, logger?: AbstractLogger) {
     this.logger = logger ?? new DummyLogger();
-    this.fastifyServer = fastifyServer;
-    this.discordAction = discordAction;
-    this.clientID = clientID;
-    this.clientSercret = clientSercret;
-    this.redirectURL = redirectURL;
-    this.scope = scope;
-    this.expiresAt = expiresAt;
+    this.fastifyServer = config.fastifyServer;
+    this.discordAction = config.discordAction;
+    this.clientID = config.clientID;
+    this.clientSercret = config.clientSercret;
+    this.redirectURL = config.redirectURL;
+    this.scope = config.scope;
+    this.expiresAt = config.expiresAt;
   }
 
   /**
    * Initializes the singleton instance.
    *
-   * @param fastifyServer - Fastify server instance for API integration
-   * @param discordAction - DiscordAction instance for DB operations
-   * @param clientID - Discord OAuth2 client ID
-   * @param clientSercret - Discord OAuth2 client secret
-   * @param redirectURL - Redirect URL after OAuth2 authorization
-   * @param scope - OAuth2 scopes requested for Discord
-   * @param expiresAt - The time taht discord token is not valid and expired
+   * @param config - Discord configuration parameters including clientId, fastify, ...
    * @param logger - Optional logger instance
    * @throws Error if already initialized
    */
   public static initialize = async (
-    fastifyServer: FastifyAPIServer,
-    discordAction: DiscordAction,
-    clientID: string,
-    clientSercret: string,
-    redirectURL: string,
-    scope: string,
-    expiresAt: Date,
+    config: DiscordAuthConfig,
     logger?: AbstractLogger,
   ): Promise<void> => {
     if (this.instance) {
       throw new Error('DiscordAuth has already been initialized.');
     }
-    this.instance = new DiscordAuth(
-      fastifyServer,
-      discordAction,
-      clientID,
-      clientSercret,
-      redirectURL,
-      scope,
-      expiresAt,
-      logger,
-    );
+    this.instance = new DiscordAuth(config, logger);
     await this.instance.discordAction.ensureDiscordAuthMethod();
     await this.instance.registerRoutes(this.instance.Discord_AUTH_PREFIX);
     this.instance.logger.info(`DiscordAuth initialized successfully.`);

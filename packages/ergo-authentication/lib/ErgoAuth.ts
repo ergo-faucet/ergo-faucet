@@ -43,7 +43,7 @@ export class ErgoAuth {
 
   /**
    * Private constructor to enforce singleton pattern.
-   * @param ErgoAuthConfig ergoAuth configuration parameters including redis, fastify, ...
+   * @param config - Ergo Auth configuration parameters including redis, fastify, ...
    * @param logger - Optional logger instance.
    */
   private constructor(config: ErgoAuthConfig, logger?: AbstractLogger) {
@@ -59,7 +59,7 @@ export class ErgoAuth {
 
   /**
    * Initializes the singleton instance.
-   * @param ErgoAuthConfig ergoAuth configuration parameters including redis, fastify, ...
+   * @param config - Ergo Auth configuration parameters including redis, fastify, ...
    * @param logger - Optional logger instance.
    */
   public static initialize = async (
