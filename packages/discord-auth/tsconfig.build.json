@@ -1,11 +1,9 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "rootDir": "./lib",
-    "outDir": "./dist"
+    "rootDir": "./lib"
   },
   "include": ["lib"],
-  "exclude": ["tests"],
   "references": [
     { "path": "../fastify-server/tsconfig.build.json" },
     { "path": "../database/tsconfig.build.json" }
