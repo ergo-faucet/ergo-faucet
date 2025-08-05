@@ -28,6 +28,20 @@ class DataSourceHandler {
   }
 
   /**
+   * Gets the singleton instance of DataSourceHandler.
+   * @returns The initialized DataSourceHandler instance
+   * @throws {Error} If handler hasn't been initialized via initialize() first
+   * @example
+   * const handler = DataSourceHandler.getInstance();
+   */
+  public static getInstance = (): DataSourceHandler => {
+    if (!this.instance) {
+      throw new Error('DataSourceHandler instance has not been initialized.');
+    }
+    return this.instance;
+  };
+
+  /**
    * Initializes the database connection and runs pending migrations.
    * @param config - Database configuration parameters
    * @param logger - Optional logger instance for connection events
@@ -55,7 +69,7 @@ class DataSourceHandler {
 
       this.instance.logger.info(`Database initialized successfully.`);
     } catch (error) {
-      this.instance.logger.error('Database setup failed', error);
+      this.instance.logger.debug('Database setup failed', error);
       throw error;
     }
   };
@@ -68,20 +82,6 @@ class DataSourceHandler {
    */
   public getDataSource = (): DataSource => {
     return this.dataSource;
-  };
-
-  /**
-   * Gets the singleton instance of DataSourceHandler.
-   * @returns The initialized DataSourceHandler instance
-   * @throws {Error} If handler hasn't been initialized via initialize() first
-   * @example
-   * const handler = DataSourceHandler.getInstance();
-   */
-  public static getInstance = (): DataSourceHandler => {
-    if (!this.instance) {
-      throw new Error('DataSourceHandler instance has not been initialized.');
-    }
-    return this.instance;
   };
 
   /**
