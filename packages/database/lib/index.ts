@@ -1,7 +1,6 @@
-import { DatabaseConfig } from './types';
-import { DataSourceHandler } from './DataSourceHandler';
-import { UserAddressAction, PackageAction, DiscordAction } from './actions';
-
+export { DatabaseConfig } from './types';
+export { DataSourceHandler } from './DataSourceHandler';
+export { UserAddressAction, PackageAction, DiscordAction } from './actions';
 export {
   Asset,
   AuthMethod,
@@ -12,11 +11,3 @@ export {
   UserAuthStatus,
   UserRequest,
 } from './entities';
-
-export {
-  DatabaseConfig,
-  DataSourceHandler,
-  UserAddressAction,
-  PackageAction,
-  DiscordAction,
-};
