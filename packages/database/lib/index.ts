@@ -1,3 +1,13 @@
 export { DatabaseConfig } from './types';
 export { DataSourceHandler } from './DataSourceHandler';
-export { DiscordAction, UserAddressAction } from './actions';
+export { UserAddressAction, PackageAction, DiscordAction } from './actions';
+export {
+  Asset,
+  AuthMethod,
+  Package,
+  PackageAuthMethod,
+  User,
+  UserAddress,
+  UserAuthStatus,
+  UserRequest,
+} from './entities';
