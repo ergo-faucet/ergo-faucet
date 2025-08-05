@@ -12,7 +12,7 @@ import {
   mockedPackageAction,
   mockedServer,
   mockPackage,
-  mockPackageDtos,
+  mockPackageDTO,
 } from './mockUtils';
 
 describe('PackageController', () => {
@@ -75,7 +75,7 @@ describe('PackageController', () => {
       });
 
       expect(result.statusCode).toEqual(200);
-      expect(JSON.parse(result.body)).toEqual(mockPackageDtos);
+      expect(JSON.parse(result.body)).toEqual(mockPackageDTO);
     });
 
     /**

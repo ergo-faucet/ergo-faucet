@@ -1,18 +1,18 @@
 export type PackageType = 'normal' | 'random';
 
-export interface AssetDto {
+export interface AssetDTO {
   id: number;
   tokenId: string;
   amount: string;
   usageDescription: string;
 }
 
-export interface AuthMethodDto {
+export interface AuthMethodDTO {
   id: number;
   name: string;
 }
 
-export interface PackageDto {
+export interface PackageDTO {
   id: number;
   name: string;
   description: string;
@@ -21,6 +21,6 @@ export interface PackageDto {
   closeAt?: string;
   delay: number;
   numberEachUser: number;
-  assets: AssetDto[];
-  authMethods: AuthMethodDto[];
+  assets: AssetDTO[];
+  authMethods: AuthMethodDTO[];
 }

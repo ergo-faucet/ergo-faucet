@@ -9,8 +9,8 @@ import {
   PackagesRouteQuery,
 } from './types/packagesRouteSchemas';
 import { PackageAction } from '@ergo-faucet/database';
-import { toPackageDto } from './utils/mapper';
-import { PackageDto } from './types/Dtos';
+import { toPackageDTO } from './utils/mapper';
+import { PackageDTO } from './types/DTOs';
 
 class PackageController {
   private static instance: PackageController;
@@ -95,9 +95,9 @@ class PackageController {
             order,
           );
 
-          const packageDtos: PackageDto[] = toPackageDto(packages);
+          const packageDTOs: PackageDTO[] = toPackageDTO(packages);
 
-          return reply.status(200).send(packageDtos);
+          return reply.status(200).send(packageDTOs);
         } catch (err) {
           this.logger.debug(
             `Error fetching packages: ${err instanceof Error ? err.message : err}`,

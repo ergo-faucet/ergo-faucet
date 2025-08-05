@@ -7,7 +7,7 @@ import {
 
 import fastify from 'fastify';
 import { vi } from 'vitest';
-import { PackageDto } from '../lib/types/Dtos';
+import { PackageDTO } from '../lib/types/DTOs';
 
 export const mockedServer = fastify();
 
@@ -71,7 +71,7 @@ mockPackage = {
   description: 'A package for new users',
   type: 'normal',
   status: 'show',
-  openAt: new Date('2025-07-01'),
+  //openAt: new Date('2025-07-01'),
   closeAt: new Date('2025-12-31'),
   delay: 3600,
   numberEachUser: 1,
@@ -81,13 +81,13 @@ mockPackage = {
   requests: [],
 };
 
-export const mockPackageDtos: PackageDto[] = [
+export const mockPackageDTO: PackageDTO[] = [
   {
     id: 101,
     name: 'Starter Pack',
     type: 'normal',
     delay: 3600,
-    openAt: new Date('2025-07-01').toString(),
+    //openAt: new Date('2025-07-01').toString(),
     closeAt: new Date('2025-12-31').toString(),
     description: 'A package for new users',
     numberEachUser: 1,

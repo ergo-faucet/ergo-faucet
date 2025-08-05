@@ -1,34 +1,26 @@
 import { Asset, PackageAuthMethod } from '@ergo-faucet/database';
 import { Package } from '@ergo-faucet/database';
-import { AssetDto, AuthMethodDto, PackageDto } from '../types/Dtos';
+import { AssetDTO, AuthMethodDTO, PackageDTO } from '../types/DTOs';
 
-export const toPackageDto = (packages: Package[]): PackageDto[] => {
-  const packageDtos: PackageDto[] = [];
-
-  packages.forEach((p: Package) => {
-    const assetDtos: AssetDto[] = [];
-
-    p.assets.forEach((a: Asset) => {
-      const assetDto: AssetDto = {
+export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
+  return packages.map((p: Package): PackageDTO => {
+    const assetDTOs: AssetDTO[] = p.assets.map(
+      (a: Asset): AssetDTO => ({
         id: a.id,
         tokenId: a.tokenId,
         amount: a.amount.toString(),
         usageDescription: a.usageDescription,
-      };
-      assetDtos.push(assetDto);
-    });
+      }),
+    );
 
-    const authMethodDtos: AuthMethodDto[] = [];
-
-    p.authMethods.forEach((a: PackageAuthMethod) => {
-      const authMethodDto: AuthMethodDto = {
+    const authMethodDTOs: AuthMethodDTO[] = p.authMethods.map(
+      (a: PackageAuthMethod): AuthMethodDTO => ({
         id: a.authMethod.id,
         name: a.authMethod.name,
-      };
-      authMethodDtos.push(authMethodDto);
-    });
+      }),
+    );
 
-    const packageDto: PackageDto = {
+    return {
       id: p.id,
       name: p.name,
       type: p.type,
@@ -37,12 +29,8 @@ export const toPackageDto = (packages: Package[]): PackageDto[] => {
       closeAt: p.closeAt?.toString(),
       description: p.description,
       numberEachUser: p.numberEachUser,
-      assets: assetDtos,
-      authMethods: authMethodDtos,
+      assets: assetDTOs,
+      authMethods: authMethodDTOs,
     };
-
-    packageDtos.push(packageDto);
   });
-
-  return packageDtos;
 };
