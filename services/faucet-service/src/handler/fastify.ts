@@ -1,10 +1,5 @@
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-import {
-  serverConfig,
-  cookieConfig,
-  swaggerConfig,
-  swaggerUiConfig,
-} from '../configs';
+import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
+import { serverConfig } from '../configs';
 import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 
@@ -14,21 +9,11 @@ export const setupFastifyServer = async () => {
   const recaptcha = GoogleRecaptcha.getInstance();
   const fastifyLogger =
     CallbackLoggerFactory.getInstance().getLogger('FastifyServer');
+  const fasftyConfig: ServerConfig = {
+    ...serverConfig,
+    googleRecaptcha: recaptcha,
+  };
 
-  await FastifyAPIServer.initialize(
-    {
-      port: serverConfig.port,
-      host: serverConfig.host,
-      corsOrigins: serverConfig.corsOrigins,
-      swagger: swaggerConfig,
-      swaggerUi: swaggerUiConfig,
-      activeFastifyLogger: serverConfig.activeFastifyLogger,
-      jwtSecret: serverConfig.jwtSecret,
-      jwtExpiration: serverConfig.jwtExpiration,
-      cookie: cookieConfig,
-      googleRecaptcha: recaptcha,
-    },
-    fastifyLogger,
-  );
+  await FastifyAPIServer.initialize(fasftyConfig, fastifyLogger);
   logger.info('Fastify server initialized successfully');
 };

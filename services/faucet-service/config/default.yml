@@ -23,33 +23,29 @@ server:
   jwtSecret: 'your-jwt-secret'
   jwtExpiration: 86400
   activeFastifyLogger: true
+  swagger:
+    openapi:
+      {
+        info:
+          {
+            title: 'Faucet Service API',
+            description: 'API documentation for Faucet Service',
+            version: '1.0.0',
+          },
+      }
 
-# Cookie configuration
-cookie:
-  secret: 'your-cookie-secret'
-  signed: true
-  name: 'refreshToken'
-  httpOnly: true
-  secure: false
-  sameSite: 'lax'
-  path: '/'
-  domain: 'localhost'
-
-# Swagger configuration
-swagger:
-  openapi:
-    {
-      info:
-        {
-          title: 'Faucet Service API',
-          description: 'API documentation for Faucet Service',
-          version: '1.0.0',
-        },
-    }
-
-swaggerUi:
-  routePrefix: '/docs'
-  uiConfig: { docExpansion: 'none', deepLinking: false }
+    swaggerUi:
+      routePrefix: '/docs'
+      uiConfig: { docExpansion: 'none', deepLinking: false }
+  cookie:
+    secret: 'your-cookie-secret'
+    signed: true
+    name: 'refreshToken'
+    httpOnly: true
+    secure: false
+    sameSite: 'lax'
+    path: '/'
+    domain: 'localhost'
 
 # Database configuration
 database:

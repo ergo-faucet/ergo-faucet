@@ -2,6 +2,21 @@ import { CookieConfig } from '@ergo-faucet/fastify-server';
 import config from 'config';
 
 /**
+ * Cookie configuration
+ */
+export const cookieConfig: CookieConfig = {
+  secret: config.get<string>('server.cookie.secret'),
+  signed: config.get<boolean>('server.cookie.signed'),
+  name: config.get<string>('server.cookie.name'),
+  httpOnly: config.get<boolean>('server.cookie.httpOnly'),
+  secure: config.get<boolean>('server.cookie.secure'),
+  sameSite: config.get<'strict' | 'lax' | 'none'>('server.cookie.sameSite'),
+  path: config.get<string>('server.cookie.path'),
+  domain: config.get<string>('server.cookie.domain'),
+  maxAge: config.get<number>('server.cookie.maxAge'),
+};
+
+/**
  * Fastify server configuration
  */
 export const serverConfig = {
@@ -11,25 +26,7 @@ export const serverConfig = {
   jwtSecret: config.get<string>('server.jwtSecret'),
   jwtExpiration: config.get<number>('server.jwtExpiration'),
   activeFastifyLogger: config.get<boolean>('server.activeFastifyLogger'),
+  swagger: config.get<object>('server.swagger'),
+  swaggerUi: config.get<object>('server.swaggerUi'),
+  cookie: cookieConfig,
 };
-
-/**
- * Cookie configuration
- */
-export const cookieConfig: CookieConfig = {
-  secret: config.get<string>('cookie.secret'),
-  signed: config.get<boolean>('cookie.signed'),
-  name: config.get<string>('cookie.name'),
-  httpOnly: config.get<boolean>('cookie.httpOnly'),
-  secure: config.get<boolean>('cookie.secure'),
-  sameSite: config.get<'strict' | 'lax' | 'none'>('cookie.sameSite'),
-  path: config.get<string>('cookie.path'),
-  domain: config.get<string>('cookie.domain'),
-  maxAge: config.get<number>('cookie.maxAge'),
-};
-
-/**
- * Swagger configuration
- */
-export const swaggerConfig = config.get<object>('swagger');
-export const swaggerUiConfig = config.get<object>('swaggerUi');
