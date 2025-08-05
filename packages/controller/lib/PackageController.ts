@@ -13,51 +13,19 @@ import { toPackageDTO } from './utils/mapper';
 import { PackageDTO } from './types/DTOs';
 
 class PackageController {
-  private static instance: PackageController;
   private readonly logger: AbstractLogger;
   private readonly packageAction: PackageAction;
   private readonly PACKAGES_PREFIX = '/packages';
 
   /**
-   * Private constructor to enforce singleton pattern.
-   * @param packageAction - The PackageAction instance for data access.
-   * @param logger - Optional logger implementing AbstractLogger.
+   * Constructs a new PackageController.
+   * @param packageAction - Instance of PackageAction for DB operations.
+   * @param logger - Optional logger instance.
    */
-  private constructor(packageAction: PackageAction, logger?: AbstractLogger) {
+  public constructor(packageAction: PackageAction, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.packageAction = packageAction;
   }
-
-  /**
-   * Returns the singleton instance of PackageController.
-   * Throws an error if not yet initialized.
-   * @returns {PackageController} The singleton instance.
-   */
-  public static getInstance = (): PackageController => {
-    if (!this.instance) {
-      throw new Error('PackageController instance has not been initialized.');
-    }
-    return PackageController.instance;
-  };
-
-  /**
-   * Initializes the PackageController singleton with the given PackageAction and optional logger.
-   * Throws an error if already initialized.
-   * @param packageAction - The PackageAction instance for data access.
-   * @param logger - Optional logger implementing AbstractLogger.
-   */
-  public static initialize = (
-    packageAction: PackageAction,
-    logger?: AbstractLogger,
-  ) => {
-    if (this.instance) {
-      throw new Error(
-        'PackageController instance has already been initialized.',
-      );
-    }
-    this.instance = new PackageController(packageAction, logger);
-    this.instance.logger.info(`PackageController initialized successfully.`);
-  };
 
   /**
    * Registers the /packages GET route on the provided Fastify instance.
@@ -99,7 +67,7 @@ class PackageController {
 
           return reply.status(200).send(packageDTOs);
         } catch (err) {
-          this.logger.debug(
+          this.logger.error(
             `Error fetching packages: ${err instanceof Error ? err.message : err}`,
           );
           reply.status(500).send({

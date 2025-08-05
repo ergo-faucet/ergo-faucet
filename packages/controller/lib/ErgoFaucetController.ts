@@ -1,6 +1,7 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { PackageController } from './PackageController';
+import { PackageAction } from '@ergo-faucet/database';
 
 class ErgoFaucetController {
   private static instance: ErgoFaucetController;
@@ -12,17 +13,16 @@ class ErgoFaucetController {
   /**
    * Private constructor to enforce singleton pattern.
    * @param fastifyServer - The FastifyAPIServer instance.
-   * @param packageController - The PackageController instance.
    * @param logger - Optional logger implementing AbstractLogger.
    */
   private constructor(
     fastifyServer: FastifyAPIServer,
-    packageController: PackageController,
+    private readonly packageAction: PackageAction,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
     this.fastifyServer = fastifyServer;
-    this.packageController = packageController;
+    this.packageController = new PackageController(this.packageAction, logger);
   }
 
   /**
@@ -43,12 +43,11 @@ class ErgoFaucetController {
    * Initializes the ErgoFaucetController singleton with the given Fastify server,
    * PackageController, and optional logger. Throws an error if already initialized.
    * @param fastifyServer - The FastifyAPIServer instance.
-   * @param packageController - The PackageController instance.
    * @param logger - Optional logger implementing AbstractLogger.
    */
   public static initialize = async (
     fastifyServer: FastifyAPIServer,
-    packageController: PackageController,
+    packageAction: PackageAction,
     logger?: AbstractLogger,
   ) => {
     if (this.instance) {
@@ -58,7 +57,7 @@ class ErgoFaucetController {
     }
     this.instance = new ErgoFaucetController(
       fastifyServer,
-      packageController,
+      packageAction,
       logger,
     );
     await this.instance.registerRoutes(this.instance.CONTROLLER_PREFIX);

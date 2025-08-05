@@ -16,32 +16,12 @@ import {
 } from './mockUtils';
 
 describe('PackageController', () => {
-  /**
-   * Reset PackageController singleton before each test to ensure a clean state.
-   */
   beforeEach(() => {
     vi.clearAllMocks();
-    // eslint-disable-next-line
-    (PackageController as any).instance = undefined;
   });
 
   afterAll(() => {
     vi.restoreAllMocks();
-  });
-
-  /**
-   * Test for initializing the PackageController successfully
-   * @target PackageController.initialize
-   * @scenario
-   * - Call initialize with a mocked PackageAction
-   * - Retrieve instance via getInstance
-   * @expected
-   * - getInstance returns an instance of PackageController
-   */
-  it('should initialize the PackageController instance', async () => {
-    await PackageController.initialize(mockedPackageAction);
-    const instance = PackageController.getInstance();
-    expect(instance).toBeInstanceOf(PackageController);
   });
 
   describe('GET /packages', async () => {
@@ -49,7 +29,7 @@ describe('PackageController', () => {
      * Register the /packages route before running the tests in this block.
      */
     beforeAll(async () => {
-      const instance = PackageController.getInstance();
+      const instance = new PackageController(mockedPackageAction);
       await mockedServer.register(instance.fetchPackagesRoute, {
         prefix: '/packages',
       });
