@@ -27,7 +27,7 @@ export class DiscordAuth {
   private readonly clientSercret: string;
   private readonly redirectURL: string;
   private readonly scope: string;
-  private readonly expiresAt: Date;
+  private readonly expiresTime: number;
 
   private readonly DISCORD_EPOCH = 1420070400000;
   private readonly GRANT_TYPE = 'authorization_code';
@@ -47,10 +47,10 @@ export class DiscordAuth {
     this.fastifyServer = config.fastifyServer;
     this.discordAction = config.discordAction;
     this.clientID = config.clientID;
-    this.clientSercret = config.clientSercret;
+    this.clientSercret = config.clientSecret;
     this.redirectURL = config.redirectURL;
     this.scope = config.scope;
-    this.expiresAt = config.expiresAt;
+    this.expiresTime = config.expiresTime;
   }
 
   /**
@@ -219,7 +219,7 @@ export class DiscordAuth {
             discordUser.userId,
             discordUser.username,
             discordUser.join_date,
-            this.expiresAt,
+            this.expiresTime,
             accessToken,
             refreshToken,
             discordUser.email,

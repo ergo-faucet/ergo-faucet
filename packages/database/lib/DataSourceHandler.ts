@@ -1,6 +1,11 @@
 import { createDataSource } from './dataSource';
 import { DataSource } from '@rosen-bridge/extended-typeorm';
-import { DatabaseConfig } from './index';
+import {
+  DatabaseConfig,
+  DiscordAction,
+  UserAddressAction,
+  XAction,
+} from './index';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 /**
@@ -23,20 +28,6 @@ class DataSourceHandler {
   }
 
   /**
-   * Gets the singleton instance of DataSourceHandler.
-   * @returns The initialized DataSourceHandler instance
-   * @throws {Error} If handler hasn't been initialized via initialize() first
-   * @example
-   * const handler = DataSourceHandler.getInstance();
-   */
-  public static getInstance = (): DataSourceHandler => {
-    if (!this.instance) {
-      throw new Error('DataSourceHandler instance has not been initialized.');
-    }
-    return DataSourceHandler.instance;
-  };
-
-  /**
    * Initializes the database connection and runs pending migrations.
    * @param config - Database configuration parameters
    * @param logger - Optional logger instance for connection events
@@ -47,13 +38,25 @@ class DataSourceHandler {
     config: DatabaseConfig,
     logger?: AbstractLogger,
   ) => {
-    if (!this.instance) {
-      this.instance = new DataSourceHandler(config, logger);
-      await this.instance.dataSource.initialize();
-      await this.instance.dataSource.runMigrations();
-      this.instance.logger.info(
-        `Data Source (${config.type}) initialized successfully`,
+    if (this.instance)
+      throw new Error(
+        'DataSourceHandler instance has already been initialized.',
       );
+
+    this.instance = new DataSourceHandler(config, logger);
+    await this.instance.dataSource.initialize();
+    await this.instance.dataSource.runMigrations();
+
+    try {
+      const dataSource = this.getInstance().getDataSource();
+      DiscordAction.initialize(dataSource, this.instance.logger);
+      UserAddressAction.initialize(dataSource, this.instance.logger);
+      XAction.initialize(dataSource, this.instance.logger);
+
+      this.instance.logger.info(`Database initialized successfully.`);
+    } catch (error) {
+      this.instance.logger.error('Database setup failed', error);
+      throw error;
     }
   };
 
@@ -65,6 +68,32 @@ class DataSourceHandler {
    */
   public getDataSource = (): DataSource => {
     return this.dataSource;
+  };
+
+  /**
+   * Gets the singleton instance of DataSourceHandler.
+   * @returns The initialized DataSourceHandler instance
+   * @throws {Error} If handler hasn't been initialized via initialize() first
+   * @example
+   * const handler = DataSourceHandler.getInstance();
+   */
+  public static getInstance = (): DataSourceHandler => {
+    if (!this.instance) {
+      throw new Error('DataSourceHandler instance has not been initialized.');
+    }
+    return this.instance;
+  };
+
+  /**
+   * Get action class instances
+   * @returns Object containing all action class instances
+   */
+  public getActions = () => {
+    return {
+      discordAction: DiscordAction.getInstance(),
+      userAddressAction: UserAddressAction.getInstance(),
+      xAction: XAction.getInstance(),
+    };
   };
 
   /**

@@ -82,7 +82,7 @@ class XAction {
    * @param username - X username
    * @param name - X display name
    * @param join_date - Account creation date
-   * @param expiresAt - Token expiration date
+   * @param expiresTime - Token expiration in seconds
    * @param access_token - X OAuth2 access token
    * @param refresh_token - X OAuth2 refresh token
    * @returns Promise<void>
@@ -93,7 +93,7 @@ class XAction {
     username: string,
     name: string,
     join_date: Date,
-    expiresAt: Date,
+    expiresTime: number,
     access_token: string,
     refresh_token: string,
   ): Promise<void> => {
@@ -129,9 +129,11 @@ class XAction {
     const savedUser = await this.userRepository.save(user);
     this.logger.debug(`Linked X ID ${xIdNum} to user ID ${userId}`);
 
+    const expireAt = new Date(Date.now() + expiresTime * 1000);
+
     await this.saveOrUpdateXAuthStatus(
       savedUser,
-      expiresAt,
+      expireAt,
       access_token,
       refresh_token,
     );

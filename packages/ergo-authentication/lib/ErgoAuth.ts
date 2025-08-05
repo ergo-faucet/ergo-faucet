@@ -38,7 +38,7 @@ export class ErgoAuth {
   private readonly challengeExpirySeconds: number;
   private readonly refreshTokenExpirySeconds: number;
   private readonly accessTokenExpirySeconds: number;
-  private readonly NETWORK_ADDRESS: Network;
+  private readonly NETWORK_TYPE: Network;
   private readonly ERGO_AUTH_PREFIX = '/ergo-auth';
 
   /**
@@ -54,7 +54,7 @@ export class ErgoAuth {
     this.challengeExpirySeconds = config.challengeExpirySeconds;
     this.refreshTokenExpirySeconds = config.refreshTokenExpirySeconds;
     this.accessTokenExpirySeconds = config.accessTokenExpirySeconds;
-    this.NETWORK_ADDRESS = config.networkAddress;
+    this.NETWORK_TYPE = config.networkType;
   }
 
   /**
@@ -94,7 +94,7 @@ export class ErgoAuth {
   public isvalidErgoAddress = (address: string): boolean => {
     try {
       const network = ErgoAddress.fromBase58(address).network;
-      return this.NETWORK_ADDRESS === network;
+      return this.NETWORK_TYPE === network;
     } catch (err) {
       if (err instanceof Error) {
         this.logger.debug(`Invalid Ergo address Network: ${address}`, {

@@ -1,0 +1,93 @@
+#logging configuration
+logs:
+  - type: 'file' # [file, console]
+    path: './logs/' # path to log files (only for rotateFile type)
+    maxSize: '20m' # maximum size of each log file (20 MB) (only for rotateFile type)
+    maxFiles: '14d' # maximum number of log files (14 days) (only for rotateFile type)
+    level: 'info' # [debug, info, warn, error]
+  - type: 'console'
+    level: 'info'
+
+# recaptcha:
+recaptcha:
+  key: 'recaptcha-key'
+  threshold: 0.5
+  hostnames:
+    - 'localhost'
+
+# Server configuration
+server:
+  port: 3000
+  host: '0.0.0.0'
+  corsOrigins: '*'
+  jwtSecret: 'your-jwt-secret'
+  jwtExpiration: 86400
+  activeFastifyLogger: true
+
+# Cookie configuration
+cookie:
+  secret: 'your-cookie-secret'
+  signed: true
+  name: 'refreshToken'
+  httpOnly: true
+  secure: false
+  sameSite: 'lax'
+  path: '/'
+  domain: 'localhost'
+
+# Swagger configuration
+swagger:
+  openapi:
+    {
+      info:
+        {
+          title: 'Faucet Service API',
+          description: 'API documentation for Faucet Service',
+          version: '1.0.0',
+        },
+    }
+
+swaggerUi:
+  routePrefix: '/docs'
+  uiConfig: { docExpansion: 'none', deepLinking: false }
+
+# Database configuration
+database:
+  type: 'postgres'
+  path: '' # Not used for PostgreSQL
+  host: 'localhost'
+  port: 5432
+  username: 'faucet_user'
+  password: 'faucet_password'
+  database: 'faucet_db'
+  logging: false
+
+# Redis configuration
+redis:
+  host: 'localhost'
+  port: 6379
+  password: ''
+
+# ErgoAuth configuration
+ergoAuth:
+  challengeExpirySeconds: 300
+  refreshTokenExpirySeconds: 2592000
+  accessTokenExpirySeconds: 3600
+  networkAddress: 'Testnet'
+
+# Discord configuration
+discord:
+  clientID: 'your-discord-client-id'
+  clientSercret: 'your-discord-client-secret'
+  redirectURL: 'http://localhost:3000/auth/discord/callback'
+  scope: 'identify email'
+  expiresTime: 7200
+
+# XAuth configuration
+x:
+  clientID: 'your-x-client-id'
+  clientSecret: 'your-x-client-secret'
+  redirectURL: 'http://localhost:3000/auth/x/callback'
+  scope: 'read write'
+  expiresTime: 7200
+  sessionTTL: 3600

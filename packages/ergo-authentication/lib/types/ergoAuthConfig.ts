@@ -10,5 +10,5 @@ export interface ErgoAuthConfig {
   challengeExpirySeconds: number;
   refreshTokenExpirySeconds: number;
   accessTokenExpirySeconds: number;
-  networkAddress: Network;
+  networkType: Network;
 }

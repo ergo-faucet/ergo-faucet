@@ -87,6 +87,7 @@ class DiscordAction {
    * @param global_name - Discord global name (nullable)
    * @param email - User email from Discord (nullable)
    * @param join_date - Calculated first join timestamp
+   * @param expiresTime - Token expiration in seconds
    * @param access_token - Discord OAuth2 access token
    * @param refresh_token - Discord OAuth2 refresh token
    * @returns Promise<void>
@@ -96,7 +97,7 @@ class DiscordAction {
     discord_id: string,
     username: string,
     join_date: Date,
-    expiresAt: Date,
+    expiresTime: number,
     access_token: string,
     refresh_token: string,
     email?: string,
@@ -137,6 +138,8 @@ class DiscordAction {
 
     const savedUser = await this.userRepository.save(user);
     this.logger.debug(`Linked Discord ID ${discordIdNum} to user ID ${userId}`);
+
+    const expiresAt = new Date(Date.now() + expiresTime * 1000);
 
     await this.saveOrUpdateDiscordAuthStatus(
       savedUser,
