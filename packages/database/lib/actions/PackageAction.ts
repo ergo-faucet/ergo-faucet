@@ -67,7 +67,7 @@ class PackageAction {
     offset: number,
     limit: number,
     sort: string,
-    order: string,
+    order: 'asc' | 'desc',
   ): Promise<Package[]> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
@@ -78,11 +78,9 @@ class PackageAction {
 
     // Set order option based on sort and order parameters
     if (sort === 'name') {
-      if (order === 'desc') orderOption = { name: 'desc' };
-      else orderOption = { name: 'desc' }; // Only 'desc' is used here, could be improved
+      orderOption = { name: order };
     } else if (sort === 'release') {
-      if (order === 'desc') orderOption = { openAt: 'desc' };
-      else orderOption = { openAt: 'desc' }; // Only 'desc' is used here, could be improved
+      orderOption = { openAt: order };
     }
 
     // Query the database for packages with status 'show'
