@@ -66,22 +66,14 @@ class PackageAction {
   public getPackages = async (
     offset: number,
     limit: number,
-    sort: string,
+    sort: 'id' | 'openAt' | 'closeAt' | 'name',
     order: 'asc' | 'desc',
   ): Promise<Package[]> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
 
-    // Default order option
-    let orderOption: FindOptionsOrder<Package> = { id: 'desc' };
-
-    // Set order option based on sort and order parameters
-    if (sort === 'name') {
-      orderOption = { name: order };
-    } else if (sort === 'release') {
-      orderOption = { openAt: order };
-    }
+    const orderOption: FindOptionsOrder<Package> = { [sort]: order };
 
     // Query the database for packages with status 'show'
     const packages = this.PackageRepository.find({
