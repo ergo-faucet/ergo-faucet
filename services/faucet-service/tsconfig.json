@@ -10,6 +10,7 @@
     { "path": "../../packages/fastify-server" },
     { "path": "../../packages/database" },
     { "path": "../../packages/ergo-authentication" },
-    { "path": "../../packages/discord-auth" }
+    { "path": "../../packages/discord-auth" },
+    { "path": "../../packages/controller" }
   ]
 }
