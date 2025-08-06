@@ -33,6 +33,9 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@ergo-faucet/database": "^0.1.0"
+    "@ergo-faucet/database": "^0.1.0",
+    "@fleet-sdk/common": "^0.10.0",
+    "@fleet-sdk/core": "^0.12.0",
+    "@fleet-sdk/wallet": "^0.12.0"
   }
 }
