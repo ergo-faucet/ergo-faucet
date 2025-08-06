@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1755070398282 implements MigrationInterface {
-  name = 'Migration1755070398282';
+export class Migration1754489748814 implements MigrationInterface {
+  name = 'Migration1754489748814';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -18,6 +18,8 @@ export class Migration1755070398282 implements MigrationInterface {
                 "timestamp" date NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
+                "signedTx" text NOT NULL,
+                "numberOfTries" integer NOT NULL,
                 "userId" integer,
                 "packageId" integer
             )
@@ -118,6 +120,8 @@ export class Migration1755070398282 implements MigrationInterface {
                 "timestamp" date NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
+                "signedTx" text NOT NULL,
+                "numberOfTries" integer NOT NULL,
                 "userId" integer,
                 "packageId" integer,
                 CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -130,6 +134,8 @@ export class Migration1755070398282 implements MigrationInterface {
                     "timestamp",
                     "destinationAddress",
                     "status",
+                    "signedTx",
+                    "numberOfTries",
                     "userId",
                     "packageId"
                 )
@@ -137,6 +143,8 @@ export class Migration1755070398282 implements MigrationInterface {
                 "timestamp",
                 "destinationAddress",
                 "status",
+                "signedTx",
+                "numberOfTries",
                 "userId",
                 "packageId"
             FROM "user_request_entity"
@@ -369,6 +377,8 @@ export class Migration1755070398282 implements MigrationInterface {
                 "timestamp" date NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
+                "signedTx" text NOT NULL,
+                "numberOfTries" integer NOT NULL,
                 "userId" integer,
                 "packageId" integer
             )
@@ -379,6 +389,8 @@ export class Migration1755070398282 implements MigrationInterface {
                     "timestamp",
                     "destinationAddress",
                     "status",
+                    "signedTx",
+                    "numberOfTries",
                     "userId",
                     "packageId"
                 )
@@ -386,6 +398,8 @@ export class Migration1755070398282 implements MigrationInterface {
                 "timestamp",
                 "destinationAddress",
                 "status",
+                "signedTx",
+                "numberOfTries",
                 "userId",
                 "packageId"
             FROM "temporary_user_request_entity"
