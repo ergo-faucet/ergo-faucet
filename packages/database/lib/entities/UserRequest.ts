@@ -35,5 +35,11 @@ export class UserRequest {
   destinationAddress!: string;
 
   @Column({ type: 'text' })
-  status!: 'paid' | 'failed' | 'pending';
+  status!: 'paid' | 'failed' | 'pending' | 'submitted';
+
+  @Column({ type: 'text' })
+  signedTx?: string;
+
+  @Column({ type: 'int' })
+  numberOfTries!: number;
 }
