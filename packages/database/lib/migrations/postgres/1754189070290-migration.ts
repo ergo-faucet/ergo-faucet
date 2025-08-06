@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1753531757728 implements MigrationInterface {
-  name = 'Migration1753531757728';
+export class Migration1754189070290 implements MigrationInterface {
+  name = 'Migration1754189070290';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -28,6 +28,7 @@ export class Migration1753531757728 implements MigrationInterface {
             CREATE TABLE "user_entity" (
                 "id" SERIAL NOT NULL,
                 "discord_id" bigint,
+                "x_id" bigint,
                 "name" character varying,
                 "metadata" text,
                 "lastLogin" bigint,

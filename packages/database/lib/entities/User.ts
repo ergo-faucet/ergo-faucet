@@ -26,6 +26,9 @@ export class User {
   @Column({ type: 'bigint', nullable: true })
   discord_id!: number;
 
+  @Column({ type: 'bigint', nullable: true })
+  x_id!: number;
+
   @Column({ type: 'varchar', nullable: true })
   name!: string;
 
@@ -35,6 +38,11 @@ export class User {
       name?: string;
       username?: string;
       email?: string;
+      join_date?: Date;
+    };
+    x?: {
+      name?: string;
+      username?: string;
       join_date?: Date;
     };
   };
