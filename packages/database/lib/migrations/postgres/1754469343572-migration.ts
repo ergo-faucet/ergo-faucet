@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1754189070290 implements MigrationInterface {
-  name = 'Migration1754189070290';
+export class Migration1754469343572 implements MigrationInterface {
+  name = 'Migration1754469343572';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -32,6 +32,8 @@ export class Migration1754189070290 implements MigrationInterface {
                 "name" character varying,
                 "metadata" text,
                 "lastLogin" bigint,
+                CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
+                CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
                 CONSTRAINT "PK_b54f8ea623b17094db7667d8206" PRIMARY KEY ("id")
             )
         `);

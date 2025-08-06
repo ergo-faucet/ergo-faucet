@@ -23,10 +23,10 @@ export class User {
   @OneToMany(() => UserRequest, (request) => request.user)
   requests!: Relation<UserRequest[]>;
 
-  @Column({ type: 'bigint', nullable: true })
+  @Column({ type: 'bigint', nullable: true, unique: true })
   discord_id!: number;
 
-  @Column({ type: 'bigint', nullable: true })
+  @Column({ type: 'bigint', nullable: true, unique: true })
   x_id!: number;
 
   @Column({ type: 'varchar', nullable: true })
