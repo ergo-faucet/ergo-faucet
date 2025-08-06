@@ -1,1 +1,1 @@
-export { userRequestPayload } from './types';
+export { userRequestPayload } from './user';
