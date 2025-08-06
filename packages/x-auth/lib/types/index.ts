@@ -5,6 +5,4 @@ export {
   ErrorResponse,
 } from './schemas';
 
-export { userRequestPayload } from './userRequestPayload';
-
 export { XAuthConfig, SessionData, XUserData, XToken } from './xPayloads';

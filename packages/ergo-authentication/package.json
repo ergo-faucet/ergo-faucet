@@ -35,6 +35,7 @@
   "dependencies": {
     "@ergo-faucet/database": "^0.1.0",
     "@ergo-faucet/fastify-server": "^0.1.0",
+    "@ergo-faucet/types": "^0.1.0",
     "@fleet-sdk/core": "^0.10.0",
     "@fleet-sdk/crypto": "^0.10.0",
     "@fleet-sdk/wallet": "^0.10.0",

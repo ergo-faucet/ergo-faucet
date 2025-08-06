@@ -13,11 +13,11 @@ import {
   CallBackRouteResponse200,
   XToken,
   ErrorResponse,
-  userRequestPayload,
   XUserData,
   XAuthConfig,
   SessionData,
 } from './types';
+import { userRequestPayload } from '@ergo-faucet/types';
 
 export class XAuth {
   private static instance: XAuth;

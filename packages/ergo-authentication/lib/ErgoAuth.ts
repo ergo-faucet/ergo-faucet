@@ -13,12 +13,12 @@ import {
   ChallengeResponse200,
   ChallengeVerificationResult,
   ErgoAuthConfig,
-  payloadJWT,
   RefreshTokenBody,
   RefreshTokenBodyType,
   RefreshTokenResponse200,
   RefreshTokenResponse401,
 } from './types';
+import { userRequestPayload } from '@ergo-faucet/types';
 import {
   FastifyAPIServer,
   FastifySeverInstance,
@@ -323,9 +323,10 @@ export class ErgoAuth {
         const user =
           await this.userAddressAction.findOrCreateUserWithAddress(address);
 
-        const payload: payloadJWT = {
+        const payload: userRequestPayload = {
           userId: user.id,
           address,
+          name: user.name || '',
         };
 
         const refreshToken = await reply.jwtSign(payload, {
@@ -368,7 +369,7 @@ export class ErgoAuth {
       },
       async (request, reply) => {
         try {
-          const decoded = await request.jwtVerify<payloadJWT>({
+          const decoded = await request.jwtVerify<userRequestPayload>({
             onlyCookie: true,
           });
 

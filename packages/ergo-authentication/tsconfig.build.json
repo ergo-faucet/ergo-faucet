@@ -6,6 +6,7 @@
   "exclude": ["tests", "vitest.config.ts"],
   "references": [
     { "path": "../fastify-server/tsconfig.build.json" },
-    { "path": "../database/tsconfig.build.json" }
+    { "path": "../database/tsconfig.build.json" },
+    { "path": "../types/tsconfig.build.json" }
   ]
 }

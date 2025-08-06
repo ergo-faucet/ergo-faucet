@@ -4,5 +4,9 @@
     "outDir": "./dist"
   },
   "include": ["tests", "lib", "vitest.config.ts"],
-  "references": [{ "path": "../fastify-server" }, { "path": "../database" }]
+  "references": [
+    { "path": "../fastify-server" },
+    { "path": "../database" },
+    { "path": "../types" }
+  ]
 }

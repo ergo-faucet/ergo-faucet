@@ -12,11 +12,10 @@ import {
   CallBackRouteResponse200,
   discordToken,
   ErrorResponse,
-  userRequestPayload,
   userDiscordData,
   DiscordAuthConfig,
 } from './types';
-
+import { userRequestPayload } from '@ergo-faucet/types';
 export class DiscordAuth {
   private static instance: DiscordAuth;
   private readonly logger: AbstractLogger;

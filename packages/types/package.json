@@ -1,7 +1,7 @@
 {
-  "name": "@ergo-faucet/x-auth",
+  "name": "@ergo-faucet/types",
   "version": "0.1.0",
-  "description": "X authentication utilities for ergo-faucet",
+  "description": "Type definitions for Ergo Faucet",
   "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
   "license": "GPL-3.0",
   "author": "TechStack-BlockChain",
@@ -26,15 +26,5 @@
   },
   "engines": {
     "node": ">=20.11.0"
-  },
-  "dependencies": {
-    "@ergo-faucet/database": "^0.1.0",
-    "@ergo-faucet/fastify-server": "^0.1.0",
-    "@ergo-faucet/types": "^0.1.0",
-    "@rosen-bridge/abstract-logger": "^2.0.1",
-    "@sinclair/typebox": "^0.34.38",
-    "axios": "^1.11.0",
-    "crypto": "^1.0.1",
-    "ioredis": "^5.7.0"
   }
 }

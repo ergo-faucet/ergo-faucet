@@ -13,7 +13,6 @@ export {
   ChallengeErrorResponse,
   ChallengeResponse200,
 } from './schemas';
-export { payloadJWT } from './payloadJWTType';
 export {
   AuthenticationBodyType,
   RefreshTokenBodyType,
