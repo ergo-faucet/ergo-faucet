@@ -3,6 +3,7 @@ import { DataSource } from '@rosen-bridge/extended-typeorm';
 import {
   DatabaseConfig,
   DiscordAction,
+  GoogleAction,
   PackageAction,
   UserAddressAction,
   XAction,
@@ -68,6 +69,7 @@ class DataSourceHandler {
       UserAddressAction.initialize(dataSource, this.instance.logger);
       XAction.initialize(dataSource, this.instance.logger);
       PackageAction.initialize(dataSource, this.instance.logger);
+      GoogleAction.initialize(dataSource, this.instance.logger);
 
       this.instance.logger.info(`Database initialized successfully.`);
     } catch (error) {
@@ -96,6 +98,7 @@ class DataSourceHandler {
       userAddressAction: UserAddressAction.getInstance(),
       xAction: XAction.getInstance(),
       packageAction: PackageAction.getInstance(),
+      googleAction: GoogleAction.getInstance(),
     };
   };
 

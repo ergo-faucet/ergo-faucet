@@ -5,6 +5,7 @@ export {
   PackageAction,
   DiscordAction,
   XAction,
+  GoogleAction,
 } from './actions';
 export {
   Asset,
