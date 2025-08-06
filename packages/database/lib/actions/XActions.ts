@@ -97,16 +97,15 @@ class XAction {
     access_token: string,
     refresh_token: string,
   ): Promise<void> => {
-    const xIdNum = Number(x_id);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error(`User with ID ${userId} not found`);
 
-    if (user.x_id != null && user.x_id !== xIdNum) {
+    if (user.x_id != null && user.x_id !== x_id) {
       throw new Error(`User ${userId} already linked a different X account`);
     }
 
     const existingUserWithX = await this.userRepository.findOne({
-      where: { x_id: xIdNum, id: Not(userId) },
+      where: { x_id: x_id, id: Not(userId) },
     });
 
     if (existingUserWithX) {
@@ -115,7 +114,7 @@ class XAction {
       );
     }
 
-    user.x_id = xIdNum;
+    user.x_id = x_id;
     user.name = user.name ?? name ?? undefined;
     user.metadata = {
       ...user.metadata,
@@ -127,7 +126,7 @@ class XAction {
     };
 
     const savedUser = await this.userRepository.save(user);
-    this.logger.debug(`Linked X ID ${xIdNum} to user ID ${userId}`);
+    this.logger.debug(`Linked X ID ${x_id} to user ID ${userId}`);
 
     const expireAt = new Date(Date.now() + expiresTime * 1000);
 
