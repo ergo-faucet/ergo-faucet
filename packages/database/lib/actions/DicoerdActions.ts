@@ -103,19 +103,17 @@ class DiscordAction {
     email?: string,
     global_name?: string,
   ): Promise<void> => {
-    const discordIdNum = Number(discord_id);
-
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error(`User with ID ${userId} not found`);
 
-    if (user.discord_id != null && user.discord_id !== discordIdNum) {
+    if (user.discord_id != null && user.discord_id !== discord_id) {
       throw new Error(
         `User ${userId} already linked a different Discord account`,
       );
     }
 
     const existingUserWithDiscord = await this.userRepository.findOne({
-      where: { discord_id: discordIdNum, id: Not(userId) },
+      where: { discord_id: discord_id, id: Not(userId) },
     });
 
     if (existingUserWithDiscord) {
@@ -124,7 +122,7 @@ class DiscordAction {
       );
     }
 
-    user.discord_id = discordIdNum;
+    user.discord_id = discord_id;
     user.name = user.name ?? global_name ?? undefined;
     user.metadata = {
       ...user.metadata,
@@ -137,7 +135,7 @@ class DiscordAction {
     };
 
     const savedUser = await this.userRepository.save(user);
-    this.logger.debug(`Linked Discord ID ${discordIdNum} to user ID ${userId}`);
+    this.logger.debug(`Linked Discord ID ${discord_id} to user ID ${userId}`);
 
     const expiresAt = new Date(Date.now() + expiresTime * 1000);
 
