@@ -1,7 +1,7 @@
 {
   "name": "@ergo-faucet/discord-auth",
   "version": "0.1.0",
-  "description": "discord authentication utilities for ergo-faucet",
+  "description": "Discord authentication utilities for ergo-faucet",
   "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
   "license": "GPL-3.0",
   "author": "TechStack-BlockChain",
@@ -12,6 +12,7 @@
     "build": "tsc --build tsconfig.build.json",
     "lint": "eslint --fix . && npm run prettify",
     "prettify": "prettier --write . --ignore-path ./.gitignore",
+    "release": "npm run build && npm publish --access public",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
@@ -30,6 +31,8 @@
   "dependencies": {
     "@ergo-faucet/database": "^0.1.0",
     "@ergo-faucet/fastify-server": "^0.1.0",
+    "@rosen-bridge/abstract-logger": "^2.0.1",
+    "@sinclair/typebox": "^0.34.38",
     "axios": "^1.10.0"
   }
 }
