@@ -1,12 +1,6 @@
 import { createDataSource } from './dataSource';
 import { DataSource } from '@rosen-bridge/extended-typeorm';
-import {
-  DatabaseConfig,
-  DiscordAction,
-  PackageAction,
-  UserAddressAction,
-  XAction,
-} from './index';
+import { DatabaseConfig } from './index';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 /**
@@ -62,18 +56,7 @@ class DataSourceHandler {
     await this.instance.dataSource.initialize();
     await this.instance.dataSource.runMigrations();
 
-    try {
-      const dataSource = this.getInstance().getDataSource();
-      DiscordAction.initialize(dataSource, this.instance.logger);
-      UserAddressAction.initialize(dataSource, this.instance.logger);
-      XAction.initialize(dataSource, this.instance.logger);
-      PackageAction.initialize(dataSource, this.instance.logger);
-
-      this.instance.logger.info(`Database initialized successfully.`);
-    } catch (error) {
-      this.instance.logger.debug('Database setup failed', error);
-      throw error;
-    }
+    this.instance.logger.info(`Database initialized successfully.`);
   };
 
   /**
@@ -84,19 +67,6 @@ class DataSourceHandler {
    */
   public getDataSource = (): DataSource => {
     return this.dataSource;
-  };
-
-  /**
-   * Get action class instances
-   * @returns Object containing all action class instances
-   */
-  public getActions = () => {
-    return {
-      discordAction: DiscordAction.getInstance(),
-      userAddressAction: UserAddressAction.getInstance(),
-      xAction: XAction.getInstance(),
-      packageAction: PackageAction.getInstance(),
-    };
   };
 
   /**
