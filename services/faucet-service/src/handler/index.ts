@@ -4,3 +4,4 @@ export { setupFastifyServer } from './fastify';
 export { setupErgoAuth } from './ergAuth';
 export { setupDiscordAuth } from './discordAuth';
 export { setupXAuth } from './xAuth';
+export { setupGoogleAuth } from './googleAuth';

@@ -19,6 +19,7 @@
     "@ergo-faucet/discord-auth": "^0.1.0",
     "@ergo-faucet/ergo-authentication": "^0.1.0",
     "@ergo-faucet/fastify-server": "^0.1.0",
+    "@ergo-faucet/google-auth": "^0.1.0",
     "@ergo-faucet/google-recaptcha": "^0.1.0",
     "@ergo-faucet/x-auth": "^0.1.0",
     "@rosen-bridge/callback-logger": "^0.1.0",

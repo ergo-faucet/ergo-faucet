@@ -62,7 +62,6 @@ database:
 redis:
   host: 'localhost'
   port: 6379
-  password: ''
 
 # ErgoAuth configuration
 ergoAuth:
@@ -80,10 +79,19 @@ discord:
   expiresTime: 7200
 
 # XAuth configuration
-x:
+x-platform:
   clientID: 'your-x-client-id'
   clientSecret: 'your-x-client-secret'
-  redirectURL: 'http://localhost:3000/auth/x/callback'
+  redirectURL: 'http://localhost:3000/auth/x-platform/callback'
   scope: 'read write'
+  expiresTime: 7200
+  sessionTTL: 3600
+
+# GoogleAuth configuration
+googleAuth:
+  clientId: 'your-google-client-id'
+  clientSecret: 'your-google-client-secret'
+  redirectUrl: 'http://localhost:3000/google/callback'
+  scope: 'email profile openid'
   expiresTime: 7200
   sessionTTL: 3600

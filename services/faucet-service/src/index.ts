@@ -5,6 +5,7 @@ import {
   setupDiscordAuth,
   setupErgoAuth,
   setupFastifyServer,
+  setupGoogleAuth,
   setupRecaptcha,
   setupXAuth,
 } from './handler';
@@ -20,6 +21,7 @@ const main = async () => {
     await setupErgoAuth();
     await setupDiscordAuth();
     await setupXAuth();
+    await setupGoogleAuth();
     logger.info('All packages was initialized successfuly');
   } catch (err) {
     logger.debug('Error in initialize the packages', err);
