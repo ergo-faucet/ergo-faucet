@@ -1,44 +1,39 @@
-#logging configuration
+# logging configuration
 logs:
-  - type: 'file' # [file, console]
-    path: './logs/' # path to log files (only for rotateFile type)
-    maxSize: '20m' # maximum size of each log file (20 MB) (only for rotateFile type)
-    maxFiles: '14d' # maximum number of log files (14 days) (only for rotateFile type)
-    level: 'info' # [debug, info, warn, error]
+  - type: 'file'
+    path: './logs/'
+    maxSize: '20m'
+    maxFiles: '14d'
+    level: 'info'
   - type: 'console'
     level: 'info'
 
-# recaptcha:
 recaptcha:
-  key: 'recaptcha-key'
+  key: ''
   threshold: 0.5
   hostnames:
     - 'localhost'
 
-# Server configuration
 server:
   port: 3000
   host: '0.0.0.0'
   corsOrigins: '*'
-  jwtSecret: 'your-jwt-secret'
+  jwtSecret: ''
   jwtExpiration: 86400
   activeFastifyLogger: true
   swagger:
     openapi:
-      {
-        info:
-          {
-            title: 'Faucet Service API',
-            description: 'API documentation for Faucet Service',
-            version: '1.0.0',
-          },
-      }
-
+      info:
+        title: 'Faucet Service API'
+        description: 'API documentation for Faucet Service'
+        version: '1.0.0'
     swaggerUi:
       routePrefix: '/docs'
-      uiConfig: { docExpansion: 'none', deepLinking: false }
+      uiConfig:
+        docExpansion: 'none'
+        deepLinking: false
   cookie:
-    secret: 'your-cookie-secret'
+    secret: ''
     signed: true
     name: 'refreshToken'
     httpOnly: true
@@ -47,43 +42,38 @@ server:
     path: '/'
     domain: 'localhost'
 
-# Database configuration
 database:
   type: 'postgres'
-  path: '' # Not used for PostgreSQL
+  path: ''
   host: 'localhost'
   port: 5432
   username: 'faucet_user'
-  password: 'faucet_password'
+  password: ''
   database: 'faucet_db'
   logging: false
 
-# Redis configuration
 redis:
   host: 'localhost'
   port: 6379
   password: ''
 
-# ErgoAuth configuration
 ergoAuth:
   challengeExpirySeconds: 300
   refreshTokenExpirySeconds: 2592000
   accessTokenExpirySeconds: 3600
   networkAddress: 'Testnet'
 
-# Discord configuration
 discord:
   clientID: 'your-discord-client-id'
-  clientSercret: 'your-discord-client-secret'
+  clientSercret: ''
   redirectURL: 'http://localhost:3000/auth/discord/callback'
   scope: 'identify email'
   expiresTime: 7200
 
-# XAuth configuration
-x:
+x-platform:
   clientID: 'your-x-client-id'
-  clientSecret: 'your-x-client-secret'
-  redirectURL: 'http://localhost:3000/auth/x/callback'
+  clientSecret: ''
+  redirectURL: 'http://localhost:3000/auth/x-platform/callback'
   scope: 'read write'
   expiresTime: 7200
   sessionTTL: 3600
