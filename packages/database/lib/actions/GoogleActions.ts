@@ -83,7 +83,7 @@ class GoogleAction {
    * @param google_id - Google User ID (string from Google API)
    * @param name - Google display name
    * @param email - User email from Google
-   * @param expiresAt - Token expiration date
+   * @param expiresTime - Token expiration time in seconds
    * @param access_token - Google OAuth2 access token
    * @param refresh_token - Google OAuth2 refresh token
    * @returns Promise<void>
@@ -93,7 +93,7 @@ class GoogleAction {
     google_id: string,
     name: string,
     email: string,
-    expiresAt: Date,
+    expiresTime: number,
     access_token: string,
     refresh_token: string,
   ): Promise<void> => {
@@ -128,6 +128,8 @@ class GoogleAction {
 
     const savedUser = await this.userRepository.save(user);
     this.logger.debug(`Linked Google ID ${google_id} to user ID ${userId}`);
+
+    const expiresAt = new Date(Date.now() + expiresTime * 1000);
 
     await this.saveOrUpdateGoogleAuthStatus(
       savedUser,
