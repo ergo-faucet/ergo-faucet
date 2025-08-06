@@ -13,12 +13,11 @@ import {
   CallBackRouteResponse200,
   XToken,
   ErrorResponse,
-  userRequestPayload,
   XUserData,
   XAuthConfig,
   SessionData,
 } from './types';
-
+import { userRequestPayload } from '@ergo-faucet/common-types';
 export class XAuth {
   private static instance: XAuth;
   private readonly logger: AbstractLogger;
@@ -157,7 +156,7 @@ export class XAuth {
     const codeChallenge = crypto
       .createHash('sha256')
       .update(codeVerifier)
-      .digest('base64url');
+      .digest('base64');
     return { codeVerifier, codeChallenge };
   };
 
