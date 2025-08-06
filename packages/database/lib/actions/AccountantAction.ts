@@ -9,12 +9,23 @@ class AccountantAction {
   private dataSource: DataSource;
   private userRequestRepository: Repository<UserRequest>;
 
+  /**
+   * Constructs an AccountantAction instance.
+   * @param dataSource - The TypeORM DataSource instance.
+   * @param logger - Optional logger for debugging.
+   */
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.dataSource = dataSource;
     this.userRequestRepository = this.dataSource.getRepository(UserRequest);
   }
 
+  /**
+   * Initializes the AccountantAction singleton instance.
+   * Throws an error if already initialized.
+   * @param dataSource - The TypeORM DataSource instance.
+   * @param logger - Optional logger for debugging.
+   */
   public static initialize = (
     dataSource: DataSource,
     logger?: AbstractLogger,

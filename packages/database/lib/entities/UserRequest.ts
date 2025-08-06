@@ -37,9 +37,12 @@ export class UserRequest {
   @Column({ type: 'text' })
   status!: 'paid' | 'failed' | 'pending' | 'submitted';
 
-  @Column({ type: 'text' })
+  @Column({ name: 'signed_tx', type: 'text', nullable: true })
   signedTx?: string;
 
-  @Column({ type: 'int' })
+  @Column({ name: 'creationHeight', type: 'int', nullable: true })
+  creationHeight!: number;
+
+  @Column({ type: 'int', default: 0 })
   numberOfTries!: number;
 }
