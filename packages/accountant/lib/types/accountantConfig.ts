@@ -7,4 +7,7 @@ export interface AccountantConfig {
   accountantAction: AccountantAction;
   mnemonic: string;
   nodeUrl: string;
+  minNanoErg: number;
+  minFee: number;
+  confirmationLimit: number;
 }

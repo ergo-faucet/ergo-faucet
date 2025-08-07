@@ -41,7 +41,7 @@ export class UserRequest {
   signedTx?: string;
 
   @Column({ name: 'creationHeight', type: 'int', nullable: true })
-  creationHeight!: number;
+  creationHeight?: number;
 
   @Column({ type: 'int', default: 0 })
   numberOfTries!: number;
