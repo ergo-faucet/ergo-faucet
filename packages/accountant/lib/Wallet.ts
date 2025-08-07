@@ -55,6 +55,16 @@ export class Wallet {
   };
 
   /**
+   * Generates the wallet address based on the mnemonic.
+   *
+   * @returns {string} - the wallet address of the child key.
+   *
+   */
+  public getWalletAddress = (): string => {
+    return this.walletAddress;
+  };
+
+  /**
    * Signs an unsigned Ergo transaction using the first derived child key from the mnemonic.
    *
    * @param {ErgoUnsignedTransaction} unsignedTx - The unsigned Ergo transaction to be signed.

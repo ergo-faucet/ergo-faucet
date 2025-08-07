@@ -326,4 +326,32 @@ export class NodeModel {
       });
     return false;
   };
+
+  public isTransactionMined = async (
+    TransactionId: string,
+  ): Promise<boolean> => {
+    if (this.axiosInstance == undefined) {
+      const error: errorResponse = {
+        error: 500,
+        reason: 'Internal Error',
+        detail: 'The Network object has not been initialized!',
+      };
+      return Promise.reject(error);
+    }
+
+    await this.axiosInstance
+      .get(`/blockchain/transaction/byId/${TransactionId}`)
+      .then((response) => {
+        if (response.status === 200) return true;
+      })
+      .catch((error) => {
+        if (axios.isAxiosError(error)) {
+          this.logger.error(`Axios error.`, {
+            message: error.message,
+            stack: error.stack,
+          });
+        } else this.logger.error(error);
+      });
+    return false;
+  };
 }
