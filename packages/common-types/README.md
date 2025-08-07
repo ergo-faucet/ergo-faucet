@@ -1,4 +1,4 @@
-# @ergo-faucet/discord-auth
+# @ergo-faucet/common-types
 
 ## Table of contents
 
@@ -12,11 +12,11 @@
 npm:
 
 ```sh
-npm i @ergo-faucet/discord-auth
+npm i @ergo-faucet/common-types
 ```
 
 yarn:
 
 ```sh
-yarn add @ergo-faucet/discord-auth
+yarn add @ergo-faucet/common-types
 ```

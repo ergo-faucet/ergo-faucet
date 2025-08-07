@@ -5,6 +5,7 @@ export {
   PackageAction,
   DiscordAction,
   AccountantAction,
+  XAction,
 } from './actions';
 export {
   Asset,

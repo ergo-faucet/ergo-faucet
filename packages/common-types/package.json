@@ -1,7 +1,7 @@
 {
-  "name": "@ergo-faucet/discord-auth",
+  "name": "@ergo-faucet/common-types",
   "version": "0.1.0",
-  "description": "Discord authentication utilities for ergo-faucet",
+  "description": "Common types for Ergo Faucet",
   "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
   "license": "GPL-3.0",
   "author": "TechStack-BlockChain",
@@ -22,17 +22,9 @@
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.4",
-    "tsx": "^4.19.4",
     "typescript": "^5.3.3"
   },
   "engines": {
     "node": ">=20.11.0"
-  },
-  "dependencies": {
-    "@ergo-faucet/database": "^0.1.0",
-    "@ergo-faucet/fastify-server": "^0.1.0",
-    "@rosen-bridge/abstract-logger": "^2.0.1",
-    "@sinclair/typebox": "^0.34.38",
-    "axios": "^1.10.0"
   }
 }

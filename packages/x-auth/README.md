@@ -1,4 +1,4 @@
-# @ergo-faucet/discord-auth
+# @ergo-faucet/x-auth
 
 ## Table of contents
 
@@ -12,11 +12,11 @@
 npm:
 
 ```sh
-npm i @ergo-faucet/discord-auth
+npm i @ergo-faucet/x-auth
 ```
 
 yarn:
 
 ```sh
-yarn add @ergo-faucet/discord-auth
+yarn add @ergo-faucet/x-auth
 ```

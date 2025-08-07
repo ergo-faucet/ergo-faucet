@@ -162,7 +162,7 @@ class Accountant {
 
       if (isMined) {
         const currentHeight = await this.nodeModel.getCurrentBlockchainHeight();
-        const confirmations = currentHeight - req.creationHeight;
+        const confirmations = currentHeight - req.creationHeight!;
         if (confirmations > this.confirmationLimit)
           await this.accountantAction.updateUserRequestPaymentInfo(
             req.id,
