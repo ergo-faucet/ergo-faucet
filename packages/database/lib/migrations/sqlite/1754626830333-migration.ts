@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1754523855018 implements MigrationInterface {
-  name = 'Migration1754523855018';
+export class Migration1754626830333 implements MigrationInterface {
+  name = 'Migration1754626830333';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -15,8 +15,9 @@ export class Migration1754523855018 implements MigrationInterface {
                 "signed_tx" text,
                 "creationHeight" integer,
                 "numberOfTries" integer NOT NULL DEFAULT (0),
-                CONSTRAINT "FK_d1a8058eb7a3869b932f1905afd" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+                "txId" text,
+                CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_d1a8058eb7a3869b932f1905afd" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -26,14 +27,20 @@ export class Migration1754523855018 implements MigrationInterface {
                     "destinationAddress",
                     "status",
                     "userId",
-                    "packageId"
+                    "packageId",
+                    "signed_tx",
+                    "creationHeight",
+                    "numberOfTries"
                 )
             SELECT "id",
                 "timestamp",
                 "destinationAddress",
                 "status",
                 "userId",
-                "packageId"
+                "packageId",
+                "signed_tx",
+                "creationHeight",
+                "numberOfTries"
             FROM "user_request_entity"
         `);
     await queryRunner.query(`
@@ -58,8 +65,11 @@ export class Migration1754523855018 implements MigrationInterface {
                 "status" text NOT NULL,
                 "userId" integer,
                 "packageId" integer,
-                CONSTRAINT "FK_d1a8058eb7a3869b932f1905afd" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+                "signed_tx" text,
+                "creationHeight" integer,
+                "numberOfTries" integer NOT NULL DEFAULT (0),
+                CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_d1a8058eb7a3869b932f1905afd" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -69,14 +79,20 @@ export class Migration1754523855018 implements MigrationInterface {
                     "destinationAddress",
                     "status",
                     "userId",
-                    "packageId"
+                    "packageId",
+                    "signed_tx",
+                    "creationHeight",
+                    "numberOfTries"
                 )
             SELECT "id",
                 "timestamp",
                 "destinationAddress",
                 "status",
                 "userId",
-                "packageId"
+                "packageId",
+                "signed_tx",
+                "creationHeight",
+                "numberOfTries"
             FROM "temporary_user_request_entity"
         `);
     await queryRunner.query(`
