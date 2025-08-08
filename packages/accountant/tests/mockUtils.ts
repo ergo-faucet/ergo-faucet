@@ -1,0 +1,71 @@
+import {
+  AccountantAction,
+  Package,
+  User,
+  UserRequest,
+} from '@ergo-faucet/database';
+import { Network } from '@fleet-sdk/common';
+import { vi } from 'vitest';
+import { AccountantConfig } from '../lib';
+
+const mockLogger = {
+  debug: vi.fn(),
+  info: vi.fn(),
+  warn: vi.fn(),
+  error: vi.fn(),
+  // eslint-disable-next-line
+} as any;
+
+const mockAccountantAction = {
+  getUnpaidRequests: vi.fn(),
+  updateUserRequestPaymentInfo: vi.fn(),
+  // eslint-disable-next-line
+} as any;
+
+const mockNodeModel = {
+  getCurrentBlockchainHeight: vi.fn(),
+  submitTransaction: vi.fn(),
+  submitTransactionBytes: vi.fn(),
+  isTransactionInMempool: vi.fn(),
+  isTransactionMined: vi.fn(),
+  // eslint-disable-next-line
+} as any;
+
+const mockWallet = {
+  selectBoxes: vi.fn(),
+  signTransaction: vi.fn(),
+  getWalletAddress: vi
+    .fn()
+    .mockReturnValue('9iBotAU1mvrbuFsyEMokLqeWp45t6G38WK4SurzquGtjieGohMk'),
+  // eslint-disable-next-line
+} as any;
+
+export const mockedConfig: AccountantConfig = {
+  network: Network.Mainnet,
+  tryLimit: 3,
+  accountantAction: {} as AccountantAction,
+  nodeUrl: 'http://mock-node-url',
+  mnemonic: 'test mnemonic',
+  minFee: 1000000,
+  minNanoErg: 1000000,
+  confirmationLimit: 10,
+};
+
+export const mockUserRequest: UserRequest = {
+  id: 1,
+  user: {} as User,
+  package: {
+    id: 1,
+    name: 'Test Package',
+    assets: [{ tokenId: 'token1', amount: 100n }],
+  } as Package,
+  timestamp: new Date(),
+  destinationAddress: '3WxFE2x4KVDYeQyJhKvK912AHHME6wNLBT8p6w7M1KqMp71jCAWc',
+  status: 'pending',
+  txSerialized: undefined,
+  txId: undefined,
+  creationHeight: 100,
+  numberOfTries: 0,
+};
+
+export { mockNodeModel, mockWallet, mockAccountantAction, mockLogger };

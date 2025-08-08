@@ -1,5 +1,5 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { Network, SignedTransaction } from '@fleet-sdk/common';
+import { Network } from '@fleet-sdk/common';
 import { AccountantConfig } from './types/accountantConfig';
 import { AccountantAction, UserRequest } from '@ergo-faucet/database';
 import { NodeModel } from './NodeModel';
@@ -10,6 +10,8 @@ import {
   OutputBuilder,
   TransactionBuilder,
 } from '@fleet-sdk/core';
+import { hex } from '@fleet-sdk/crypto';
+import { serializeTransaction } from '@fleet-sdk/serializer';
 
 class Accountant {
   private static instance: Accountant;
@@ -84,7 +86,6 @@ class Accountant {
         await this.accountantAction.updateUserRequestPaymentInfo(
           req.id,
           'failed',
-          '',
           req.numberOfTries,
         );
         return;
@@ -115,17 +116,21 @@ class Accountant {
 
       // Sign Transction
       const signedTx = this.wallet.signTransaction(unsignedTx);
+      const serialized = hex.encode(serializeTransaction(signedTx).toBytes());
 
       // Submit Transaction to network
-      const transactionId = await this.nodeModel.submitTransaction(signedTx);
+      const transactionId =
+        await this.nodeModel.submitTransactionBytes(serialized);
+
       this.logger.debug('Transaction sent successfully', {
         transactionId,
       });
       await this.accountantAction.updateUserRequestPaymentInfo(
         req.id,
         'submitted',
-        JSON.stringify(signedTx),
         req.numberOfTries + 1,
+        serialized,
+        transactionId,
       );
     } catch (error) {
       if (error instanceof NotEnoughAssetsError) {
@@ -133,7 +138,6 @@ class Accountant {
         await this.accountantAction.updateUserRequestPaymentInfo(
           req.id,
           'pending',
-          '',
           req.numberOfTries + 1,
         );
         return;
@@ -144,17 +148,16 @@ class Accountant {
 
   public handleSubmittedRequest = async (req: UserRequest): Promise<void> => {
     try {
-      if (!req.signedTx) {
+      if (req.txSerialized == undefined || req.txSerialized == null) {
         await this.accountantAction.updateUserRequestPaymentInfo(
           req.id,
           'pending',
-          '',
           req.numberOfTries,
         );
         return;
       }
-      const signedTx: SignedTransaction = JSON.parse(req.signedTx);
-      const transactionId = signedTx.id;
+      const txSerialized: string = req.txSerialized;
+      const transactionId = req.txId!;
 
       const isInMempool =
         await this.nodeModel.isTransactionInMempool(transactionId);
@@ -167,14 +170,14 @@ class Accountant {
           await this.accountantAction.updateUserRequestPaymentInfo(
             req.id,
             'paid',
-            '',
             req.numberOfTries,
           );
         return;
       }
       if (!isInMempool) {
         // Submit existing Transaction to network once again
-        const transactionId = await this.nodeModel.submitTransaction(signedTx);
+        const transactionId =
+          await this.nodeModel.submitTransactionBytes(txSerialized);
         this.logger.debug('Transaction sent successfully', {
           transactionId,
         });
@@ -185,7 +188,6 @@ class Accountant {
       await this.accountantAction.updateUserRequestPaymentInfo(
         req.id,
         'pending',
-        '',
         req.numberOfTries,
       );
     }
