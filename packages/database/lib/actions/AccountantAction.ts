@@ -18,6 +18,8 @@ class AccountantAction {
     this.logger = logger ? logger : new DummyLogger();
     this.dataSource = dataSource;
     this.userRequestRepository = this.dataSource.getRepository(UserRequest);
+
+    this.logger.debug('AccountantAction instance created.');
   }
 
   /**
@@ -37,6 +39,7 @@ class AccountantAction {
     }
 
     AccountantAction.instance = new AccountantAction(dataSource, logger);
+    logger?.info('AccountantAction singleton instance initialized.');
   };
 
   /**
@@ -58,21 +61,24 @@ class AccountantAction {
    */
   public getUnpaidRequests = async (): Promise<UserRequest[]> => {
     this.logger.debug(
-      'Fetching pending or submitted user requests from database ',
+      'Fetching user requests with status "pending" or "submitted" from the database.',
     );
-    return await this.userRequestRepository.find({
+    const requests = await this.userRequestRepository.find({
       where: [{ status: 'pending' }, { status: 'submitted' }],
-      order: { id: 'asc' }, //from oldest to newest request
+      order: { id: 'asc' }, // From oldest to newest request
     });
+    this.logger.info(`Fetched ${requests.length} unpaid user requests.`);
+    return requests;
   };
 
   /**
    * Updates payment information for a specific user request.
+   * Logs the update operation and handles cases where the request is not found.
    * @param userRequestId - The ID of the user request to update.
-   * @param numberOfTries - The number of payment attempts.
    * @param status - The new status ('pending', 'submitted', 'paid', 'failed').
-   * @param txSerialized - The Serialized transaction string.
-   * @param txId - The transaction id
+   * @param numberOfTries - The number of payment attempts.
+   * @param txSerialized - The serialized transaction string (optional).
+   * @param txId - The transaction ID (optional).
    * @returns {Promise<void>}
    */
   public updateUserRequestPaymentInfo = async (
@@ -82,23 +88,34 @@ class AccountantAction {
     txSerialized?: string,
     txId?: string,
   ): Promise<void> => {
+    this.logger.debug(
+      `Updating payment info for user request ID: ${userRequestId}.`,
+    );
+
     const userRequest = await this.userRequestRepository.findOne({
       where: { id: userRequestId },
     });
+
     if (!userRequest) {
-      this.logger.debug(`There is no user request with id ${userRequestId}`);
+      this.logger.debug(
+        `No user request found with ID: ${userRequestId}. Update operation aborted.`,
+      );
       return;
     }
+
+    // Update user request fields
     userRequest.status = status;
     userRequest.txSerialized = txSerialized ? txSerialized : '';
     userRequest.txId = txId ? txId : '';
-
     userRequest.numberOfTries = numberOfTries;
 
+    // Save updated user request
     await this.userRequestRepository.save(userRequest);
-    this.logger.debug(
-      `User request with id ${userRequestId} updated with status: ${status} numberOfTries: ${numberOfTries}`,
+
+    this.logger.info(
+      `User request with ID: ${userRequestId} updated successfully. Status: ${status}, Number of Tries: ${numberOfTries}`,
     );
   };
 }
+
 export { AccountantAction };

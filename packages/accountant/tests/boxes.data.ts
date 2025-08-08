@@ -1,4 +1,6 @@
 import { Box } from '@fleet-sdk/common';
+import { mockUTxO } from '@fleet-sdk/mock-chain';
+import { ErgoHDKey, generateMnemonic } from '@fleet-sdk/wallet';
 
 export const mockBoxes: Box<bigint>[] = [
   {
@@ -28,3 +30,17 @@ export const mockBoxes: Box<bigint>[] = [
     index: 1,
   },
 ];
+
+export const mockRootKey = await ErgoHDKey.fromMnemonic(generateMnemonic());
+// mock inputs
+export const mockInput = mockUTxO({
+  value: 1_000_000_000n,
+  ergoTree: mockRootKey.address.ergoTree,
+  assets: [
+    {
+      amount: 100n,
+      tokenId:
+        '03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04',
+    },
+  ],
+});

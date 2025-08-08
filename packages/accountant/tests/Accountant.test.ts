@@ -1,14 +1,12 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Accountant } from '../lib';
-import { NodeModel } from '../lib';
-import { Wallet } from '../lib';
+import { Accountant, NotEnoughAssetsError, NodeModel, Wallet } from '../lib';
 import { Asset, UserRequest } from '@ergo-faucet/database';
 import {
   ErgoUnsignedTransaction,
   OutputBuilder,
   TransactionBuilder,
 } from '@fleet-sdk/core';
-import { NotEnoughAssetsError } from '../lib/types';
+import {} from '../lib';
 import { SignedTransaction } from '@fleet-sdk/common';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { hex } from '@fleet-sdk/crypto';
@@ -21,9 +19,14 @@ import {
   mockedConfig,
   mockUserRequest,
 } from './mockUtils';
-import { mockUTxO } from '@fleet-sdk/mock-chain';
-import { ErgoHDKey, generateMnemonic } from '@fleet-sdk/wallet';
+import { mockInput } from './boxes.data';
 
+/**
+ * Test suite for Accountant class
+ * @target Accountant
+ * @description
+ * - Covers user request processing, pending/submitted request handling, and error scenarios.
+ */
 describe('Accountant', () => {
   let accountant: Accountant;
   let mockLogger: AbstractLogger;
@@ -42,18 +45,22 @@ describe('Accountant', () => {
     },
   }));
 
+  /**
+   * Setup mocks and Accountant singleton before each test
+   */
   beforeEach(() => {
-    // Mock logger
     mockLogger = new DummyLogger();
     vi.mocked(NodeModel.getInstance).mockReturnValue(mockNodeModel);
     vi.mocked(Wallet.getInstance).mockReturnValue(mockWallet);
     mockedConfig.accountantAction = mockAccountantAction;
 
-    // Initialize Accountant
     Accountant.initialize(mockedConfig, mockLogger);
     accountant = Accountant.getInstance();
   });
 
+  /**
+   * Reset Accountant singleton and clear mocks after each test
+   */
   afterEach(() => {
     // Reset singleton
     // eslint-disable-next-line
@@ -61,6 +68,15 @@ describe('Accountant', () => {
     vi.clearAllMocks();
   });
 
+  /**
+   * Test for processing user requests
+   * @target Accountant.processUserRequests
+   * @scenario
+   * - Should call appropriate handlers for pending and submitted requests
+   * @expected
+   * - handlePendingRequest called for pending
+   * - handleSubmittedRequest called for submitted
+   */
   describe('processUserRequests', () => {
     it('should process pending and submitted requests', async () => {
       const pendingRequest = {
@@ -89,7 +105,20 @@ describe('Accountant', () => {
     });
   });
 
+  /**
+   * Test for handling pending user requests
+   * @target Accountant.handlePendingRequest
+   * @description
+   * - Covers successful transaction submission, try limit exceeded, and asset errors.
+   */
   describe('handlePendingRequest', () => {
+    /**
+     * Test for successful pending request processing
+     * @scenario
+     * - Selects boxes, builds and signs transaction, submits, updates request
+     * @expected
+     * - All steps called and request updated to 'submitted'
+     */
     it('should process a pending request and submit a transaction', async () => {
       const request = mockUserRequest;
       request.package.assets = [
@@ -102,25 +131,11 @@ describe('Accountant', () => {
 
       const currentHeight = 1000;
 
-      const rootKey = await ErgoHDKey.fromMnemonic(generateMnemonic());
-
-      // mock inputs
-      const input = mockUTxO({
-        value: 1_000_000_000n,
-        ergoTree: rootKey.address.ergoTree,
-        assets: [
-          {
-            amount: 100n,
-            tokenId:
-              '03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04',
-          },
-        ],
-      });
-
+      // Build unsigned transaction
       const unsignedTx: ErgoUnsignedTransaction = new TransactionBuilder(
         currentHeight,
       )
-        .from(input)
+        .from(mockInput)
         .to(
           new OutputBuilder(
             mockedConfig.minNanoErg.toString(),
@@ -137,8 +152,8 @@ describe('Accountant', () => {
         outputs: [],
         dataInputs: [],
       };
-
-      mockWallet.selectBoxes.mockResolvedValue(input);
+      // Mock wallet and node actions
+      mockWallet.selectBoxes.mockResolvedValue(mockInput);
       mockNodeModel.getCurrentBlockchainHeight.mockResolvedValue(currentHeight);
       mockWallet.signTransaction.mockReturnValue(signedTx);
       mockNodeModel.submitTransactionBytes.mockResolvedValue('tx123');
@@ -166,6 +181,13 @@ describe('Accountant', () => {
       );
     });
 
+    /**
+     * Test for exceeding try limit
+     * @scenario
+     * - Request numberOfTries exceeds limit
+     * @expected
+     * - Request marked as 'failed', no transaction attempted
+     */
     it('should mark request as failed if tryLimit is exceeded', async () => {
       const failedRequest: UserRequest = {
         ...mockUserRequest,
@@ -184,6 +206,13 @@ describe('Accountant', () => {
       expect(mockWallet.selectBoxes).not.toHaveBeenCalled();
     });
 
+    /**
+     * Test for NotEnoughAssetsError handling
+     * @scenario
+     * - Wallet.selectBoxes throws NotEnoughAssetsError
+     * @expected
+     * - Request stays 'pending', numberOfTries incremented, error logged
+     */
     it('should handle NotEnoughAssetsError', async () => {
       const errorSpy = vi.spyOn(mockLogger, 'error');
       mockWallet.selectBoxes.mockRejectedValue(
@@ -200,17 +229,31 @@ describe('Accountant', () => {
         mockUserRequest.numberOfTries + 1,
       );
       expect(errorSpy).toHaveBeenCalledWith(
-        'Not Enough Assets error : Not enough ERG/tokens.',
+        'Not Enough Assets error : Not enough ERG/tokens. request ID: 1',
       );
     });
   });
 
+  /**
+   * Test for handling submitted user requests
+   * @target Accountant.handleSubmittedRequest
+   * @description
+   * - Covers paid, resubmission, and missing serialized transaction scenarios.
+   */
   describe('handleSubmittedRequest', () => {
     const request: UserRequest = {
       ...mockUserRequest,
       txId: 'tx123' as const,
       txSerialized: 'txSerialized',
     };
+
+    /**
+     * Test for marking request as paid
+     * @scenario
+     * - Transaction is mined and has enough confirmations
+     * @expected
+     * - Request updated to 'paid'
+     */
     it('should mark request as paid if transaction is mined and has enough confirmations', async () => {
       mockNodeModel.isTransactionMined.mockResolvedValue(true);
       mockNodeModel.isTransactionInMempool.mockResolvedValue(false);
@@ -226,6 +269,13 @@ describe('Accountant', () => {
       ).toHaveBeenCalledWith(request.id, 'paid', request.numberOfTries);
     });
 
+    /**
+     * Test for resubmitting transaction
+     * @scenario
+     * - Transaction not mined and not in mempool
+     * @expected
+     * - Transaction resubmitted, request not updated
+     */
     it('should resubmit transaction if not in mempool', async () => {
       mockNodeModel.isTransactionMined.mockResolvedValue(false);
       mockNodeModel.isTransactionInMempool.mockResolvedValue(false);
@@ -241,6 +291,13 @@ describe('Accountant', () => {
       ).not.toHaveBeenCalled();
     });
 
+    /**
+     * Test for missing serialized transaction
+     * @scenario
+     * - txSerialized is missing in request
+     * @expected
+     * - Request reverted to 'pending'
+     */
     it('should revert to pending if txSerialized is missing', async () => {
       const invalidRequest: UserRequest = mockUserRequest;
 
