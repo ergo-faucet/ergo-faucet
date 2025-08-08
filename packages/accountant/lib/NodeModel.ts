@@ -144,6 +144,52 @@ export class NodeModel {
   };
 
   /**
+   * Submits a signed Ergo transaction  bytes to the network.
+   *
+   * @param {string} signedTxBytes - The signed transaction bytes to be broadcasted.
+   * @returns {Promise<string>} A promise that resolves to the transaction ID if successful.
+   * @throws {errorResponse} If the network object is not initialized.
+   * @throws {errorResponse} If an Axios error occurs during the request.
+   */
+  public submitTransactionBytes = async (
+    signedTxBytes: string,
+  ): Promise<string> => {
+    if (this.axiosInstance == undefined) {
+      const error: errorResponse = {
+        error: 500,
+        reason: 'Internal Error',
+        detail: 'The Network object has not been initialized!',
+      };
+      throw error;
+    }
+
+    this.logger.debug(
+      `Submitting signed transaction bytes to the network...`,
+      signedTxBytes,
+    );
+    return await this.axiosInstance
+      .post<string>('/transactions/bytes', signedTxBytes)
+      .then((res) => res.data)
+      .catch((error) => {
+        if (axios.isAxiosError(error)) {
+          this.logger.error('Axios error.', {
+            error,
+            message: error.message,
+            stack: error.stack,
+          });
+          const errorResponse: errorResponse = {
+            error: 500,
+            reason: 'Internal Error',
+            detail: 'Axios error!',
+          };
+          throw errorResponse;
+        } else {
+          throw error;
+        }
+      });
+  };
+
+  /**
    * Fetches token details by its ID.
    *
    * @param {string} tokenId - The ID of the token to fetch.

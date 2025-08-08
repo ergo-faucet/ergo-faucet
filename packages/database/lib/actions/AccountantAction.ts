@@ -69,16 +69,18 @@ class AccountantAction {
   /**
    * Updates payment information for a specific user request.
    * @param userRequestId - The ID of the user request to update.
-   * @param status - The new status ('pending', 'submitted', 'paid', 'failed').
-   * @param signedTx - The signed transaction string.
    * @param numberOfTries - The number of payment attempts.
+   * @param status - The new status ('pending', 'submitted', 'paid', 'failed').
+   * @param txSerialized - The Serialized transaction string.
+   * @param txId - The transaction id
    * @returns {Promise<void>}
    */
   public updateUserRequestPaymentInfo = async (
     userRequestId: number,
     status: 'pending' | 'submitted' | 'paid' | 'failed',
-    signedTx: string,
     numberOfTries: number,
+    txSerialized?: string,
+    txId?: string,
   ): Promise<void> => {
     const userRequest = await this.userRequestRepository.findOne({
       where: { id: userRequestId },
@@ -88,7 +90,9 @@ class AccountantAction {
       return;
     }
     userRequest.status = status;
-    userRequest.signedTx = signedTx;
+    userRequest.txSerialized = txSerialized ? txSerialized : '';
+    userRequest.txId = txId ? txId : '';
+
     userRequest.numberOfTries = numberOfTries;
 
     await this.userRequestRepository.save(userRequest);
