@@ -1,0 +1,19 @@
+recaptcha:
+  key: RECAPTCHA_KEY
+
+server:
+  jwtSecret: JWT_SECRET
+  cookie:
+    secret: COOKIE_SECRET
+
+database:
+  password: DATABASE_PASSWORD
+
+redis:
+  password: REDIS_PASSWORD
+
+discord:
+  clientSercret: DISCORD_CLIENT_SECRET
+
+x-platform:
+  clientSecret: X_CLIENT_SECRET
