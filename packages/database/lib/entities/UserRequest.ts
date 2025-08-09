@@ -38,10 +38,10 @@ export class UserRequest {
   status!: 'paid' | 'failed' | 'pending' | 'submitted';
 
   @Column({ type: 'text', nullable: true })
-  txId?: string;
+  txId?: string | null;
 
   @Column({ name: 'signed_tx', type: 'text', nullable: true })
-  txSerialized?: string;
+  txSerialized?: string | null;
 
   @Column({ name: 'creationHeight', type: 'int', nullable: true })
   creationHeight?: number;

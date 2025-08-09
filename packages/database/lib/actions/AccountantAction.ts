@@ -105,8 +105,8 @@ class AccountantAction {
 
     // Update user request fields
     userRequest.status = status;
-    userRequest.txSerialized = txSerialized ? txSerialized : '';
-    userRequest.txId = txId ? txId : '';
+    userRequest.txSerialized = txSerialized ? txSerialized : null;
+    userRequest.txId = txId ? txId : null;
     userRequest.numberOfTries = numberOfTries;
 
     // Save updated user request

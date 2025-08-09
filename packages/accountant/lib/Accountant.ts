@@ -182,6 +182,7 @@ class Accountant {
         );
         return;
       }
+      if (error instanceof DoubleSpendError) return;
       throw error;
     }
   };
