@@ -11,6 +11,7 @@ import {
 import { Network } from '@fleet-sdk/common';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
+import { DoubleSpendError } from './types/errors';
 
 class Accountant {
   private static instance: Accountant;
@@ -250,6 +251,7 @@ class Accountant {
           `Error while processing submitted request ID: ${req.id}. ${error.message}`,
         );
       }
+      if (error instanceof DoubleSpendError) return;
       await this.accountantAction.updateUserRequestPaymentInfo(
         req.id,
         'pending',

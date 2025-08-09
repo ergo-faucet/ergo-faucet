@@ -8,6 +8,7 @@ import {
   WalletBalancesAPIResponse,
 } from './types';
 import { Box, SignedTransaction } from '@fleet-sdk/common';
+import { DoubleSpendError } from './types/errors';
 
 export class NodeModel {
   private static instance: NodeModel;
@@ -172,6 +173,22 @@ export class NodeModel {
       .then((res) => res.data)
       .catch((error) => {
         if (axios.isAxiosError(error)) {
+          if (error.response) {
+            const data = error.response.data;
+
+            // Detect your two special bad.request cases
+            if (
+              data.error === 400 &&
+              data.reason === 'bad.request' &&
+              (data.detail.startsWith('Pool can not accept transaction') ||
+                data.detail.startsWith(
+                  'Malformed transaction: Every input of the transaction should be in UTXO.',
+                ))
+            ) {
+              this.logger.debug(data.detail);
+              throw new DoubleSpendError(data.detail);
+            }
+          }
           this.logger.error('Axios error.', {
             error,
             message: error.message,
