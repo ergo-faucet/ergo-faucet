@@ -10,4 +10,5 @@ export {
   tokenByIdResponse,
   errorResponse,
   tokenByIdResponseSuccess,
+  DoubleSpendError,
 } from './types';

@@ -10,3 +10,4 @@ export {
   errorResponse,
   tokenByIdResponseSuccess,
 } from './tokenByIdResponse';
+export { DoubleSpendError } from './errors';

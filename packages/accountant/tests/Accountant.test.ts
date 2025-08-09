@@ -1,12 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Accountant, NotEnoughAssetsError, NodeModel, Wallet } from '../lib';
+import {
+  Accountant,
+  NotEnoughAssetsError,
+  NodeModel,
+  Wallet,
+  DoubleSpendError,
+} from '../lib';
 import { Asset, UserRequest } from '@ergo-faucet/database';
 import {
   ErgoUnsignedTransaction,
   OutputBuilder,
   TransactionBuilder,
 } from '@fleet-sdk/core';
-import {} from '../lib';
 import { SignedTransaction } from '@fleet-sdk/common';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { hex } from '@fleet-sdk/crypto';
@@ -310,6 +315,37 @@ describe('Accountant', () => {
         'pending',
         invalidRequest.numberOfTries,
       );
+    });
+
+    /**
+     * Test for handling DoubleSpendError in submitted request
+     * @target Accountant.handleSubmittedRequest
+     * @scenario
+     * - NodeModel.submitTransactionBytes throws DoubleSpendError
+     * @expected
+     * - Request not updated, error handled silently
+     */
+    it('should handle DoubleSpendError during transaction resubmission', async () => {
+      const request: UserRequest = {
+        ...mockUserRequest,
+        txId: 'tx123' as const,
+        txSerialized: 'txSerialized',
+      };
+
+      mockNodeModel.isTransactionMined.mockResolvedValue(false);
+      mockNodeModel.isTransactionInMempool.mockResolvedValue(false);
+      mockNodeModel.submitTransactionBytes.mockRejectedValue(
+        new DoubleSpendError('Double spend detected'),
+      );
+
+      await accountant.handleSubmittedRequest(request);
+
+      expect(mockNodeModel.submitTransactionBytes).toHaveBeenCalledWith(
+        'txSerialized',
+      );
+      expect(
+        mockAccountantAction.updateUserRequestPaymentInfo,
+      ).not.toHaveBeenCalled();
     });
   });
 });

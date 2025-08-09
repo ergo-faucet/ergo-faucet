@@ -1,8 +1,6 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
-import { Wallet } from '../lib';
-import { NotEnoughAssetsError } from '../lib';
+import { NodeModel, Wallet, NotEnoughAssetsError } from '../lib';
 import { mockBoxes } from './boxes.data';
-import { NodeModel } from '../lib';
 import { Network } from '@fleet-sdk/common';
 
 describe('Wallet - selectBoxes', () => {
