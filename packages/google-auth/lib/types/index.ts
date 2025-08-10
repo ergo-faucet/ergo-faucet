@@ -5,8 +5,6 @@ export {
   ErrorResponse,
 } from './schemas';
 
-export { userRequestPayload } from './userRequestPayload';
-
 export {
   GoogleAuthConfig,
   SessionData,
