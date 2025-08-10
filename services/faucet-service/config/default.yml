@@ -47,9 +47,9 @@ database:
   path: '' #  ''
   host: '' #  'localhost'
   port: '' #  5432
-  username: '' #  'faucet_user'
+  username: ''
   password: ''
-  database: '' #  'faucet_db'
+  database: ''
   logging: '' #  false
 
 redis:
@@ -64,16 +64,16 @@ ergoAuth:
   networkAddress: '' #  'Testnet'
 
 discord:
-  clientID: '' #  '123456789012345678'
+  clientID: ''
   clientSercret: ''
-  redirectURL: '' #  'http://localhost:3000/auth/discord/callback'
+  redirectURL: ''
   scope: '' #  'identify email'
   expiresTime: '' #  7200
 
 x-platform:
-  clientID: '' #  'x-platform-client-id'
+  clientID: ''
   clientSecret: ''
-  redirectURL: '' #  'http://localhost:3000/auth/x-platform/callback'
+  redirectURL: ''
   scope: '' #  'read write'
   expiresTime: '' #  7200
   sessionTTL: '' #  3600
