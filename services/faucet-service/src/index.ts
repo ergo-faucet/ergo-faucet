@@ -8,6 +8,7 @@ import {
   setupGoogleAuth,
   setupRecaptcha,
   setupXAuth,
+  setupController,
 } from './handler';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
@@ -19,6 +20,7 @@ const main = async () => {
     await setupDatabase();
     await setupFastifyServer();
     await setupErgoAuth();
+    await setupController();
     await setupDiscordAuth();
     await setupXAuth();
     await setupGoogleAuth();

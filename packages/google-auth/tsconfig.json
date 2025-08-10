@@ -5,5 +5,9 @@
     "composite": true
   },
   "include": ["tests", "lib"],
-  "references": [{ "path": "../database" }, { "path": "../fastify-server" }]
+  "references": [
+    { "path": "../database" },
+    { "path": "../fastify-server" },
+    { "path": "../common-types" }
+  ]
 }

@@ -13,12 +13,11 @@ import {
   CallBackRouteResponse200,
   GoogleToken,
   ErrorResponse,
-  userRequestPayload,
   GoogleUserData,
   GoogleAuthConfig,
   SessionData,
 } from './types';
-
+import { userRequestPayload } from '@ergo-faucet/common-types';
 export class GoogleAuth {
   private static instance: GoogleAuth;
   private readonly logger: AbstractLogger;
@@ -235,34 +234,6 @@ export class GoogleAuth {
     };
 
     return tokenData;
-  };
-
-  /**
-   * Refreshes the access token using the refresh token.
-   * @param refreshToken - Refresh token
-   * @returns New access token and refresh token
-   */
-  private refreshToken = async (
-    refreshToken: string,
-  ): Promise<Partial<GoogleToken>> => {
-    const params = new URLSearchParams({
-      grant_type: this.REFRESH_GRANT_TYPE,
-      refresh_token: refreshToken,
-      client_id: this.clientId,
-      client_secret: this.clientSecret,
-    });
-
-    const res = await axios.post(this.GOOGLE_TOKEN_URL, params, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-    });
-
-    return {
-      accessToken: res.data.access_token,
-      refreshToken: res.data.refresh_token,
-      expiresInSecond: res.data.expires_in,
-    };
   };
 
   /**
