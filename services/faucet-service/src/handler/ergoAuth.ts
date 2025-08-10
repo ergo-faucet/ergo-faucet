@@ -1,15 +1,14 @@
 import { ErgoAuth } from '@ergo-faucet/ergo-authentication';
 import { ergoAuthConfig, redisConfig } from '../configs';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-import { DataSourceHandler } from '@ergo-faucet/database';
+import { UserAddressAction } from '@ergo-faucet/database';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
 export const setupErgoAuth = async () => {
   const fastify = FastifyAPIServer.getInstance();
-  const userAddressAction =
-    DataSourceHandler.getInstance().getActions().userAddressAction;
+  const userAddressAction = UserAddressAction.getInstance();
   const ergoAuthLogger =
     CallbackLoggerFactory.getInstance().getLogger('ErgoAuth');
 

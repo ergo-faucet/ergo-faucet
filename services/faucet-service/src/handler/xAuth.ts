@@ -1,14 +1,14 @@
 import { XAuth } from '@ergo-faucet/x-auth';
 import { xAuthConfig, redisConfig } from '../configs';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-import { DataSourceHandler } from '@ergo-faucet/database';
+import { XAction } from '@ergo-faucet/database';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
 export const setupXAuth = async () => {
   const fastify = FastifyAPIServer.getInstance();
-  const xAction = DataSourceHandler.getInstance().getActions().xAction;
+  const xAction = XAction.getInstance();
   const xAuthLogger = CallbackLoggerFactory.getInstance().getLogger('XAuth');
 
   await XAuth.initialize(

@@ -51,40 +51,40 @@ class XAction {
   };
 
   /**
-   * Ensures the `x` AuthMethod is seeded in the database.
+   * Ensures the `x-platform` AuthMethod is seeded in the database.
    *
-   * - Checks if an AuthMethod with name `x` exists.
+   * - Checks if an AuthMethod with name `x-platform` exists.
    * - If missing, creates it with an empty config.
    *
    * @returns Promise<void>
    */
   public async ensureXAuthMethod(): Promise<void> {
     let xMethod = await this.authMethodRepository.findOne({
-      where: { name: 'x' },
+      where: { name: 'x-platform' },
     });
     if (!xMethod) {
       xMethod = this.authMethodRepository.create({
-        name: 'x',
+        name: 'x-platform',
         config: JSON.stringify({}),
       });
       this.xAuthMethod = await this.authMethodRepository.save(xMethod);
     } else {
       this.xAuthMethod = xMethod;
     }
-    this.logger.debug('Seeded AuthMethod: x');
+    this.logger.debug('Seeded AuthMethod: x-platform');
   }
 
   /**
-   * Links an X account to an already existing User.
+   * Links an X-platform account to an already existing User.
    *
    * @param userId - Existing application User ID
-   * @param x_id - X User ID (string from X API)
-   * @param username - X username
-   * @param name - X display name
+   * @param x_id - X-platform User ID (string from X-platform API)
+   * @param username - X-platform username
+   * @param name - X-platform display name
    * @param join_date - Account creation date
    * @param expiresTime - Token expiration in seconds
-   * @param access_token - X OAuth2 access token
-   * @param refresh_token - X OAuth2 refresh token
+   * @param access_token - X-platform OAuth2 access token
+   * @param refresh_token - X-platform OAuth2 refresh token
    * @returns Promise<void>
    */
   public linkXAccount = async (
@@ -101,7 +101,9 @@ class XAction {
     if (!user) throw new Error(`User with ID ${userId} not found`);
 
     if (user.x_id != null && user.x_id !== x_id) {
-      throw new Error(`User ${userId} already linked a different X account`);
+      throw new Error(
+        `User ${userId} already linked a different X-platform account`,
+      );
     }
 
     const existingUserWithX = await this.userRepository.findOne({
@@ -110,7 +112,7 @@ class XAction {
 
     if (existingUserWithX) {
       throw new Error(
-        `This X account is already linked with another user (${existingUserWithX.id})`,
+        `This X-platform account is already linked with another user (${existingUserWithX.id})`,
       );
     }
 
@@ -126,13 +128,12 @@ class XAction {
     };
 
     const savedUser = await this.userRepository.save(user);
-    this.logger.debug(`Linked X ID ${x_id} to user ID ${userId}`);
+    this.logger.debug(`Linked X-platform ID ${x_id} to user ID ${userId}`);
 
-    const expireAt = new Date(Date.now() + expiresTime * 1000);
-
+    const expiresAt = new Date(Date.now() + expiresTime * 1000);
     await this.saveOrUpdateXAuthStatus(
       savedUser,
-      expireAt,
+      expiresAt,
       access_token,
       refresh_token,
     );
@@ -184,7 +185,9 @@ class XAction {
     }
 
     await this.userAuthStatusRepository.save(authStatus);
-    this.logger.debug(`Saved/Updated X UserAuthStatus for user ID ${user.id}`);
+    this.logger.debug(
+      `Saved/Updated X-platform UserAuthStatus for user ID ${user.id}`,
+    );
   };
 }
 

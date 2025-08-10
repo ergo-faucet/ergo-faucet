@@ -12,7 +12,7 @@ export const ergoAuthConfig = {
     'ergoAuth.accessTokenExpirySeconds',
   ),
   networkType:
-    config.get<'Mainnet' | 'Testnet'>('ergoAuth.networkAddress') === 'Mainnet'
+    config.get<string>('ergoAuth.networkAddress').toLowerCase() === 'mainnet'
       ? 0
       : 16,
 };

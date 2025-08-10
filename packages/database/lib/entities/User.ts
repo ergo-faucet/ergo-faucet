@@ -1,5 +1,4 @@
 import {
-  BigIntValueTransformer,
   Column,
   Entity,
   OneToMany,
@@ -25,26 +24,23 @@ export class User {
   requests!: Relation<UserRequest[]>;
 
   @Column({
-    type: 'bigint',
+    type: 'varchar',
     nullable: true,
     unique: true,
-    transformer: new BigIntValueTransformer(),
   })
   discord_id!: string;
 
   @Column({
-    type: 'bigint',
+    type: 'varchar',
     nullable: true,
     unique: true,
-    transformer: new BigIntValueTransformer(),
   })
   x_id!: string;
 
   @Column({
-    type: 'bigint',
+    type: 'varchar',
     nullable: true,
     unique: true,
-    transformer: new BigIntValueTransformer(),
   })
   google_id!: string;
 

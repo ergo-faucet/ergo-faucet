@@ -13,12 +13,11 @@ import {
   CallBackRouteResponse200,
   XToken,
   ErrorResponse,
-  userRequestPayload,
   XUserData,
   XAuthConfig,
   SessionData,
 } from './types';
-
+import { userRequestPayload } from '@ergo-faucet/common-types';
 export class XAuth {
   private static instance: XAuth;
   private readonly logger: AbstractLogger;
@@ -32,7 +31,7 @@ export class XAuth {
   private readonly redis: Redis;
   private readonly sessionTTL: number;
   private readonly SESSION_PREFIX = 'xauth:session:';
-  private readonly X_AUTH_PREFIX = '/x';
+  private readonly X_AUTH_PREFIX = '/x-platform';
   private readonly X_OAUTH_URL = 'https://x.com/i/oauth2/authorize';
   private readonly X_TOKEN_URL = 'https://api.x.com/2/oauth2/token';
   private readonly X_API_URL = 'https://api.x.com/2/users/me';
@@ -41,7 +40,7 @@ export class XAuth {
   /**
    * Private constructor to enforce singleton pattern.
    *
-   * @param config - X configuration parameters including clientId, fastify, ...
+   * @param config - X-platform configuration parameters including clientId, fastify, ...
    * @param logger - Optional logger instance (defaults to DummyLogger)
    */
   private constructor(config: XAuthConfig, logger?: AbstractLogger) {
@@ -60,7 +59,7 @@ export class XAuth {
   /**
    * Initializes the singleton instance.
    *
-   * @param config - X configuration parameters including clientId, fastify, ...
+   * @param config - X-platform configuration parameters including clientId, fastify, ...
    * @param logger - Optional logger instance
    * @throws Error if already initialized
    */
@@ -162,8 +161,8 @@ export class XAuth {
   };
 
   /**
-   * Builds the X OAuth2 login URL with PKCE.
-   * @returns Fully qualified X login URL with all query params
+   * Builds the X-platform OAuth2 login URL with PKCE.
+   * @returns Fully qualified X-platform login URL with all query params
    */
   private buildLoginURL = async (): Promise<string> => {
     const { codeVerifier, codeChallenge } = this.generatePKCECodes();
@@ -177,9 +176,9 @@ export class XAuth {
   };
 
   /**
-   * Fetches the X user profile using the given OAuth2 access token.
-   * @param accessToken - X OAuth2 access token
-   * @returns X user data mapped to `XUserData`
+   * Fetches the X-platform user profile using the given OAuth2 access token.
+   * @param accessToken - X-platform OAuth2 access token
+   * @returns X-platform user data mapped to `XUserData`
    */
   private fetchXUser = async (accessToken: string): Promise<XUserData> => {
     const res = await axios.get(this.X_API_URL, {
@@ -203,8 +202,8 @@ export class XAuth {
   };
 
   /**
-   * Exchanges the authorization `code` for X OAuth2 access/refresh tokens.
-   * @param code - Authorization code returned by X after login
+   * Exchanges the authorization `code` for X-platform OAuth2 access/refresh tokens.
+   * @param code - Authorization code returned by X-platform after login
    * @param codeVerifier - PKCE code verifier
    * @returns `XToken` containing accessToken, refreshToken, and expiry
    */
@@ -239,9 +238,9 @@ export class XAuth {
   /**
    * Registers the `/login` route:
    *
-   * **GET `/x/login`**
+   * **GET `/x-platform/login`**
    * - Requires JWT auth
-   * - Redirects the user to the X OAuth2 login page
+   * - Redirects the user to the X-platform OAuth2 login page
    *
    * @param fastify - Fastify instance
    */
@@ -267,10 +266,10 @@ export class XAuth {
   /**
    * Registers the `/callback` route:
    *
-   * **GET `/x/callback`**
+   * **GET `/x-platform/callback`**
    * - Requires JWT auth
    * - Expects `code` and `state` query params
-   * - Exchanges code for tokens, fetches X user, links account to the user
+   * - Exchanges code for tokens, fetches X-platform user, links account to the user
    *
    * @param fastify - Fastify instance
    */
@@ -330,16 +329,18 @@ export class XAuth {
 
           return reply.status(200).send({
             success: true,
-            message: `The user with id ${user.userId} logged in successfully with X`,
+            message: `The user with id ${user.userId} logged in successfully with X-platform`,
           });
         } catch (err) {
           if (err instanceof Error) {
-            this.logger.error(`X callback failed`, {
+            this.logger.error(`X-platform callback failed`, {
               message: err.message,
               stack: err.stack,
             });
           }
-          return reply.status(500).send({ error: 'X authentication failed' });
+          return reply
+            .status(500)
+            .send({ error: 'X-platform authentication failed' });
         }
       },
     );
