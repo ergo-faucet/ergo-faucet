@@ -1,0 +1,25 @@
+recaptcha:
+  key: RECAPTCHA_KEY
+
+server:
+  jwtSecret: JWT_SECRET
+  cookie:
+    secret: COOKIE_SECRET
+
+database:
+  username: DATABASE_USERNAME
+  password: DATABASE_PASSWORD
+  database: DATABASE_NAME
+
+redis:
+  password: REDIS_PASSWORD
+
+discord:
+  clientID: DISCORD_CLIENT_ID
+  clientSercret: DISCORD_CLIENT_SECRET
+  redirectURL: DISCORD_REDIRECT_URL
+
+x-platform:
+  clientID: X_CLIENT_ID
+  clientSercret: X_CLIENT_SECRET
+  redirectURL: X_REDIRECT_URL
