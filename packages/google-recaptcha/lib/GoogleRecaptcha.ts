@@ -14,23 +14,28 @@ class GoogleRecaptcha {
   private logger: AbstractLogger;
   private readonly recaptchaKey: string;
   private readonly threshold: number;
+  private readonly activate: boolean;
+
   private hostnames: string[];
 
   /**
    * Private constructor for singleton pattern.
    *
+   * @param activate - Boolean flag to activate or deactivate reCAPTCHA verification.
    * @param recaptchaKey - Your reCAPTCHA secret key.
    * @param threshold - Optional risk score threshold, defaults to 0.5.
    * @param hostnames - Valid Hostnames.
    * @param logger - Optional custom logger, defaults to DummyLogger.
    */
   private constructor(
+    activate: boolean,
     recaptchaKey: string,
     threshold: number = 0.5,
     hostnames: string[],
     logger?: AbstractLogger,
   ) {
     this.recaptchaKey = recaptchaKey;
+    this.activate = activate;
     this.threshold = threshold;
     this.hostnames = hostnames;
     this.logger = logger ? logger : new DummyLogger();
@@ -52,7 +57,8 @@ class GoogleRecaptcha {
   /**
    * Initializes the singleton instance of `GoogleRecaptcha` if not already initialized.
    *
-   * @param recaptchaKey - Site key for reCAPTCHA.
+   * @param activate - Boolean flag to activate or deactivate reCAPTCHA verification.
+   * @param recaptchaKey - Your reCAPTCHA secret key (required if `activate` is true).
    * @param threshold - Optional risk score threshold.
    * @param logger - Optional custom logger.
    * @param hostnames - List of allowed domain names (as strings) for validation, configured in the Google Cloud Console.
@@ -63,6 +69,7 @@ class GoogleRecaptcha {
    * @returns The `GoogleRecaptcha` instance.
    */
   public static initialize = async (
+    activate: boolean,
     recaptchaKey: string,
     threshold: number = 0.5,
     hostnames: string[],
@@ -71,7 +78,11 @@ class GoogleRecaptcha {
     if (this.instance) {
       throw new Error('GooglereCaptcha instance has already been initialized.');
     }
+    if (activate && recaptchaKey === '')
+      throw new Error('GooglereCaptcha key must be set.');
+
     this.instance = new GoogleRecaptcha(
+      activate,
       recaptchaKey,
       threshold,
       hostnames,
@@ -94,6 +105,7 @@ class GoogleRecaptcha {
     token: string,
     remoteip?: string,
   ): Promise<boolean> => {
+    if (this.activate) return true;
     const queryParams: VerifyQuery = {
       secret: this.recaptchaKey,
       response: token,
