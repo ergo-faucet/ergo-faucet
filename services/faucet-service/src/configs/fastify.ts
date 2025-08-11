@@ -1,6 +1,6 @@
 import { CookieConfig } from '@ergo-faucet/fastify-server';
 import config from 'config';
-
+import packageJson from 'package.json' assert { type: 'json' };
 /**
  * Cookie configuration
  */
@@ -16,6 +16,16 @@ export const cookieConfig: CookieConfig = {
   maxAge: config.get<number>('server.cookie.maxAge'),
 };
 
+const swagger: object = {
+  openapi: {
+    info: {
+      title: 'Faucet Service API',
+      description: 'API documentation for Faucet Service',
+      version: packageJson.version,
+    },
+  },
+};
+
 /**
  * Fastify server configuration
  */
@@ -26,7 +36,8 @@ export const serverConfig = {
   jwtSecret: config.get<string>('server.jwtSecret'),
   jwtExpiration: config.get<number>('server.jwtExpiration'),
   activeFastifyLogger: config.get<boolean>('server.activeFastifyLogger'),
-  swagger: config.get<object>('server.swagger'),
+  swagger: swagger,
+
   swaggerUi: config.get<object>('server.swaggerUi'),
   cookie: cookieConfig,
 };

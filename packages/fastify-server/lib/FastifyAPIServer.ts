@@ -217,7 +217,7 @@ export class FastifyAPIServer {
       if (!captchaToken) {
         return res.status(400).send({
           code: 'missing-captcha-token',
-          message: 'Captcha token is required',
+          error: 'Captcha token is required',
         });
       }
 
@@ -228,19 +228,19 @@ export class FastifyAPIServer {
       } else {
         return res.status(400).send({
           code: 'invalid-captcha-token',
-          message: 'Invalid captcha token',
+          error: 'Invalid captcha token',
         });
       }
     } catch (err) {
       if (err instanceof RecaptchaClientError) {
         return res.status(400).send({
           code: 'captcha-verification-failed',
-          message: err.message,
+          error: err.message,
         });
       } else if (err instanceof RecaptchaServerError) {
         return res.status(500).send({
           code: 'captcha-verification-failed',
-          message: 'Internal server error during captcha verification',
+          error: 'Internal server error during captcha verification',
         });
       } else if (err instanceof Error) {
         this.logger.debug('captcha-verification-failed', {
@@ -249,7 +249,7 @@ export class FastifyAPIServer {
         });
         return res.status(500).send({
           code: 'captcha-verification-failed',
-          message: 'Internal server error during captcha verification',
+          error: 'Internal server error during captcha verification',
         });
       }
     }
