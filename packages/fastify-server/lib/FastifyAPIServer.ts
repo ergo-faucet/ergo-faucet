@@ -11,7 +11,6 @@ import {
   RecaptchaClientError,
   RecaptchaServerError,
 } from '@ergo-faucet/google-recaptcha';
-import { HookHandlerDoneFunction } from 'fastify/types/hooks';
 
 /**
  * Fastify-based API server implementation.
@@ -176,7 +175,6 @@ export class FastifyAPIServer {
    * If JWT validation fails, it sends an error Unauthorized.
    * @param req - FastifyRequest (expects `JWT token`)
    * @param res - FastifyReply (used to send early error responses)
-   * @param next - HookHandlerDoneFunction to continue request if JWT is valid
    *
    */
   public authPreHandler = async <
@@ -185,11 +183,9 @@ export class FastifyAPIServer {
   >(
     req: T,
     res: U,
-    next: HookHandlerDoneFunction,
   ) => {
     try {
       await req.jwtVerify();
-      next();
     } catch {
       return res.status(401).send({ error: 'Unauthorized' });
     }
@@ -200,7 +196,6 @@ export class FastifyAPIServer {
    * If captcha validation fails, it sends an error response.
    * @param req - FastifyRequest (expects `captchaToken` inside request body)
    * @param res - FastifyReply (used to send early error responses)
-   * @param next - HookHandlerDoneFunction to continue request if captcha is valid
    *
    */
   public captchaPreHandler = async <
@@ -209,7 +204,6 @@ export class FastifyAPIServer {
   >(
     req: T,
     res: U,
-    next: HookHandlerDoneFunction,
   ) => {
     const { captchaToken } = req.body as { captchaToken: string };
 
@@ -223,9 +217,7 @@ export class FastifyAPIServer {
 
       const isValid = await this.googleRecaptcha.verifyToken(captchaToken);
 
-      if (isValid) {
-        next();
-      } else {
+      if (!isValid) {
         return res.status(400).send({
           code: 'invalid-captcha-token',
           message: 'Invalid captcha token',
