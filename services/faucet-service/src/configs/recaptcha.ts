@@ -6,7 +6,7 @@ const activate = config.get<boolean>('recaptcha.activate');
  */
 
 export const recaptchaConfig =
-  activate === true
+  activate === false
     ? {
         recaptchaActivate: activate,
         recaptchaKey: '',

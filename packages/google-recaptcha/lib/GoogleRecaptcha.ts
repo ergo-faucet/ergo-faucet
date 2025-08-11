@@ -78,7 +78,7 @@ class GoogleRecaptcha {
     if (this.instance) {
       throw new Error('GooglereCaptcha instance has already been initialized.');
     }
-    if (!activate && recaptchaKey === '')
+    if (activate && recaptchaKey === '')
       throw new Error('GooglereCaptcha key must be set.');
 
     this.instance = new GoogleRecaptcha(
