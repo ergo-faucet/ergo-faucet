@@ -182,7 +182,7 @@ describe('ErgoAuth', () => {
     // This is a valid TESTNET prefix address (network byte 0x10)
     const testnetAddress =
       '3WxrAftnTJSGP91VEhRQWYviUG26XQNoPKciqqcBD86VPVS5Zn13';
-    const isValid = ergoAuth.isvalidErgoAddress(testnetAddress);
+    const isValid = ergoAuth.isValidErgoAddress(testnetAddress);
 
     expect(isValid).toBe(false);
   });
@@ -197,7 +197,7 @@ describe('ErgoAuth', () => {
    */
   it('should accept valid MAINNET address', () => {
     const mainnetAddr = '9fq3mgbL6UgzV33dC4R2n8L3CFSrBUytME8JKD8xDKgj8BDTLX7';
-    const isValid = ergoAuth.isvalidErgoAddress(mainnetAddr);
+    const isValid = ergoAuth.isValidErgoAddress(mainnetAddr);
 
     expect(isValid).toBe(true);
   });
