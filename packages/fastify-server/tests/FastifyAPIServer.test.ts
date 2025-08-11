@@ -260,7 +260,7 @@ describe('FastifyAPIServer', () => {
     expect(response.statusCode).toBe(400);
     expect(JSON.parse(response.body)).deep.equal({
       code: 'captcha-verification-failed',
-      message: 'Client-side issue',
+      error: 'Client-side issue',
     });
 
     await instance.close();
@@ -301,7 +301,7 @@ describe('FastifyAPIServer', () => {
     expect(resMissing.statusCode).toBe(400);
     expect(JSON.parse(resMissing.body)).deep.equal({
       code: 'missing-captcha-token',
-      message: 'Captcha token is required',
+      error: 'Captcha token is required',
     });
 
     const resInvalid = await instance['fastify'].inject({
@@ -312,7 +312,7 @@ describe('FastifyAPIServer', () => {
     expect(resInvalid.statusCode).toBe(400);
     expect(JSON.parse(resInvalid.body)).toEqual({
       code: 'invalid-captcha-token',
-      message: 'Invalid captcha token',
+      error: 'Invalid captcha token',
     });
 
     const resValid = await instance['fastify'].inject({
@@ -362,7 +362,7 @@ describe('FastifyAPIServer', () => {
     expect(response.statusCode).toBe(500);
     expect(JSON.parse(response.body)).deep.equal({
       code: 'captcha-verification-failed',
-      message: 'Internal server error during captcha verification',
+      error: 'Internal server error during captcha verification',
     });
 
     await instance.close();
