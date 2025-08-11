@@ -10,6 +10,7 @@ logs:
 
 recaptcha:
   key: ''
+  development: true
   threshold: 0.5
   hostnames:
     - 'localhost'

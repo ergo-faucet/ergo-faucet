@@ -14,6 +14,8 @@ class GoogleRecaptcha {
   private logger: AbstractLogger;
   private readonly recaptchaKey: string;
   private readonly threshold: number;
+  private readonly development: boolean;
+
   private hostnames: string[];
 
   /**
@@ -22,15 +24,18 @@ class GoogleRecaptcha {
    * @param recaptchaKey - Your reCAPTCHA secret key.
    * @param threshold - Optional risk score threshold, defaults to 0.5.
    * @param hostnames - Valid Hostnames.
+   * @param development - Optional for test
    * @param logger - Optional custom logger, defaults to DummyLogger.
    */
   private constructor(
     recaptchaKey: string,
     threshold: number = 0.5,
     hostnames: string[],
+    development: boolean = false,
     logger?: AbstractLogger,
   ) {
     this.recaptchaKey = recaptchaKey;
+    this.development = development;
     this.threshold = threshold;
     this.hostnames = hostnames;
     this.logger = logger ? logger : new DummyLogger();
@@ -53,6 +58,7 @@ class GoogleRecaptcha {
    * Initializes the singleton instance of `GoogleRecaptcha` if not already initialized.
    *
    * @param recaptchaKey - Your reCAPTCHA secret key.
+   * @param development - Optional for test
    * @param threshold - Optional risk score threshold.
    * @param logger - Optional custom logger.
    * @param hostnames - List of allowed domain names (as strings) for validation, configured in the Google Cloud Console.
@@ -64,6 +70,7 @@ class GoogleRecaptcha {
    */
   public static initialize = async (
     recaptchaKey: string,
+    development: boolean = false,
     threshold: number = 0.5,
     hostnames: string[],
     logger?: AbstractLogger,
@@ -75,6 +82,7 @@ class GoogleRecaptcha {
       recaptchaKey,
       threshold,
       hostnames,
+      development,
       logger,
     );
   };
@@ -94,6 +102,7 @@ class GoogleRecaptcha {
     token: string,
     remoteip?: string,
   ): Promise<boolean> => {
+    if (this.development) return true;
     const queryParams: VerifyQuery = {
       secret: this.recaptchaKey,
       response: token,
