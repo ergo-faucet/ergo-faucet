@@ -27,11 +27,11 @@ server:
         title: '' #  'Faucet Service API'
         description: '' #  'API documentation for Faucet Service'
         version: '' #  '1.0.0'
-    swaggerUi:
-      routePrefix: '' #  '/docs'
-      uiConfig:
-        docExpansion: '' #  'none'
-        deepLinking: '' #  false
+  swaggerUi:
+    routePrefix: '' #  '/docs'
+    uiConfig:
+      docExpansion: '' #  'none'
+      deepLinking: '' #  false
   cookie:
     secret: ''
     signed: '' #  true
@@ -41,6 +41,7 @@ server:
     sameSite: '' #  'lax'
     path: '' #  '/'
     domain: '' #  'localhost'
+    maxAge: '' # 7200
 
 database:
   type: '' #  'postgres'
@@ -65,7 +66,7 @@ ergoAuth:
 
 discord:
   clientID: ''
-  clientSercret: ''
+  clientSecret: ''
   redirectURL: ''
   scope: '' #  'identify email'
   expiresTime: '' #  7200
