@@ -1,6 +1,7 @@
 import {
   DataSourceHandler,
   DiscordAction,
+  GoogleAction,
   PackageAction,
   UserAddressAction,
   XAction,
@@ -19,6 +20,7 @@ export const setupDatabase = async () => {
     PackageAction.initialize(dataSource, dbLogger);
     UserAddressAction.initialize(dataSource, dbLogger);
     XAction.initialize(dataSource, dbLogger);
+    GoogleAction.initialize(dataSource, dbLogger);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(
