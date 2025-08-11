@@ -52,7 +52,7 @@ class GoogleRecaptcha {
   /**
    * Initializes the singleton instance of `GoogleRecaptcha` if not already initialized.
    *
-   * @param recaptchaKey - Site key for reCAPTCHA.
+   * @param recaptchaKey - Your reCAPTCHA secret key.
    * @param threshold - Optional risk score threshold.
    * @param logger - Optional custom logger.
    * @param hostnames - List of allowed domain names (as strings) for validation, configured in the Google Cloud Console.

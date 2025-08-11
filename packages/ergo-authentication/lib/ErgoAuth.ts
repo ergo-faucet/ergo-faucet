@@ -91,7 +91,7 @@ export class ErgoAuth {
    * @param address - The Ergo address to validate.
    * @returns `true` if valid, otherwise `false`.
    */
-  public isvalidErgoAddress = (address: string): boolean => {
+  public isValidErgoAddress = (address: string): boolean => {
     try {
       const network = ErgoAddress.fromBase58(address).network;
       return this.NETWORK_TYPE === network;
@@ -257,7 +257,7 @@ export class ErgoAuth {
         },
         preHandler: async (req, res) => {
           const { address } = req.body;
-          if (!this.isvalidErgoAddress(address)) {
+          if (!this.isValidErgoAddress(address)) {
             return res.status(400).send({
               error: 'Invalid Ergo address',
               code: 'invalid-address-network',
@@ -298,7 +298,7 @@ export class ErgoAuth {
           this.fastifyServer.captchaPreHandler,
           async (req, res) => {
             const { address } = req.body;
-            if (!this.isvalidErgoAddress(address)) {
+            if (!this.isValidErgoAddress(address)) {
               return res.status(400).send({
                 error: 'Invalid Ergo address',
                 code: 'invalid-address-network',
