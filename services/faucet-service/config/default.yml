@@ -83,6 +83,6 @@ googleAuth:
   clientId: ''
   clientSecret: ''
   redirectUrl: ''
-  scope: 'email profile openid'
-  expiresTime: 7200
-  sessionTTL: 3600
+  scope: '' # 'email profile openid'
+  expiresTime: '' # 7200
+  sessionTTL: '' # 3600
