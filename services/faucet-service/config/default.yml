@@ -9,8 +9,8 @@ logs:
     level: 'info'
 
 recaptcha:
+  activate: true
   key: ''
-  development: true
   threshold: 0.5
   hostnames:
     - 'localhost'
