@@ -17,3 +17,8 @@ export const setupFastifyServer = async () => {
   await FastifyAPIServer.initialize(fasftyConfig, fastifyLogger);
   logger.info('Fastify server initialized successfully');
 };
+
+export const startServerService = async () => {
+  const server = FastifyAPIServer.getInstance();
+  await server.start();
+};
