@@ -163,6 +163,11 @@ export class DiscordAuth {
             302: { description: 'Redirect to Discord OAuth2 login' },
             401: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (_, reply) => {
@@ -195,6 +200,11 @@ export class DiscordAuth {
             401: ErrorResponse,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
