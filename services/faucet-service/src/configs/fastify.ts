@@ -28,18 +28,13 @@ const swagger = {
     },
     components: {
       securitySchemes: {
-        cookieAuth: {
-          type: 'apiKey' as const,
-          in: 'cookie' as const,
-          name: cookieConfig.name,
+        bearerAuth: {
+          type: 'http' as const,
+          scheme: 'bearer' as const,
+          bearerFormat: 'JWT',
         },
       },
     },
-    security: [
-      {
-        cookieAuth: [],
-      },
-    ],
   },
 };
 

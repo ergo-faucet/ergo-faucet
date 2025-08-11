@@ -254,6 +254,11 @@ export class XAuth {
             302: { description: 'Redirect to X OAuth2 login' },
             401: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (_, reply) => {
@@ -286,6 +291,11 @@ export class XAuth {
             401: ErrorResponse,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
