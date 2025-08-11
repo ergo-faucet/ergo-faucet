@@ -255,6 +255,11 @@ export class GoogleAuth {
             302: { description: 'Redirect to Google OAuth2 login' },
             401: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (_, reply) => {
@@ -287,6 +292,11 @@ export class GoogleAuth {
             401: ErrorResponse,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
