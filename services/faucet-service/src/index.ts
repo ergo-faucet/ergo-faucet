@@ -10,6 +10,7 @@ import {
   setupXAuth,
   setupController,
 } from './handler';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
@@ -25,6 +26,8 @@ const main = async () => {
     await setupXAuth();
     await setupGoogleAuth();
     logger.info('All packages was initialized successfuly');
+    const server = FastifyAPIServer.getInstance();
+    server.start();
   } catch (err) {
     logger.debug('Error in initialize the packages', err);
   }
