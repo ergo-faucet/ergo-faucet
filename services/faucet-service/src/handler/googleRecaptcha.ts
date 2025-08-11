@@ -9,6 +9,7 @@ export const setupRecaptcha = async () => {
     CallbackLoggerFactory.getInstance().getLogger('GoogleRecaptcha');
 
   await GoogleRecaptcha.initialize(
+    recaptchaConfig.recaptchaActivate,
     recaptchaConfig.recaptchaKey,
     recaptchaConfig.recaptchaThreshold,
     recaptchaConfig.recaptchaHostnames,
