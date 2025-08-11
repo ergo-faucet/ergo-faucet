@@ -105,7 +105,7 @@ class GoogleRecaptcha {
     token: string,
     remoteip?: string,
   ): Promise<boolean> => {
-    if (this.activate) return true;
+    if (!this.activate) return true;
     const queryParams: VerifyQuery = {
       secret: this.recaptchaKey,
       response: token,
