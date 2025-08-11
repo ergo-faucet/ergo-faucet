@@ -12,7 +12,7 @@ export const dbConfig: DatabaseConfig =
         type: dbType,
         database: config.get<string>('database.database'),
         path: config.get<string>('database.path'),
-        logging: false,
+        logging: config.get<boolean>('database.logging'),
       }
     : {
         type: dbType,
@@ -21,5 +21,5 @@ export const dbConfig: DatabaseConfig =
         username: config.get<string>('database.username'),
         password: config.get<string>('database.password'),
         database: config.get<string>('database.database'),
-        logging: false,
+        logging: config.get<boolean>('database.logging'),
       };

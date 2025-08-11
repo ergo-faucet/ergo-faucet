@@ -1,83 +1,78 @@
 # logging configuration
 logs:
-  - type: '' #  'file'
-    path: '' #  './logs/'
-    maxSize: '' #  '20m'
-    maxFiles: '' #  '14d'
-    level: '' #  'info'
-  - type: '' #  'console'
-    level: '' #  'info'
+  - type: 'file'
+    path: './logs/'
+    maxSize: '20m'
+    maxFiles: '14d'
+    level: 'info'
+  - type: 'console'
+    level: 'info'
 
 recaptcha:
   key: ''
-  threshold: '' #  0.5
+  development: true
+  threshold: 0.5
   hostnames:
-    - '' #  'localhost'
+    - 'localhost'
 
 server:
-  port: '' #  3000
-  host: '' #  '0.0.0.0'
-  corsOrigins: '' #  '*'
+  port: 3000
+  host: 127.0.0.1
+  corsOrigins: '*'
   jwtSecret: ''
-  jwtExpiration: '' #  86400
-  activeFastifyLogger: '' #  true
-  swagger:
-    openapi:
-      info:
-        title: '' #  'Faucet Service API'
-        description: '' #  'API documentation for Faucet Service'
-        version: '' #  '1.0.0'
+  jwtExpiration: 86400
+  activeFastifyLogger: false
   swaggerUi:
-    routePrefix: '' #  '/docs'
+    routePrefix: '/docs'
     uiConfig:
-      docExpansion: '' #  'none'
-      deepLinking: '' #  false
+      docExpansion: true
+      deepLinking: false
   cookie:
     secret: ''
-    signed: '' #  true
-    name: '' #  'refreshToken'
-    httpOnly: '' #  true
-    secure: '' #  false
-    sameSite: '' #  'lax'
-    path: '' #  '/'
-    domain: '' #  'localhost'
-    maxAge: '' # 7200
+    signed: false
+    name: 'refreshToken'
+    httpOnly: true
+    secure: false
+    sameSite: 'lax'
+    path: '/'
+    domain: 'localhost'
+    maxAge: 7200
 
 database:
-  type: '' #  'postgres'
-  path: '' #  ''
-  host: '' #  'localhost'
-  port: '' #  5432
-  username: ''
-  password: ''
-  database: ''
-  logging: '' #  false
+  type: 'sqlite'
+  path: './sqlite'
+  database: 'faucet_db.sqlite'
+  # host: '' #  'localhost'
+  # port: '' #  5432
+  # username: '' # 'faucet_user'
+  # password: '' # 'secure_password'
+  logging: false
 
 redis:
-  host: '' #  'localhost'
-  port: '' #  6379
+  host: 'localhost'
+  port: 6379
   password: ''
 
 ergoAuth:
-  challengeExpirySeconds: '' #  300
-  refreshTokenExpirySeconds: '' #  2592000
-  accessTokenExpirySeconds: '' #  3600
-  networkAddress: '' #  'Testnet'
+  challengeExpirySeconds: 300
+  refreshTokenExpirySeconds: 2592000
+  accessTokenExpirySeconds: 3600
+  networkAddress: 'mainnet'
 
 discord:
   clientID: ''
   clientSecret: ''
   redirectURL: ''
-  scope: '' #  'identify email'
-  expiresTime: '' #  7200
+  scope: 'identify email'
+  expiresTime: 7200
 
 x-platform:
   clientID: ''
   clientSecret: ''
   redirectURL: ''
-  scope: '' #  'read write'
-  expiresTime: '' #  7200
-  sessionTTL: '' #  3600
+  scope: 'read write'
+  expiresTime: 7200
+  sessionTTL: 3600
 
 googleAuth:
   clientId: ''
