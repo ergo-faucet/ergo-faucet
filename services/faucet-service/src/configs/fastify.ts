@@ -16,13 +16,30 @@ export const cookieConfig: CookieConfig = {
   maxAge: config.get<number>('server.cookie.maxAge'),
 };
 
-const swagger: object = {
+/**
+ * Swagger/OpenAPI configuration with cookie authentication
+ */
+const swagger = {
   openapi: {
     info: {
       title: 'Faucet Service API',
       description: 'API documentation for Faucet Service',
       version: packageJson.version,
     },
+    components: {
+      securitySchemes: {
+        cookieAuth: {
+          type: 'apiKey' as const,
+          in: 'cookie' as const,
+          name: cookieConfig.name,
+        },
+      },
+    },
+    security: [
+      {
+        cookieAuth: [],
+      },
+    ],
   },
 };
 
