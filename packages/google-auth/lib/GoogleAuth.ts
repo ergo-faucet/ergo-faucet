@@ -64,7 +64,6 @@ export class GoogleAuth {
    *
    * @param config - Google configuration parameters including clientId, fastify, ...
    * @param logger - Optional logger instance
-   * @throws Error if already initialized
    */
   public static initialize = async (
     config: GoogleAuthConfig,
@@ -82,7 +81,6 @@ export class GoogleAuth {
   /**
    * Returns the singleton instance after initialization.
    * @returns GoogleAuth instance
-   * @throws Error if instance not initialized
    */
   public static getInstance = (): GoogleAuth => {
     if (!this.instance) {
