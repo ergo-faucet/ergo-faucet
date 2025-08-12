@@ -11,7 +11,6 @@ export const setupRecaptcha = async () => {
   await GoogleRecaptcha.initialize(
     recaptchaConfig.recaptchaActivate,
     recaptchaConfig.recaptchaKey,
-    recaptchaConfig.recaptchaDevelopment,
     recaptchaConfig.recaptchaThreshold,
     recaptchaConfig.recaptchaHostnames,
     recaptchaLogger,
