@@ -2,13 +2,13 @@ import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
 import { User, UserAuthStatus, AuthMethod } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
-class XAction {
-  private static instance: XAction;
+class GoogleAction {
+  private static instance: GoogleAction;
   private logger: AbstractLogger;
   private userRepository: Repository<User>;
   private userAuthStatusRepository: Repository<UserAuthStatus>;
   private authMethodRepository: Repository<AuthMethod>;
-  private xAuthMethod!: AuthMethod;
+  private googleAuthMethod!: AuthMethod;
 
   /**
    * Private constructor to enforce singleton usage.
@@ -24,7 +24,7 @@ class XAction {
   }
 
   /**
-   * Initializes the XAction singleton instance.
+   * Initializes the GoogleAction singleton instance.
    *
    * @param dataSource - TypeORM DataSource for database operations
    * @param logger - Optional logger instance
@@ -35,64 +35,63 @@ class XAction {
     logger?: AbstractLogger,
   ): void => {
     if (this.instance)
-      throw new Error('XAction instance has already been initialized.');
-    this.instance = new XAction(dataSource, logger);
+      throw new Error('GoogleAction instance has already been initialized.');
+    this.instance = new GoogleAction(dataSource, logger);
   };
 
   /**
    * Returns the singleton instance after initialization.
-   * @returns XAction instance
+   * @returns GoogleAction instance
    * @throws Error if not initialized
    */
-  public static getInstance = (): XAction => {
+  public static getInstance = (): GoogleAction => {
     if (!this.instance)
-      throw new Error('XAction instance has not been initialized.');
+      throw new Error('GoogleAction instance has not been initialized.');
     return this.instance;
   };
 
   /**
-   * Ensures the `x-platform` AuthMethod is seeded in the database.
+   * Ensures the `google` AuthMethod is seeded in the database.
    *
-   * - Checks if an AuthMethod with name `x-platform` exists.
+   * - Checks if an AuthMethod with name `google` exists.
    * - If missing, creates it with an empty config.
    *
    * @returns Promise<void>
    */
-  public async ensureXAuthMethod(): Promise<void> {
-    let xMethod = await this.authMethodRepository.findOne({
-      where: { name: 'x-platform' },
+  public async ensureGoogleAuthMethod(): Promise<void> {
+    let googleMethod = await this.authMethodRepository.findOne({
+      where: { name: 'google' },
     });
-    if (!xMethod) {
-      xMethod = this.authMethodRepository.create({
-        name: 'x-platform',
+    if (!googleMethod) {
+      googleMethod = this.authMethodRepository.create({
+        name: 'google',
         config: JSON.stringify({}),
       });
-      this.xAuthMethod = await this.authMethodRepository.save(xMethod);
+      this.googleAuthMethod =
+        await this.authMethodRepository.save(googleMethod);
     } else {
-      this.xAuthMethod = xMethod;
+      this.googleAuthMethod = googleMethod;
     }
-    this.logger.debug('Seeded AuthMethod: x-platform');
+    this.logger.debug('Seeded AuthMethod: google');
   }
 
   /**
-   * Links an X-platform account to an already existing User.
+   * Links a Google account to an already existing User.
    *
    * @param userId - Existing application User ID
-   * @param x_id - X-platform User ID (string from X-platform API)
-   * @param username - X-platform username
-   * @param name - X-platform display name
-   * @param join_date - Account creation date
-   * @param expiresTime - Token expiration in seconds
-   * @param access_token - X-platform OAuth2 access token
-   * @param refresh_token - X-platform OAuth2 refresh token
+   * @param google_id - Google User ID (string from Google API)
+   * @param name - Google display name
+   * @param email - User email from Google
+   * @param expiresTime - Token expiration time in seconds
+   * @param access_token - Google OAuth2 access token
+   * @param refresh_token - Google OAuth2 refresh token
    * @returns Promise<void>
    */
-  public linkXAccount = async (
+  public linkGoogleAccount = async (
     userId: number,
-    x_id: string,
-    username: string,
+    google_id: string,
     name: string,
-    join_date: Date,
+    email: string,
     expiresTime: number,
     access_token: string,
     refresh_token: string,
@@ -100,38 +99,38 @@ class XAction {
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error(`User with ID ${userId} not found`);
 
-    if (user.x_id != null && user.x_id !== x_id) {
+    if (user.google_id != null && user.google_id !== google_id) {
       throw new Error(
-        `User ${userId} already linked a different X-platform account`,
+        `User ${userId} already linked a different Google account`,
       );
     }
 
-    const existingUserWithX = await this.userRepository.findOne({
-      where: { x_id: x_id, id: Not(userId) },
+    const existingUserWithGoogle = await this.userRepository.findOne({
+      where: { google_id: google_id, id: Not(userId) },
     });
 
-    if (existingUserWithX) {
+    if (existingUserWithGoogle) {
       throw new Error(
-        `This X-platform account is already linked with another user (${existingUserWithX.id})`,
+        `This Google account is already linked with another user (${existingUserWithGoogle.id})`,
       );
     }
 
-    user.x_id = x_id;
+    user.google_id = google_id;
     user.name = user.name ?? name ?? undefined;
     user.metadata = {
       ...user.metadata,
-      x: {
-        username,
+      google: {
         name: name ?? undefined,
-        join_date: join_date,
+        email: email ?? undefined,
       },
     };
 
     const savedUser = await this.userRepository.save(user);
-    this.logger.debug(`Linked X-platform ID ${x_id} to user ID ${userId}`);
+    this.logger.debug(`Linked Google ID ${google_id} to user ID ${userId}`);
 
     const expiresAt = new Date(Date.now() + expiresTime * 1000);
-    await this.saveOrUpdateXAuthStatus(
+
+    await this.saveOrUpdateGoogleAuthStatus(
       savedUser,
       expiresAt,
       access_token,
@@ -140,15 +139,15 @@ class XAction {
   };
 
   /**
-   * Creates or updates the `UserAuthStatus` record for a user's X authentication.
+   * Creates or updates the `UserAuthStatus` record for a user's Google authentication.
    *
    * @param user - User entity already saved in DB
    * @param expiresAt - Token expiration date
-   * @param accessToken - X OAuth2 access token
-   * @param refreshToken - X OAuth2 refresh token
+   * @param accessToken - Google OAuth2 access token
+   * @param refreshToken - Google OAuth2 refresh token
    * @returns Promise<void>
    */
-  private saveOrUpdateXAuthStatus = async (
+  private saveOrUpdateGoogleAuthStatus = async (
     user: User,
     expiresAt: Date,
     accessToken: string,
@@ -157,7 +156,7 @@ class XAction {
     let authStatus = await this.userAuthStatusRepository.findOne({
       where: {
         user: { id: user.id },
-        authMethod: { id: this.xAuthMethod.id },
+        authMethod: { id: this.googleAuthMethod.id },
       },
       relations: ['authMethod', 'user'],
     });
@@ -165,7 +164,7 @@ class XAction {
     if (!authStatus) {
       authStatus = this.userAuthStatusRepository.create({
         user,
-        authMethod: this.xAuthMethod,
+        authMethod: this.googleAuthMethod,
         verifiedAt: new Date(),
         status: 'passed',
         expiresAt,
@@ -186,9 +185,9 @@ class XAction {
 
     await this.userAuthStatusRepository.save(authStatus);
     this.logger.debug(
-      `Saved/Updated X-platform UserAuthStatus for user ID ${user.id}`,
+      `Saved/Updated Google UserAuthStatus for user ID ${user.id}`,
     );
   };
 }
 
-export { XAction };
+export { GoogleAction };

@@ -37,6 +37,13 @@ export class User {
   })
   x_id!: string;
 
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    unique: true,
+  })
+  google_id!: string;
+
   @Column({ type: 'varchar', nullable: true })
   name!: string;
 
@@ -52,6 +59,10 @@ export class User {
       name?: string;
       username?: string;
       join_date?: Date;
+    };
+    google?: {
+      name?: string;
+      email?: string;
     };
   };
 
