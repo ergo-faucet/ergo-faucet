@@ -89,7 +89,7 @@ export class DiscordAuth {
    * @returns Fully qualified Discord login URL with all query params
    */
   private buildLoginURL = (): string => {
-    return `${this.DISCORD_OAUTH_URL}/authorize?clientID=${this.clientID}&redirectURL=${encodeURIComponent(
+    return `${this.DISCORD_OAUTH_URL}/authorize?client_id=${this.clientID}&redirect_uri=${encodeURIComponent(
       this.redirectURL,
     )}&response_type=code&scope=${this.scope}`;
   };
