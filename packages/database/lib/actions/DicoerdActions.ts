@@ -87,6 +87,7 @@ class DiscordAction {
    * @param global_name - Discord global name (nullable)
    * @param email - User email from Discord (nullable)
    * @param join_date - Calculated first join timestamp
+   * @param expiresTime - Token expiration in seconds
    * @param access_token - Discord OAuth2 access token
    * @param refresh_token - Discord OAuth2 refresh token
    * @returns Promise<void>
@@ -96,25 +97,23 @@ class DiscordAction {
     discord_id: string,
     username: string,
     join_date: Date,
-    expiresAt: Date,
+    expiresTime: number,
     access_token: string,
     refresh_token: string,
     email?: string,
     global_name?: string,
   ): Promise<void> => {
-    const discordIdNum = Number(discord_id);
-
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error(`User with ID ${userId} not found`);
 
-    if (user.discord_id != null && user.discord_id !== discordIdNum) {
+    if (user.discord_id != null && user.discord_id !== discord_id) {
       throw new Error(
         `User ${userId} already linked a different Discord account`,
       );
     }
 
     const existingUserWithDiscord = await this.userRepository.findOne({
-      where: { discord_id: discordIdNum, id: Not(userId) },
+      where: { discord_id: discord_id, id: Not(userId) },
     });
 
     if (existingUserWithDiscord) {
@@ -123,7 +122,7 @@ class DiscordAction {
       );
     }
 
-    user.discord_id = discordIdNum;
+    user.discord_id = discord_id;
     user.name = user.name ?? global_name ?? undefined;
     user.metadata = {
       ...user.metadata,
@@ -136,7 +135,9 @@ class DiscordAction {
     };
 
     const savedUser = await this.userRepository.save(user);
-    this.logger.debug(`Linked Discord ID ${discordIdNum} to user ID ${userId}`);
+    this.logger.debug(`Linked Discord ID ${discord_id} to user ID ${userId}`);
+
+    const expiresAt = new Date(Date.now() + expiresTime * 1000);
 
     await this.saveOrUpdateDiscordAuthStatus(
       savedUser,

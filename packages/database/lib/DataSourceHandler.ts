@@ -33,7 +33,7 @@ class DataSourceHandler {
     if (!this.instance) {
       throw new Error('DataSourceHandler instance has not been initialized.');
     }
-    return DataSourceHandler.instance;
+    return this.instance;
   };
 
   /**
@@ -47,14 +47,16 @@ class DataSourceHandler {
     config: DatabaseConfig,
     logger?: AbstractLogger,
   ) => {
-    if (!this.instance) {
-      this.instance = new DataSourceHandler(config, logger);
-      await this.instance.dataSource.initialize();
-      await this.instance.dataSource.runMigrations();
-      this.instance.logger.info(
-        `Data Source (${config.type}) initialized successfully`,
+    if (this.instance)
+      throw new Error(
+        'DataSourceHandler instance has already been initialized.',
       );
-    }
+
+    this.instance = new DataSourceHandler(config, logger);
+    await this.instance.dataSource.initialize();
+    await this.instance.dataSource.runMigrations();
+
+    this.instance.logger.info(`Database initialized successfully.`);
   };
 
   /**

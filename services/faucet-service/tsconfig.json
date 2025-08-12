@@ -1,0 +1,17 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "baseUrl": "."
+  },
+  "include": ["src"],
+  "references": [
+    { "path": "../../packages/google-recaptcha" },
+    { "path": "../../packages/fastify-server" },
+    { "path": "../../packages/database" },
+    { "path": "../../packages/ergo-authentication" },
+    { "path": "../../packages/discord-auth" },
+    { "path": "../../packages/controller" },
+    { "path": "../../packages/x-auth" }
+  ]
+}

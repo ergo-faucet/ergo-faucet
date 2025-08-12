@@ -5,8 +5,8 @@ export interface DiscordAuthConfig {
   fastifyServer: FastifyAPIServer;
   discordAction: DiscordAction;
   clientID: string;
-  clientSercret: string;
+  clientSecret: string;
   redirectURL: string;
   scope: string;
-  expiresAt: Date;
+  expiresTime: number;
 }

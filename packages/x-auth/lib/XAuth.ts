@@ -27,7 +27,7 @@ export class XAuth {
   private readonly clientSecret: string;
   private readonly redirectURL: string;
   private readonly scope: string;
-  private readonly expiresAt: Date;
+  private readonly expiresTime: number;
   private readonly redis: Redis;
   private readonly sessionTTL: number;
   private readonly SESSION_PREFIX = 'xauth:session:';
@@ -51,7 +51,7 @@ export class XAuth {
     this.clientSecret = config.clientSecret;
     this.redirectURL = config.redirectURL;
     this.scope = config.scope;
-    this.expiresAt = config.expiresAt;
+    this.expiresTime = config.expiresTime;
     this.redis = new Redis(config.redis);
     this.sessionTTL = config.sessionTTL;
   }
@@ -156,7 +156,7 @@ export class XAuth {
     const codeChallenge = crypto
       .createHash('sha256')
       .update(codeVerifier)
-      .digest('base64');
+      .digest('base64url');
     return { codeVerifier, codeChallenge };
   };
 
@@ -254,6 +254,11 @@ export class XAuth {
             302: { description: 'Redirect to X OAuth2 login' },
             401: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (_, reply) => {
@@ -286,6 +291,11 @@ export class XAuth {
             401: ErrorResponse,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
@@ -322,7 +332,7 @@ export class XAuth {
             xUser.username,
             xUser.name,
             xUser.join_date,
-            this.expiresAt,
+            this.expiresTime,
             accessToken,
             refreshToken,
           );
