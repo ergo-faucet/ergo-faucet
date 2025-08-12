@@ -1,4 +1,3 @@
-// lib/actions/GoogleAction.ts
 import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
 import { User, UserAuthStatus, AuthMethod } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
