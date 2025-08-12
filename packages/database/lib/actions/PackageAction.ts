@@ -81,7 +81,7 @@ class PackageAction {
       order: orderOption,
       skip: offset,
       take: limit,
-      relations: ['assets', 'authMethods'],
+      relations: ['assets', 'authMethods', 'authMethods.authMethod'],
     });
     return packages;
   };
