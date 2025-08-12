@@ -5,6 +5,7 @@ import {
   setupDiscordAuth,
   setupErgoAuth,
   setupFastifyServer,
+  setupGoogleAuth,
   setupRecaptcha,
   setupXAuth,
   setupController,
@@ -23,6 +24,7 @@ const main = async () => {
     await setupController();
     await setupDiscordAuth();
     await setupXAuth();
+    await setupGoogleAuth();
     logger.info('All packages was initialized successfuly');
     await startServerService();
   } catch (err) {

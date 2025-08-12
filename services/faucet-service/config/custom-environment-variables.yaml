@@ -23,3 +23,8 @@ x-platform:
   clientID: X_CLIENT_ID
   clientSercret: X_CLIENT_SECRET
   redirectURL: X_REDIRECT_URL
+
+googleAuth:
+  clientID: GOOGLE_CLIENT_ID
+  clientSercret: GOOGLE_CLIENT_SECRET
+  redirectURL: GOOGLE_REDIRECT_URL

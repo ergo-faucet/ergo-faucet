@@ -73,3 +73,11 @@ x-platform:
   scope: 'read write'
   expiresTime: 7200
   sessionTTL: 3600
+
+googleAuth:
+  clientId: ''
+  clientSecret: ''
+  redirectUrl: ''
+  scope: 'email profile openid'
+  expiresTime: 7200
+  sessionTTL: 3600
