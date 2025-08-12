@@ -58,5 +58,5 @@ export const mockErgoAuthConfig: ErgoAuthConfig = {
   challengeExpirySeconds: 300,
   refreshTokenExpirySeconds: 3600,
   accessTokenExpirySeconds: 600,
-  networkAddress: 0,
+  networkType: 0,
 };

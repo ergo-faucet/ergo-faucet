@@ -82,7 +82,7 @@ class XAction {
    * @param username - X-platform username
    * @param name - X-platform display name
    * @param join_date - Account creation date
-   * @param expiresAt - Token expiration date
+   * @param expiresTime - Token expiration in seconds
    * @param access_token - X-platform OAuth2 access token
    * @param refresh_token - X-platform OAuth2 refresh token
    * @returns Promise<void>
@@ -93,22 +93,21 @@ class XAction {
     username: string,
     name: string,
     join_date: Date,
-    expiresAt: Date,
+    expiresTime: number,
     access_token: string,
     refresh_token: string,
   ): Promise<void> => {
-    const xIdNum = Number(x_id);
     const user = await this.userRepository.findOne({ where: { id: userId } });
     if (!user) throw new Error(`User with ID ${userId} not found`);
 
-    if (user.x_id != null && user.x_id !== xIdNum) {
+    if (user.x_id != null && user.x_id !== x_id) {
       throw new Error(
         `User ${userId} already linked a different X-platform account`,
       );
     }
 
     const existingUserWithX = await this.userRepository.findOne({
-      where: { x_id: xIdNum, id: Not(userId) },
+      where: { x_id: x_id, id: Not(userId) },
     });
 
     if (existingUserWithX) {
@@ -117,7 +116,7 @@ class XAction {
       );
     }
 
-    user.x_id = xIdNum;
+    user.x_id = x_id;
     user.name = user.name ?? name ?? undefined;
     user.metadata = {
       ...user.metadata,
@@ -129,8 +128,9 @@ class XAction {
     };
 
     const savedUser = await this.userRepository.save(user);
-    this.logger.debug(`Linked X-platform ID ${xIdNum} to user ID ${userId}`);
+    this.logger.debug(`Linked X-platform ID ${x_id} to user ID ${userId}`);
 
+    const expiresAt = new Date(Date.now() + expiresTime * 1000);
     await this.saveOrUpdateXAuthStatus(
       savedUser,
       expiresAt,

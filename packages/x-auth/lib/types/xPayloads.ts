@@ -26,7 +26,7 @@ export interface XAuthConfig {
   clientSecret: string;
   redirectURL: string;
   scope: string;
-  expiresAt: Date;
+  expiresTime: number;
   redis: RedisOptions;
   sessionTTL: number;
 }

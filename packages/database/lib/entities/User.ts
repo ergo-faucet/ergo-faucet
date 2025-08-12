@@ -23,11 +23,26 @@ export class User {
   @OneToMany(() => UserRequest, (request) => request.user)
   requests!: Relation<UserRequest[]>;
 
-  @Column({ type: 'bigint', nullable: true })
-  discord_id!: number;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    unique: true,
+  })
+  discord_id!: string;
 
-  @Column({ type: 'bigint', nullable: true })
-  x_id!: number;
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    unique: true,
+  })
+  x_id!: string;
+
+  @Column({
+    type: 'varchar',
+    nullable: true,
+    unique: true,
+  })
+  google_id!: string;
 
   @Column({ type: 'varchar', nullable: true })
   name!: string;
@@ -44,6 +59,10 @@ export class User {
       name?: string;
       username?: string;
       join_date?: Date;
+    };
+    google?: {
+      name?: string;
+      email?: string;
     };
   };
 
