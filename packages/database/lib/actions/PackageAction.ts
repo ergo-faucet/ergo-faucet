@@ -76,11 +76,12 @@ class PackageAction {
     const orderOption: FindOptionsOrder<Package> = { [sort]: order };
 
     // Query the database for packages with status 'show'
-    const packages = this.PackageRepository.find({
+    const packages = await this.PackageRepository.find({
       where: { status: 'show' },
       order: orderOption,
       skip: offset,
       take: limit,
+      relations: ['assets', 'authMethods', 'authMethods.authMethod'],
     });
     return packages;
   };
