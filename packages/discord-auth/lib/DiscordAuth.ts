@@ -23,7 +23,7 @@ export class DiscordAuth {
   private readonly discordAction: DiscordAction;
 
   private readonly clientID: string;
-  private readonly clientSercret: string;
+  private readonly clientSecret: string;
   private readonly redirectURL: string;
   private readonly scope: string;
   private readonly expiresTime: number;
@@ -46,7 +46,7 @@ export class DiscordAuth {
     this.fastifyServer = config.fastifyServer;
     this.discordAction = config.discordAction;
     this.clientID = config.clientID;
-    this.clientSercret = config.clientSecret;
+    this.clientSecret = config.clientSecret;
     this.redirectURL = config.redirectURL;
     this.scope = config.scope;
     this.expiresTime = config.expiresTime;
@@ -125,7 +125,7 @@ export class DiscordAuth {
   ): Promise<discordToken> => {
     const params = new URLSearchParams({
       client_id: this.clientID,
-      client_secret: this.clientSercret,
+      client_secret: this.clientSecret,
       grant_type: this.GRANT_TYPE,
       code,
       redirect_uri: this.redirectURL,
