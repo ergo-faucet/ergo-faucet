@@ -22,8 +22,6 @@ export const AuthenticationResponseError = Type.Object({
   code: Type.String(),
 });
 
-export const RefreshTokenBody = Type.Null();
-
 export const RefreshTokenResponse200 = Type.Object({
   success: Type.Boolean(),
   newToken: Type.String(),

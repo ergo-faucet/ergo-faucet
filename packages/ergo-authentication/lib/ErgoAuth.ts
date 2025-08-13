@@ -13,8 +13,6 @@ import {
   ChallengeResponse200,
   ChallengeVerificationResult,
   ErgoAuthConfig,
-  RefreshTokenBody,
-  RefreshTokenBodyType,
   RefreshTokenResponse200,
   RefreshTokenResponse401,
 } from './types';
@@ -356,11 +354,10 @@ export class ErgoAuth {
   private refreshTokenRoute = async (
     fastify: FastifySeverInstance,
   ): Promise<void> => {
-    fastify.post<{ Body: RefreshTokenBodyType }>(
+    fastify.get(
       '/refresh-token',
       {
         schema: {
-          body: RefreshTokenBody,
           response: {
             200: RefreshTokenResponse200,
             401: RefreshTokenResponse401,
