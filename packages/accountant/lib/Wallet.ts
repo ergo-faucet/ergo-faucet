@@ -28,7 +28,7 @@ export class Wallet {
     const rootKey = ErgoHDKey.fromMnemonicSync(mnemonic);
     this.childKey = rootKey.deriveChild(0);
     this.walletAddress = this.childKey.address.encode(network);
-    this.logger.debug('first address of the mnemonic', this.walletAddress);
+    this.logger.debug('First address of the mnemonic', this.walletAddress);
   }
 
   public static initialize = (
@@ -70,19 +70,18 @@ export class Wallet {
    * @param {ErgoUnsignedTransaction} unsignedTx - The unsigned Ergo transaction to be signed.
    * @returns {Promise<SignedTransaction>} A promise that resolves to the signed transaction.
    *
-   * @throws {Error} If the signing process fails at any stage.
    */
   public signTransaction = (
     unsignedTx: ErgoUnsignedTransaction,
   ): SignedTransaction => {
-    this.logger.debug(`signing transaction: ${JSON.stringify(unsignedTx)}`);
+    this.logger.debug(`Signing transaction: ${JSON.stringify(unsignedTx)}`);
 
     const signedTx: SignedTransaction = this.prover.signTransaction(
       unsignedTx,
       [this.childKey],
     );
     this.logger.debug(
-      `transaction signed successfully ${JSON.stringify(signedTx)}`,
+      `Transaction signed successfully ${JSON.stringify(signedTx)}`,
     );
     return signedTx;
   };
@@ -92,8 +91,6 @@ export class Wallet {
    * @param amount - The amount of ERGs in nanoerg
    * @param tokens - The list of tokens needed
    * @returns {Box<bigint>[]} - A list of selected boxes that have enough tokens and nanoergs
-   * @throws {NotEnoughAssetsError} - Throw error when the wallet has not enough assets in its boxes
-   *
    */
   public selectBoxes = async (
     amount: bigint,

@@ -39,7 +39,9 @@ class AccountantAction {
     }
 
     AccountantAction.instance = new AccountantAction(dataSource, logger);
-    logger?.info('AccountantAction singleton instance initialized.');
+    AccountantAction.instance.logger.info(
+      'AccountantAction singleton instance initialized.',
+    );
   };
 
   /**
