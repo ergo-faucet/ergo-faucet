@@ -6,7 +6,6 @@ export {
   AuthenticationBody,
   AuthenticationResponse200,
   AuthenticationResponseError,
-  RefreshTokenBody,
   RefreshTokenResponse200,
   RefreshTokenResponse401,
   ChallengeBody,
@@ -14,9 +13,5 @@ export {
   ChallengeResponse200,
 } from './schemas';
 export { payloadJWT } from './payloadJWTType';
-export {
-  AuthenticationBodyType,
-  RefreshTokenBodyType,
-  ChallengeBodyType,
-} from './routeBodyType';
+export { AuthenticationBodyType, ChallengeBodyType } from './routeBodyType';
 export { ErgoAuthConfig } from './ergoAuthConfig';
