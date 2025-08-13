@@ -9,7 +9,11 @@ export const AuthenticationBody = Type.Object({
 
 export const AuthenticationResponse200 = Type.Object({
   success: Type.Boolean(),
-  userId: Type.Integer(),
+  payload: Type.Object({
+    userId: Type.Number(),
+    address: Type.String(),
+    name: Type.Optional(Type.String()),
+  }),
   accessToken: Type.String(),
 });
 

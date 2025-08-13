@@ -7,6 +7,4 @@ export {
 
 export { userDiscordData, discordToken } from './discordData';
 
-export { userRequestPayload } from './userRequestPayload';
-
 export { DiscordAuthConfig } from './discordAuthConfig';

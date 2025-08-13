@@ -12,6 +12,5 @@ export {
   ChallengeErrorResponse,
   ChallengeResponse200,
 } from './schemas';
-export { payloadJWT } from './payloadJWTType';
 export { AuthenticationBodyType, ChallengeBodyType } from './routeBodyType';
 export { ErgoAuthConfig } from './ergoAuthConfig';
