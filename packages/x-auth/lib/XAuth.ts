@@ -31,7 +31,7 @@ export class XAuth {
   private readonly redis: Redis;
   private readonly sessionTTL: number;
   private readonly SESSION_PREFIX = 'xauth:session:';
-  private readonly X_AUTH_PREFIX = '/x-platform';
+  private readonly X_AUTH_PREFIX = '/auth/x-platform';
   private readonly X_OAUTH_URL = 'https://x.com/i/oauth2/authorize';
   private readonly X_TOKEN_URL = 'https://api.x.com/2/oauth2/token';
   private readonly X_API_URL = 'https://api.x.com/2/users/me';
