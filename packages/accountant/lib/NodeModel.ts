@@ -7,7 +7,7 @@ import {
   ConfirmedBalance,
   WalletBalancesAPIResponse,
 } from './types';
-import { Box, SignedTransaction } from '@fleet-sdk/common';
+import { Box } from '@fleet-sdk/common';
 import { DoubleSpendError } from './types/errors';
 
 export class NodeModel {
@@ -15,9 +15,15 @@ export class NodeModel {
   private readonly logger: AbstractLogger;
   private axiosInstance: AxiosInstance | undefined;
 
-  private constructor(axiosInstance: AxiosInstance, logger?: AbstractLogger) {
+  private constructor(nodeUrl: string, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
-    this.axiosInstance = axiosInstance;
+    this.axiosInstance = axios.create({
+      baseURL: `${nodeUrl}`,
+      timeout: 1000,
+      headers: {
+        accept: 'application/json',
+      },
+    });
   }
 
   /**
@@ -28,15 +34,7 @@ export class NodeModel {
     if (this.instance) {
       throw new Error('NodeModel instance has already been initialized.');
     }
-
-    const axiosInstance = axios.create({
-      baseURL: `${nodeUrl}`,
-      timeout: 1000,
-      headers: {
-        accept: 'application/json',
-      },
-    });
-    NodeModel.instance = new NodeModel(axiosInstance, logger);
+    NodeModel.instance = new NodeModel(nodeUrl, logger);
   };
 
   /**
@@ -56,8 +54,6 @@ export class NodeModel {
    *
    * @param {string} address - The wallet address to fetch balances for.
    * @returns {Promise<ConfirmedBalance>} A promise that resolves to the confirmed balances (nanoErgs and tokens).
-   * @throws {errorResponse} If the network object is not initialized.
-   * @throws {errorResponse} If an Axios error occurs during the request.
    */
   public fetchWalletBalances = async (
     address: string,
@@ -99,58 +95,10 @@ export class NodeModel {
   };
 
   /**
-   * Submits a signed Ergo transaction to the network.
-   *
-   * @param {SignedTransaction} signedTx - The signed transaction to be broadcasted.
-   * @returns {Promise<string>} A promise that resolves to the transaction ID if successful.
-   * @throws {errorResponse} If the network object is not initialized.
-   * @throws {errorResponse} If an Axios error occurs during the request.
-   */
-  public submitTransaction = async (
-    signedTx: SignedTransaction,
-  ): Promise<string> => {
-    if (this.axiosInstance == undefined) {
-      const error: errorResponse = {
-        error: 500,
-        reason: 'Internal Error',
-        detail: 'The Network object has not been initialized!',
-      };
-      throw error;
-    }
-
-    this.logger.debug(
-      `Submitting signed transaction to the network...`,
-      signedTx.id,
-    );
-    return await this.axiosInstance
-      .post<string>('/transactions', signedTx)
-      .then((res) => res.data)
-      .catch((error) => {
-        if (axios.isAxiosError(error)) {
-          this.logger.error('Axios error.', {
-            error,
-            message: error.message,
-            stack: error.stack,
-          });
-          const errorResponse: errorResponse = {
-            error: 500,
-            reason: 'Internal Error',
-            detail: 'Axios error!',
-          };
-          throw errorResponse;
-        } else {
-          throw error;
-        }
-      });
-  };
-
-  /**
    * Submits a signed Ergo transaction  bytes to the network.
    *
    * @param {string} signedTxBytes - The signed transaction bytes to be broadcasted.
    * @returns {Promise<string>} A promise that resolves to the transaction ID if successful.
-   * @throws {errorResponse} If the network object is not initialized.
-   * @throws {errorResponse} If an Axios error occurs during the request.
    */
   public submitTransactionBytes = async (
     signedTxBytes: string,
@@ -211,8 +159,6 @@ export class NodeModel {
    *
    * @param {string} tokenId - The ID of the token to fetch.
    * @returns {Promise<tokenByIdResponseSuccess>} A promise that resolves to the token details.
-   * @throws {errorResponse} If the network object is not initialized.
-   * @throws {errorResponse} If an Axios error occurs during the request.
    */
   public getTokenById = async (
     tokenId: string,
@@ -252,7 +198,6 @@ export class NodeModel {
    *
    * @param {string} transactionId - The ID of the transaction.
    * @returns {Promise<number | undefined>} A promise that resolves to the inclusion height of the transaction.
-   * @throws Will log an error if the transaction data cannot be fetched.
    */
   public getInclusionHeight = async (
     transactionId: string,
@@ -285,11 +230,11 @@ export class NodeModel {
         throw new Error('Failed to fetch inclusion height');
       });
   };
+
   /**
    * Fetches the current blockchain height.
    *
    * @returns {Promise<number>} A promise that resolves to the current blockchain height.
-   * @throws Will log an error if the blockchain height cannot be fetched.
    */
   public getCurrentBlockchainHeight = async (): Promise<number> => {
     if (this.axiosInstance == undefined) {
@@ -325,7 +270,6 @@ export class NodeModel {
    * @param {offset} - amount of elements to skip from the start
    * @param {limit} - amount of elements to retrieve
    * @returns {Box<bigint>[]} - returns desired boxes
-   * @throws {errorResponse} - If an Axios error occurs during the request.
    */
   public getUnspentBoxes = async (
     address: string,
@@ -362,9 +306,7 @@ export class NodeModel {
       });
   };
 
-  public isTransactionInMempool = async (
-    TransactionId: string,
-  ): Promise<boolean> => {
+  public isTxInMempool = async (TransactionId: string): Promise<boolean> => {
     if (this.axiosInstance == undefined) {
       const error: errorResponse = {
         error: 500,
@@ -390,9 +332,7 @@ export class NodeModel {
     return false;
   };
 
-  public isTransactionMined = async (
-    TransactionId: string,
-  ): Promise<boolean> => {
+  public isTxMined = async (TransactionId: string): Promise<boolean> => {
     if (this.axiosInstance == undefined) {
       const error: errorResponse = {
         error: 500,

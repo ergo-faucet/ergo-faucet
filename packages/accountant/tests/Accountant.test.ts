@@ -1,11 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import {
-  Accountant,
-  NotEnoughAssetsError,
-  NodeModel,
-  Wallet,
-  DoubleSpendError,
-} from '../lib';
+import { Accountant, NotEnoughAssetsError, DoubleSpendError } from '../lib';
 import { Asset, UserRequest } from '@ergo-faucet/database';
 import {
   ErgoUnsignedTransaction,
@@ -55,8 +49,6 @@ describe('Accountant', () => {
    */
   beforeEach(() => {
     mockLogger = new DummyLogger();
-    vi.mocked(NodeModel.getInstance).mockReturnValue(mockNodeModel);
-    vi.mocked(Wallet.getInstance).mockReturnValue(mockWallet);
     mockedConfig.accountantAction = mockAccountantAction;
 
     Accountant.initialize(mockedConfig, mockLogger);
@@ -260,14 +252,13 @@ describe('Accountant', () => {
      * - Request updated to 'paid'
      */
     it('should mark request as paid if transaction is mined and has enough confirmations', async () => {
-      mockNodeModel.isTransactionMined.mockResolvedValue(true);
-      mockNodeModel.isTransactionInMempool.mockResolvedValue(false);
+      mockNodeModel.isTxMined.mockResolvedValue(true);
+      mockNodeModel.isTxInMempool.mockResolvedValue(false);
       mockNodeModel.getCurrentBlockchainHeight.mockResolvedValue(1011); // 11 confirmations
 
       await accountant.handleSubmittedRequest(request);
 
-      // Assert
-      expect(mockNodeModel.isTransactionMined).toHaveBeenCalledWith('tx123');
+      expect(mockNodeModel.isTxMined).toHaveBeenCalledWith('tx123');
       expect(mockNodeModel.getCurrentBlockchainHeight).toHaveBeenCalled();
       expect(
         mockAccountantAction.updateUserRequestPaymentInfo,
@@ -282,8 +273,8 @@ describe('Accountant', () => {
      * - Transaction resubmitted, request not updated
      */
     it('should resubmit transaction if not in mempool', async () => {
-      mockNodeModel.isTransactionMined.mockResolvedValue(false);
-      mockNodeModel.isTransactionInMempool.mockResolvedValue(false);
+      mockNodeModel.isTxMined.mockResolvedValue(false);
+      mockNodeModel.isTxInMempool.mockResolvedValue(false);
       mockNodeModel.submitTransactionBytes.mockResolvedValue('tx123');
 
       await accountant.handleSubmittedRequest(request);
@@ -332,8 +323,8 @@ describe('Accountant', () => {
         txSerialized: 'txSerialized',
       };
 
-      mockNodeModel.isTransactionMined.mockResolvedValue(false);
-      mockNodeModel.isTransactionInMempool.mockResolvedValue(false);
+      mockNodeModel.isTxMined.mockResolvedValue(false);
+      mockNodeModel.isTxInMempool.mockResolvedValue(false);
       mockNodeModel.submitTransactionBytes.mockRejectedValue(
         new DoubleSpendError('Double spend detected'),
       );

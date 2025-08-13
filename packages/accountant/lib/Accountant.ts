@@ -38,16 +38,10 @@ class Accountant {
     this.minFee = config.minFee;
     this.minNanoErg = config.minNanoErg;
     this.confirmationLimit = config.confirmationLimit;
+    this.nodeModel = config.nodeModel;
+    this.wallet = config.wallet;
 
-    // Initialize NodeModel and Wallet
-    NodeModel.initialize(config.nodeUrl, logger);
-    this.nodeModel = NodeModel.getInstance();
-    Wallet.initialize(config.mnemonic, this.network, logger);
-    this.wallet = Wallet.getInstance();
-
-    this.logger.debug(
-      `Accountant initialized with network: ${this.network}, try limit: ${this.tryLimit}, and confirmation limit: ${this.confirmationLimit}`,
-    );
+    this.logger.debug(`Accountant initialized with network: ${this.network}`);
   }
 
   /**
@@ -84,7 +78,6 @@ class Accountant {
    * @returns {Promise<void>}
    */
   public processUserRequests = async (): Promise<void> => {
-    this.logger.info('Starting processUserRequests job.');
     try {
       const requests = await this.accountantAction.getUnpaidRequests();
       this.logger.debug(`Found ${requests.length} user requests to process.`);
@@ -212,9 +205,8 @@ class Accountant {
         `Checking transaction status for request ID: ${req.id}, Transaction ID: ${transactionId}`,
       );
 
-      const isInMempool =
-        await this.nodeModel.isTransactionInMempool(transactionId);
-      const isMined = await this.nodeModel.isTransactionMined(transactionId);
+      const isInMempool = await this.nodeModel.isTxInMempool(transactionId);
+      const isMined = await this.nodeModel.isTxMined(transactionId);
 
       if (isMined) {
         const currentHeight = await this.nodeModel.getCurrentBlockchainHeight();

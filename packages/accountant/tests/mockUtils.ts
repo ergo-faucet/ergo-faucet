@@ -26,8 +26,8 @@ const mockNodeModel = {
   getCurrentBlockchainHeight: vi.fn(),
   submitTransaction: vi.fn(),
   submitTransactionBytes: vi.fn(),
-  isTransactionInMempool: vi.fn(),
-  isTransactionMined: vi.fn(),
+  isTxInMempool: vi.fn(),
+  isTxMined: vi.fn(),
   // eslint-disable-next-line
 } as any;
 
@@ -41,6 +41,8 @@ const mockWallet = {
 } as any;
 
 export const mockedConfig: AccountantConfig = {
+  nodeModel: mockNodeModel,
+  wallet: mockWallet,
   network: Network.Mainnet,
   tryLimit: 3,
   accountantAction: {} as AccountantAction,
