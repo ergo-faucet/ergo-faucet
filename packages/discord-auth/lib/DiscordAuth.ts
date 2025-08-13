@@ -23,7 +23,7 @@ export class DiscordAuth {
   private readonly discordAction: DiscordAction;
 
   private readonly clientID: string;
-  private readonly clientSercret: string;
+  private readonly clientSecret: string;
   private readonly redirectURL: string;
   private readonly scope: string;
   private readonly expiresTime: number;
@@ -46,7 +46,7 @@ export class DiscordAuth {
     this.fastifyServer = config.fastifyServer;
     this.discordAction = config.discordAction;
     this.clientID = config.clientID;
-    this.clientSercret = config.clientSecret;
+    this.clientSecret = config.clientSecret;
     this.redirectURL = config.redirectURL;
     this.scope = config.scope;
     this.expiresTime = config.expiresTime;
@@ -89,7 +89,7 @@ export class DiscordAuth {
    * @returns Fully qualified Discord login URL with all query params
    */
   private buildLoginURL = (): string => {
-    return `${this.DISCORD_OAUTH_URL}/authorize?clientID=${this.clientID}&redirectURL=${encodeURIComponent(
+    return `${this.DISCORD_OAUTH_URL}/authorize?client_id=${this.clientID}&redirect_uri=${encodeURIComponent(
       this.redirectURL,
     )}&response_type=code&scope=${this.scope}`;
   };
@@ -124,11 +124,11 @@ export class DiscordAuth {
     code: string,
   ): Promise<discordToken> => {
     const params = new URLSearchParams({
-      clientID: this.clientID,
-      clientSercret: this.clientSercret,
+      client_id: this.clientID,
+      client_secret: this.clientSecret,
       grant_type: this.GRANT_TYPE,
       code,
-      redirectURL: this.redirectURL,
+      redirect_uri: this.redirectURL,
     });
 
     const res = await axios.post(this.DISCORD_TOKEN_URL, params, {
