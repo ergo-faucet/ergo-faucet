@@ -31,7 +31,7 @@ export class GoogleAuth {
   private readonly redis: Redis;
   private readonly sessionTTL: number;
   private readonly SESSION_PREFIX = 'googleAuth:session:';
-  private readonly GOOGLE_AUTH_PREFIX = '/google';
+  private readonly GOOGLE_AUTH_PREFIX = '/auth/google';
   private readonly GOOGLE_OAUTH_URL =
     'https://accounts.google.com/o/oauth2/v2/auth';
   private readonly GOOGLE_TOKEN_URL = 'https://oauth2.googleapis.com/token';

@@ -39,7 +39,7 @@ export class ErgoAuth {
   private readonly refreshTokenExpirySeconds: number;
   private readonly accessTokenExpirySeconds: number;
   private readonly NETWORK_TYPE: Network;
-  private readonly ERGO_AUTH_PREFIX = '/ergo-auth';
+  private readonly ERGO_AUTH_PREFIX = '/auth/ergo';
 
   /**
    * Private constructor to enforce singleton pattern.

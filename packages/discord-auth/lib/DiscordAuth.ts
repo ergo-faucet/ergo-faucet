@@ -30,7 +30,7 @@ export class DiscordAuth {
 
   private readonly DISCORD_EPOCH = 1420070400000;
   private readonly GRANT_TYPE = 'authorization_code';
-  private readonly Discord_AUTH_PREFIX = '/discord';
+  private readonly Discord_AUTH_PREFIX = '/auth/discord';
   private readonly DISCORD_OAUTH_URL = 'https://discord.com/api/oauth2';
   private readonly DISCORD_TOKEN_URL = 'https://discord.com/api/oauth2/token';
   private readonly DISCORD_API_URL = 'https://discord.com/api/users/@me';
