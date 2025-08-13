@@ -1,7 +1,7 @@
 import { MigrationInterface, QueryRunner } from 'typeorm';
 
-export class Migration1754843408255 implements MigrationInterface {
-  name = 'Migration1754843408255';
+export class Migration1755070398282 implements MigrationInterface {
+  name = 'Migration1755070398282';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -45,7 +45,7 @@ export class Migration1754843408255 implements MigrationInterface {
                 "metadata" text,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
-                "packageId" integer NOT NULL
+                "packageId" integer
             )
         `);
     await queryRunner.query(`
@@ -157,7 +157,7 @@ export class Migration1754843408255 implements MigrationInterface {
                 "metadata" text,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
-                "packageId" integer NOT NULL,
+                "packageId" integer,
                 CONSTRAINT "FK_359a7061b1cce4191f212893715" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
                 CONSTRAINT "FK_1706f917d940b8559937eb33f8e" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
                 CONSTRAINT "FK_66bd1b1ac02bcbbf13ca3964109" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
@@ -332,7 +332,7 @@ export class Migration1754843408255 implements MigrationInterface {
                 "metadata" text,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
-                "packageId" integer NOT NULL
+                "packageId" integer
             )
         `);
     await queryRunner.query(`
