@@ -167,7 +167,9 @@ class Accountant {
       );
     } catch (error) {
       if (error instanceof NotEnoughAssetsError) {
-        this.logger.error(`${error.message} request ID: ${req.id}`);
+        this.logger.error(
+          `${error.message} request ID: ${req.id}, package ID: ${req.package.id}`,
+        );
         await this.accountantAction.updateUserRequestPaymentInfo(
           req.id,
           'pending',
@@ -188,7 +190,7 @@ class Accountant {
    */
   public handleSubmittedRequest = async (req: UserRequest): Promise<void> => {
     try {
-      if (!req.txSerialized) {
+      if (!req.txSerialized || !req.txId) {
         this.logger.debug(
           `Request ID: ${req.id} has no serialized transaction. Marking as pending.`,
         );
@@ -209,6 +211,15 @@ class Accountant {
       const isMined = await this.nodeModel.isTxMined(transactionId);
 
       if (isMined) {
+        if (!req.creationHeight) {
+          req.creationHeight = await this.nodeModel.getInclusionHeight(
+            req.txId,
+          );
+          this.accountantAction.updateCreationHeight(
+            req.id,
+            req.creationHeight,
+          );
+        }
         const currentHeight = await this.nodeModel.getCurrentBlockchainHeight();
         const confirmations = currentHeight - req.creationHeight!;
         this.logger.debug(

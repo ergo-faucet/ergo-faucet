@@ -114,8 +114,44 @@ class AccountantAction {
     // Save updated user request
     await this.userRequestRepository.save(userRequest);
 
-    this.logger.info(
+    this.logger.debug(
       `User request with ID: ${userRequestId} updated successfully. Status: ${status}, Number of Tries: ${numberOfTries}`,
+    );
+  };
+
+  /**
+   * Updates the creation height for a specific user request.
+   * Logs the update operation and handles cases where the request is not found.
+   * @param userRequestId - The ID of the user request to update.
+   * @param creationHeight - The new creation height to set.
+   * @returns {Promise<void>}
+   */
+  public updateCreationHeight = async (
+    userRequestId: number,
+    creationHeight: number,
+  ): Promise<void> => {
+    this.logger.debug(
+      `Updating creation height for user request ID: ${userRequestId}.`,
+    );
+    // Fetch the user request from the database
+    const userRequest = await this.userRequestRepository.findOne({
+      where: { id: userRequestId },
+    });
+
+    if (!userRequest) {
+      this.logger.debug(
+        `No user request found with ID: ${userRequestId}. Update operation aborted.`,
+      );
+      return;
+    }
+    // Update creation height
+    userRequest.creationHeight = creationHeight;
+
+    // Save updated user request
+    await this.userRequestRepository.save(userRequest);
+
+    this.logger.debug(
+      `Creation height for user request ID: ${userRequestId} updated to ${creationHeight}.`,
     );
   };
 }

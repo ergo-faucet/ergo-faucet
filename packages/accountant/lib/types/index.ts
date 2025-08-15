@@ -1,13 +1,3 @@
-export { NotEnoughAssetsError } from './errors';
-export { AccountantConfig } from './accountantConfig';
-export {
-  ConfirmedBalance,
-  Token,
-  WalletBalancesAPIResponse,
-} from './walletBlanacesResponse';
-export {
-  tokenByIdResponse,
-  errorResponse,
-  tokenByIdResponseSuccess,
-} from './tokenByIdResponse';
-export { DoubleSpendError } from './errors';
+export { NotEnoughAssetsError, DoubleSpendError } from './errors';
+export type { AccountantConfig } from './accountantConfig';
+export type { errorResponse } from './apiResponse';

@@ -226,7 +226,7 @@ describe('Accountant', () => {
         mockUserRequest.numberOfTries + 1,
       );
       expect(errorSpy).toHaveBeenCalledWith(
-        'Not Enough Assets error : Not enough ERG/tokens. request ID: 1',
+        'Not Enough Assets error : Not enough ERG/tokens. request ID: 1, package ID: 1',
       );
     });
   });
