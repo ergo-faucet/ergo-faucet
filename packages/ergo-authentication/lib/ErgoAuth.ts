@@ -13,12 +13,10 @@ import {
   ChallengeResponse200,
   ChallengeVerificationResult,
   ErgoAuthConfig,
-  payloadJWT,
-  RefreshTokenBody,
-  RefreshTokenBodyType,
   RefreshTokenResponse200,
   RefreshTokenResponse401,
 } from './types';
+import { userRequestPayload } from '@ergo-faucet/common-types';
 import {
   FastifyAPIServer,
   FastifySeverInstance,
@@ -39,7 +37,7 @@ export class ErgoAuth {
   private readonly refreshTokenExpirySeconds: number;
   private readonly accessTokenExpirySeconds: number;
   private readonly NETWORK_TYPE: Network;
-  private readonly ERGO_AUTH_PREFIX = '/ergo-auth';
+  private readonly ERGO_AUTH_PREFIX = '/auth/ergo';
 
   /**
    * Private constructor to enforce singleton pattern.
@@ -323,9 +321,10 @@ export class ErgoAuth {
         const user =
           await this.userAddressAction.findOrCreateUserWithAddress(address);
 
-        const payload: payloadJWT = {
+        const payload: userRequestPayload = {
           userId: user.id,
-          address,
+          address: address,
+          name: user.name,
         };
 
         const refreshToken = await reply.jwtSign(payload, {
@@ -355,11 +354,10 @@ export class ErgoAuth {
   private refreshTokenRoute = async (
     fastify: FastifySeverInstance,
   ): Promise<void> => {
-    fastify.post<{ Body: RefreshTokenBodyType }>(
+    fastify.get(
       '/refresh-token',
       {
         schema: {
-          body: RefreshTokenBody,
           response: {
             200: RefreshTokenResponse200,
             401: RefreshTokenResponse401,
@@ -368,7 +366,7 @@ export class ErgoAuth {
       },
       async (request, reply) => {
         try {
-          const decoded = await request.jwtVerify<payloadJWT>({
+          const decoded = await request.jwtVerify<userRequestPayload>({
             onlyCookie: true,
           });
 

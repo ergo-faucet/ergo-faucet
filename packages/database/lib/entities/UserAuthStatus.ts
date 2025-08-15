@@ -29,7 +29,7 @@ export class UserAuthStatus {
   @JoinColumn()
   authMethod!: Relation<AuthMethod>;
 
-  @ManyToOne(() => Package, (pkg) => pkg.authStatuses, { nullable: false })
+  @ManyToOne(() => Package, (pkg) => pkg.authStatuses, { nullable: true })
   @JoinColumn()
   package?: Relation<Package>;
 
