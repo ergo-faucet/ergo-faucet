@@ -3,8 +3,15 @@ import {
   FindOptionsOrder,
   Repository,
 } from '@rosen-bridge/extended-typeorm';
-import { Package } from '../entities';
+import {
+  Package,
+  PackageAuthMethod,
+  UserAuthStatus,
+  UserRequest,
+  User,
+} from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { CooldownLimitError, NotFoundError } from '../types';
 
 class PackageAction {
   private static instance: PackageAction;
@@ -12,6 +19,10 @@ class PackageAction {
   private logger: AbstractLogger;
   private dataSource: DataSource;
   private PackageRepository: Repository<Package>;
+  private packageAuthMethodRepository: Repository<PackageAuthMethod>;
+  private userAuthStatusRepository: Repository<UserAuthStatus>;
+  private userRequestRepository: Repository<UserRequest>;
+  private userRepository: Repository<User>;
 
   /**
    * Protected constructor to enforce singleton pattern.
@@ -22,6 +33,12 @@ class PackageAction {
     this.logger = logger ? logger : new DummyLogger();
     this.dataSource = dataSource;
     this.PackageRepository = this.dataSource.getRepository(Package);
+    this.packageAuthMethodRepository =
+      this.dataSource.getRepository(PackageAuthMethod);
+    this.userAuthStatusRepository =
+      this.dataSource.getRepository(UserAuthStatus);
+    this.userRequestRepository = this.dataSource.getRepository(UserRequest);
+    this.userRepository = this.dataSource.getRepository(User);
   }
 
   /**
@@ -84,6 +101,155 @@ class PackageAction {
       relations: ['assets', 'authMethods', 'authMethods.authMethod'],
     });
     return packages;
+  };
+
+  /**
+   * Checks if a package is available for a given user.
+   *
+   * - Verifies that the package exists and is visible.
+   * - Verifies that the user exists.
+   * - Checks cooldown period based on the user's last request for the package.
+   *
+   * @param packageId - Package ID to check
+   * @param userId - User ID to check
+   * @returns {Promise<boolean>} - True if available, otherwise throws
+   * @throws {NotFoundError} if package or user does not exist
+   * @throws {CooldownLimitError} if cooldown period is still active
+   */
+  public isPackageAvailableForUser = async (
+    packageId: number,
+    userId: number,
+  ): Promise<boolean> => {
+    const pkg = await this.PackageRepository.findOne({
+      where: { id: packageId, status: 'show' },
+    });
+    if (!pkg)
+      throw new NotFoundError(
+        `There is no package with id ${packageId} available`,
+      );
+
+    const usr = await this.userRepository.find({
+      where: { id: userId },
+    });
+    if (!usr) throw new NotFoundError(`There is no user with id ${userId}`);
+
+    const userReq = await this.userRequestRepository.findOne({
+      where: { package: { id: packageId }, user: { id: userId } },
+      order: { id: 'DESC' }, // checking the latest request
+    });
+
+    if (userReq) {
+      const currentTime = new Date();
+      const lastRequestTime = userReq.timestamp;
+      const timeDifferenceMs =
+        currentTime.getTime() - lastRequestTime.getTime();
+
+      if (timeDifferenceMs < pkg.delay)
+        throw new CooldownLimitError('Cooldown period is still active.');
+    }
+
+    return true;
+  };
+
+  /**
+   * Checks if the user has passed all required authentication methods for a package.
+   *
+   * - Fetches required AuthMethods for the package.
+   * - Checks if user has passed all required AuthMethods.
+   *
+   * @param userId - User ID to check
+   * @param packageId - Package ID to check
+   * @returns {Promise<boolean>} - True if all required methods are passed
+   * @throws `Error` if database query fails
+   */
+  public hasUserPassedAllAuthMethods = async (
+    userId: number,
+    packageId: number,
+  ): Promise<boolean> => {
+    const requiredAuthMethods = await this.packageAuthMethodRepository.find({
+      where: { package: { id: packageId } },
+      relations: ['authMethod'],
+    });
+
+    if (requiredAuthMethods.length === 0) {
+      this.logger.debug(
+        `No auth methods required for packageId=${packageId}, userId=${userId}`,
+      );
+      return true; //package has no auth status then we do not need to check user auth status
+    }
+
+    const requiredAuthMethodIds = new Set(
+      requiredAuthMethods.map((pam) => pam.authMethod.id),
+    );
+    const passedAuthMethodIds = new Set(
+      await this.getPassedUserAuthByPackage(userId, packageId),
+    );
+
+    // Check if all required auth methods are in the passed set
+    return [...requiredAuthMethodIds].every((id) =>
+      passedAuthMethodIds.has(id),
+    );
+  };
+
+  /**
+   * Retrieves IDs of all passed UserAuthStatus records for a user and package.
+   *
+   * @param userId - User ID
+   * @param packageId - Package ID
+   * @returns {Promise<number[]>} - Array of passed AuthMethod IDs
+   * @throws Error if database query fails
+   */
+  public getPassedUserAuthByPackage = async (
+    userId: number,
+    packageId: number,
+  ): Promise<number[]> => {
+    const passedAuthStatuses = await this.userAuthStatusRepository.find({
+      where: {
+        user: { id: userId },
+        package: { id: packageId },
+        status: 'passed',
+      },
+      relations: ['authMethod'],
+    });
+    this.logger.debug(
+      `Fetched ${passedAuthStatuses.length} passed UserAuthStatus for userId=${userId}, packageId=${packageId}`,
+    );
+    return passedAuthStatuses.map((uas) => uas.authMethod.id);
+  };
+
+  /**
+   * Adds a new user request for a package.
+   *
+   * @param userId - User ID making the request
+   * @param packageId - Package ID requested
+   * @param destAddress - Destination address for the request
+   * @returns {Promise<void>}
+   * @throws `Error` if database save fails
+   */
+  public addUserRequest = async (
+    userId: number,
+    packageId: number,
+    destAddress: string,
+  ): Promise<void> => {
+    const pkg = await this.PackageRepository.findOne({
+      where: { id: packageId },
+    });
+    const usr = await this.userRepository.findOne({
+      where: { id: userId },
+    });
+
+    const userRequest = this.userRequestRepository.create({
+      destinationAddress: destAddress,
+      package: pkg!,
+      status: 'pending',
+      user: usr!,
+      timestamp: new Date(),
+    });
+
+    await this.userRequestRepository.save(userRequest);
+    this.logger.debug(
+      `Added UserRequest for user ID ${userId} and package ID ${packageId} to the database`,
+    );
   };
 }
 
