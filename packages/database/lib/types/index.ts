@@ -2,4 +2,5 @@ import { DatabaseConfig } from './dataSourceTypes';
 
 export { DatabaseConfig };
 
-export { NotFoundError, CooldownLimitError } from './errors';
+import { NotFoundError, CooldownLimitError } from './errors';
+export { NotFoundError, CooldownLimitError };

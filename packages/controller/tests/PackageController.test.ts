@@ -9,13 +9,18 @@ import {
 } from 'vitest';
 import { PackageController } from '../lib';
 import {
+  createMockedServer,
+  mockedFastifyServer,
   mockedPackageAction,
-  mockedServer,
   mockPackage,
   mockPackageDTO,
 } from './mockUtils';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-
+//import { CooldownLimitError, NotFoundError } from '@ergo-faucet/database';
+import {
+  CooldownLimitError,
+  NotFoundError,
+} from '@ergo-faucet/database/lib/types/errors';
 describe('PackageController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -26,6 +31,8 @@ describe('PackageController', () => {
   });
 
   describe('GET /packages', async () => {
+    const mockedServer = createMockedServer();
+
     /**
      * Register the /packages route before running the tests in this block.
      */
@@ -38,6 +45,11 @@ describe('PackageController', () => {
       await mockedServer.register(instance.fetchPackagesRoute, {
         prefix: '/packages',
       });
+    });
+
+    afterAll(async () => {
+      vi.restoreAllMocks();
+      await mockedServer.close();
     });
 
     // Default mock for getPackages to return a package
@@ -104,6 +116,218 @@ describe('PackageController', () => {
       });
 
       expect(result.statusCode).toBe(500);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'Internal server error occured',
+        code: 'internal-error',
+      });
+    });
+  });
+
+  describe('POST /packages/request', () => {
+    const mockedServer = createMockedServer();
+
+    /**
+     * Register the /packages/request route before running the tests in this block.
+     */
+    beforeAll(async () => {
+      const instance = new PackageController(
+        mockedPackageAction,
+        mockedFastifyServer,
+      );
+      await mockedServer.register(instance.requestPackageRoute, {
+        prefix: '/packages',
+      });
+    });
+
+    /**
+     * Test for successful POST /packages/request
+     * @target PackageController.requestPackageRoute
+     * @scenario
+     * - POST /packages/request with valid userId, packageId, and destAddress
+     * @expected
+     * - returns 200
+     */
+    it('should successfully request a package', async () => {
+      mockedPackageAction.isPackageAvailableForUser.mockResolvedValue(true);
+
+      mockedPackageAction.hasUserPassedAllAuthMethods.mockResolvedValue(true);
+      mockedPackageAction.addUserRequest.mockResolvedValue(123);
+
+      const result = await mockedServer.inject({
+        method: 'POST',
+        url: '/packages/request',
+        payload: {
+          packageId: 1,
+          destAddress: 'test-address',
+          captchaToken: 'token',
+        },
+      });
+
+      expect(
+        mockedPackageAction.isPackageAvailableForUser,
+      ).toHaveBeenCalledWith(123, 1);
+      expect(
+        mockedPackageAction.hasUserPassedAllAuthMethods,
+      ).toHaveBeenCalledWith(123, 1);
+      expect(mockedPackageAction.addUserRequest).toHaveBeenCalledWith(
+        123,
+        1,
+        'test-address',
+      );
+      expect(result.statusCode).toEqual(200);
+      expect(result.body).toEqual('');
+    });
+
+    /**
+     * Test for missing userId in POST /packages/request
+     * @target PackageController.requestPackageRoute
+     * @scenario
+     * - POST /packages/request without userId
+     * @expected
+     * - returns 400 with missing userId error
+     */
+    it('should return 400 for missing userId', async () => {
+      mockedFastifyServer.authPreHandler.mockImplementationOnce(
+        async (request) => {
+          request.user = {
+            // Simulate missing userId
+            address: 'mocked-user-address',
+          };
+        },
+      );
+
+      const result = await mockedServer.inject({
+        method: 'POST',
+        url: '/packages/request',
+        payload: {
+          packageId: 1,
+          destAddress: 'test-address',
+          captchaToken: 'token',
+        },
+      });
+
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'Missing userId',
+        code: 'Bad Request',
+      });
+    });
+
+    /**
+     * Test for incomplete auth methods in POST /packages/request
+     * @target PackageController.requestPackageRoute
+     * @scenario
+     * - POST /packages/request when user has not passed all auth methods
+     * @expected
+     * - returns 403 with auth methods incomplete error
+     */
+    it('should return 403 for incomplete auth methods', async () => {
+      mockedPackageAction.isPackageAvailableForUser.mockResolvedValue(true);
+
+      mockedPackageAction.hasUserPassedAllAuthMethods.mockResolvedValue(false);
+
+      const result = await mockedServer.inject({
+        method: 'POST',
+        url: '/packages/request',
+        payload: {
+          packageId: 1,
+          destAddress: 'test-address',
+          captchaToken: 'token',
+        },
+      });
+
+      expect(result.statusCode).toEqual(403);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'forbidden',
+        code: 'AUTH_METHODS_INCOMPLETE',
+      });
+    });
+
+    /**
+     * Test for package or user not found in POST /packages/request
+     * @target PackageController.requestPackageRoute
+     * @scenario
+     * - POST /packages/request when package or user is not found
+     * @expected
+     * - returns 404 with not found error
+     */
+    it('should return 404 for package or user not found', async () => {
+      mockedPackageAction.isPackageAvailableForUser.mockRejectedValue(
+        new NotFoundError('Package or user not found'),
+      );
+
+      const result = await mockedServer.inject({
+        method: 'POST',
+        url: '/packages/request',
+        payload: {
+          packageId: 1,
+          destAddress: 'test-address',
+          captchaToken: 'token',
+        },
+      });
+
+      expect(result.statusCode).toEqual(404);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'Package or user not found',
+        code: 'NOT_FOUND',
+      });
+    });
+
+    /**
+     * Test for cooldown limit in POST /packages/request
+     * @target PackageController.requestPackageRoute
+     * @scenario
+     * - POST /packages/request when user is under cooldown
+     * @expected
+     * - returns 429 with cooldown limit error
+     */
+    it('should return 429 for cooldown limit', async () => {
+      mockedPackageAction.isPackageAvailableForUser.mockRejectedValue(
+        new CooldownLimitError('Cooldown limit active'),
+      );
+
+      const result = await mockedServer.inject({
+        method: 'POST',
+        url: '/packages/request',
+        payload: {
+          packageId: 1,
+          destAddress: 'test-address',
+          captchaToken: 'token',
+        },
+      });
+
+      expect(result.statusCode).toEqual(429);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'Cooldown limit active',
+        code: 'COOLDOWN_LIMIT',
+      });
+    });
+
+    /**
+     * Test for internal server error in POST /packages/request
+     * @target PackageController.requestPackageRoute
+     * @scenario
+     * - POST /packages/request when an unexpected error occurs
+     * @expected
+     * - returns 500 with internal server error
+     */
+    it('should return 500 on internal server error', async () => {
+      vi.spyOn(
+        mockedPackageAction,
+        'isPackageAvailableForUser',
+      ).mockRejectedValue(new Error('Unexpected error'));
+
+      const result = await mockedServer.inject({
+        method: 'POST',
+        url: '/packages/request',
+        payload: {
+          packageId: 1,
+          destAddress: 'test-address',
+          captchaToken: 'token',
+        },
+      });
+
+      expect(result.statusCode).toEqual(500);
       expect(JSON.parse(result.body)).toEqual({
         error: 'Internal server error occured',
         code: 'internal-error',
