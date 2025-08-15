@@ -4,10 +4,10 @@ import {
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
 import {
-  GetPackageErrorResponse,
+  ErrorResponse,
   GetPackagesResponse200,
   PackagesRouteQuery,
-} from './types/packagesRouteSchemas';
+} from './types/schemas';
 import { PackageAction } from '@ergo-faucet/database';
 import { toPackageDTO } from './utils/mapper';
 import { PackageDTO } from './types/DTOs';
@@ -51,7 +51,7 @@ class PackageController {
           querystring: PackagesRouteQuery,
           response: {
             200: GetPackagesResponse200,
-            500: GetPackageErrorResponse,
+            500: ErrorResponse,
           },
         },
       },

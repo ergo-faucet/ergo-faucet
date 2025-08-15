@@ -46,7 +46,13 @@ const PackageSchema = Type.Object({
 
 export const GetPackagesResponse200 = Type.Array(PackageSchema);
 
-export const GetPackageErrorResponse = Type.Object({
+export const ErrorResponse = Type.Object({
   error: Type.String(),
   code: Type.String(),
+});
+
+export const RequestPackageBody = Type.Object({
+  packageId: Type.Number({ minimum: 0 }),
+  destAddress: Type.String({ minLength: 1 }),
+  captchaToken: Type.String({ minLength: 1 }),
 });
