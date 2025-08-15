@@ -14,6 +14,7 @@ import {
   mockPackage,
   mockPackageDTO,
 } from './mockUtils';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
 describe('PackageController', () => {
   beforeEach(() => {
@@ -29,7 +30,11 @@ describe('PackageController', () => {
      * Register the /packages route before running the tests in this block.
      */
     beforeAll(async () => {
-      const instance = new PackageController(mockedPackageAction);
+      const instance = new PackageController(
+        mockedPackageAction,
+        // eslint-disable-next-line
+        {} as any as FastifyAPIServer,
+      );
       await mockedServer.register(instance.fetchPackagesRoute, {
         prefix: '/packages',
       });

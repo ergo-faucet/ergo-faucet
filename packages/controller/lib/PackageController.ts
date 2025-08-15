@@ -16,15 +16,21 @@ class PackageController {
   private readonly logger: AbstractLogger;
   private readonly packageAction: PackageAction;
   private readonly PACKAGES_PREFIX = '/packages';
+  private readonly fastifyServer: FastifyAPIServer;
 
   /**
    * Constructs a new PackageController.
    * @param packageAction - Instance of PackageAction for DB operations.
    * @param logger - Optional logger instance.
    */
-  public constructor(packageAction: PackageAction, logger?: AbstractLogger) {
+  public constructor(
+    packageAction: PackageAction,
+    fastifyServer: FastifyAPIServer,
+    logger?: AbstractLogger,
+  ) {
     this.logger = logger ? logger : new DummyLogger();
     this.packageAction = packageAction;
+    this.fastifyServer = fastifyServer;
   }
 
   /**
@@ -87,11 +93,8 @@ class PackageController {
    * @param prefix - The URL prefix under which to register the routes (e.g., '/controller').
    * @returns {Promise<void>}
    */
-  public registerRoutes = async (
-    fastifyServer: FastifyAPIServer,
-    prefix: string,
-  ): Promise<void> => {
-    await fastifyServer.register(
+  public registerRoutes = async (prefix: string): Promise<void> => {
+    await this.fastifyServer.register(
       this.fetchPackagesRoute,
       prefix + this.PACKAGES_PREFIX,
     );

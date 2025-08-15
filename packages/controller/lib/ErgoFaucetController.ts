@@ -22,7 +22,11 @@ class ErgoFaucetController {
   ) {
     this.logger = logger ? logger : new DummyLogger();
     this.fastifyServer = fastifyServer;
-    this.packageController = new PackageController(this.packageAction, logger);
+    this.packageController = new PackageController(
+      this.packageAction,
+      fastifyServer,
+      logger,
+    );
   }
 
   /**
@@ -71,7 +75,7 @@ class ErgoFaucetController {
    * @returns {Promise<void>}
    */
   public registerRoutes = async (prefix: string): Promise<void> => {
-    await this.packageController.registerRoutes(this.fastifyServer, prefix);
+    await this.packageController.registerRoutes(prefix);
     this.logger.info(
       `ErgoFaucetController routes registered under prefix "${prefix}"`,
     );
