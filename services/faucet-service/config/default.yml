@@ -43,7 +43,7 @@ database:
   # path: './sqlite'
   database: ''
   host: 'postgres'
-  port: ''
+  port: 5432
   username: ''
   password: ''
   logging: false

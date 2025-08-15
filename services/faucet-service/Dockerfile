@@ -3,12 +3,12 @@ WORKDIR /app
 COPY . /app
 
 FROM base AS build
-RUN --mount=type=cache,target=/root/.npm npm i 
+RUN --mount=type=cache,target=/root/.npm npm ci 
 RUN npm run build 
 
 FROM base AS prod-deps
 ENV CI=true
-RUN --mount=type=cache,target=/root/.npm npm install --omit=dev
+RUN --mount=type=cache,target=/root/.npm npm ci --omit=dev
 RUN mkdir -p /app/packages/common-types/node_modules \
     && mkdir -p /app/packages/controller/node_modules \
     && mkdir -p /app/packages/database/node_modules \
@@ -42,7 +42,6 @@ COPY --from=prod-deps /app/packages/google-auth/node_modules /app/packages/googl
 COPY --from=prod-deps /app/packages/google-recaptcha/node_modules /app/packages/google-recaptcha/node_modules
 COPY --from=prod-deps /app/packages/x-auth/node_modules /app/packages/x-auth/node_modules
 COPY --from=prod-deps /app/services/faucet-service/node_modules /app/services/faucet-service/node_modules
-COPY --from=prod-deps /app/services/faucet-service/config /app/services/faucet-service/config
 
 WORKDIR /app/services/faucet-service
 CMD ["npm", "run", "start"]

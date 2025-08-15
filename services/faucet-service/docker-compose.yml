@@ -10,7 +10,6 @@ services:
     env_file:
       - .env
     volumes:
-      - ./services/faucet-service/config:/app/services/faucet-service/config
       - ./services/faucet-service/logs:/app/services/faucet-service/logs
     depends_on:
       - postgres
@@ -22,6 +21,10 @@ services:
     image: postgres:14
     env_file:
       - .env
+    environment:
+      POSTGRES_USER: ${DATABASE_USERNAME}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD}
+      POSTGRES_DB: ${DATABASE_NAME}
     ports:
       - '${POSTGRES_PORT}:5432'
     volumes:
