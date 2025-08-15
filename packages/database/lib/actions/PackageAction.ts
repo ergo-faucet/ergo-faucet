@@ -117,8 +117,8 @@ class PackageAction {
    * @throws {CooldownLimitError} if cooldown period is still active
    */
   public isPackageAvailableForUser = async (
-    packageId: number,
     userId: number,
+    packageId: number,
   ): Promise<boolean> => {
     const pkg = await this.PackageRepository.findOne({
       where: { id: packageId, status: 'show' },
@@ -230,7 +230,7 @@ class PackageAction {
     userId: number,
     packageId: number,
     destAddress: string,
-  ): Promise<void> => {
+  ): Promise<number> => {
     const pkg = await this.PackageRepository.findOne({
       where: { id: packageId },
     });
@@ -250,6 +250,7 @@ class PackageAction {
     this.logger.debug(
       `Added UserRequest for user ID ${userId} and package ID ${packageId} to the database`,
     );
+    return userRequest.id;
   };
 }
 

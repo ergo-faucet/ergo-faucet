@@ -1,4 +1,4 @@
 export interface userRequestPayload {
-  userId: number;
+  userId: number ;
   address: string;
 }
