@@ -1,12 +1,7 @@
 import axios, { AxiosInstance } from 'axios';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
-import {
-  errorResponse,
-  tokenByIdResponseSuccess,
-  ConfirmedBalance,
-  WalletBalancesAPIResponse,
-} from './types';
+import { errorResponse } from './types';
 import { Box } from '@fleet-sdk/common';
 import { DoubleSpendError } from './types/errors';
 
@@ -47,51 +42,6 @@ export class NodeModel {
       throw new Error('NodeModel instance has not been initialized.');
     }
     return this.instance;
-  };
-
-  /**
-   * Fetches the confirmed wallet balances for a given address.
-   *
-   * @param {string} address - The wallet address to fetch balances for.
-   * @returns {Promise<ConfirmedBalance>} A promise that resolves to the confirmed balances (nanoErgs and tokens).
-   */
-  public fetchWalletBalances = async (
-    address: string,
-  ): Promise<ConfirmedBalance> => {
-    if (this.axiosInstance == undefined) {
-      const error: errorResponse = {
-        error: 500,
-        reason: 'Internal Error',
-        detail: 'The Network object has not been initialized!',
-      };
-      throw error;
-    }
-
-    return await this.axiosInstance
-      .post<WalletBalancesAPIResponse>('/blockchain/balances', address)
-      .then((response) => {
-        this.logger.info('Successfully fetched wallet balances.');
-
-        const confirmedBalance: ConfirmedBalance = response.data.confirmed;
-        return confirmedBalance;
-      })
-      .catch((error) => {
-        if (axios.isAxiosError(error)) {
-          this.logger.error(`Axios error.`, {
-            error,
-            message: error.message,
-            stack: error.stack,
-          });
-          const errorResponse: errorResponse = {
-            error: 500,
-            reason: 'Internal Error',
-            detail: 'Axios error!',
-          };
-          throw errorResponse;
-        } else {
-          throw error;
-        }
-      });
   };
 
   /**
@@ -138,45 +88,6 @@ export class NodeModel {
             }
           }
           this.logger.error('Axios error.', {
-            error,
-            message: error.message,
-            stack: error.stack,
-          });
-          const errorResponse: errorResponse = {
-            error: 500,
-            reason: 'Internal Error',
-            detail: 'Axios error!',
-          };
-          throw errorResponse;
-        } else {
-          throw error;
-        }
-      });
-  };
-
-  /**
-   * Fetches token details by its ID.
-   *
-   * @param {string} tokenId - The ID of the token to fetch.
-   * @returns {Promise<tokenByIdResponseSuccess>} A promise that resolves to the token details.
-   */
-  public getTokenById = async (
-    tokenId: string,
-  ): Promise<tokenByIdResponseSuccess> => {
-    if (this.axiosInstance == undefined) {
-      const error: errorResponse = {
-        error: 500,
-        reason: 'Internal Error',
-        detail: 'The Network object has not been initialized!',
-      };
-      throw error;
-    }
-    return await this.axiosInstance
-      .get<tokenByIdResponseSuccess>(`/blockchain/token/byId/${tokenId}`)
-      .then((res) => res.data)
-      .catch((error) => {
-        if (axios.isAxiosError(error)) {
-          this.logger.error(`Axios error.`, {
             error,
             message: error.message,
             stack: error.stack,
@@ -306,7 +217,12 @@ export class NodeModel {
       });
   };
 
-  public isTxInMempool = async (TransactionId: string): Promise<boolean> => {
+  /**
+   * Checks if a transaction is currently in the mempool.
+   * @param {string} txId - The transaction ID to check.
+   * @returns {Promise<boolean>} - True if the transaction is in the mempool, false otherwise.
+   */
+  public isTxInMempool = async (txId: string): Promise<boolean> => {
     if (this.axiosInstance == undefined) {
       const error: errorResponse = {
         error: 500,
@@ -316,8 +232,9 @@ export class NodeModel {
       return Promise.reject(error);
     }
 
+    this.logger.debug(`Checking mempool status for txId: ${txId}`);
     await this.axiosInstance
-      .get(`/transactions/unconfirmed/${TransactionId}`)
+      .get(`/transactions/unconfirmed/${txId}`)
       .then((response) => {
         if (response.status === 200) return true;
       })
@@ -327,12 +244,21 @@ export class NodeModel {
             message: error.message,
             stack: error.stack,
           });
-        } else this.logger.error(error);
+        } else if (error instanceof Error)
+          this.logger
+            .debug(`Failed to check mempool status for transaction ${txId}
+          error: ${error.message}
+          stack: ${error.stack}`);
       });
     return false;
   };
 
-  public isTxMined = async (TransactionId: string): Promise<boolean> => {
+  /**
+   * Checks if a transaction has been mined (included in a block).
+   * @param {string} txId - The transaction ID to check.
+   * @returns {Promise<boolean>} - True if the transaction is mined, false otherwise.
+   */
+  public isTxMined = async (txId: string): Promise<boolean> => {
     if (this.axiosInstance == undefined) {
       const error: errorResponse = {
         error: 500,
@@ -341,9 +267,10 @@ export class NodeModel {
       };
       return Promise.reject(error);
     }
+    this.logger.debug(`Checking mined status for txId: ${txId}`);
 
     await this.axiosInstance
-      .get(`/blockchain/transaction/byId/${TransactionId}`)
+      .get(`/blockchain/transaction/byId/${txId}`)
       .then((response) => {
         if (response.status === 200) return true;
       })
@@ -353,7 +280,11 @@ export class NodeModel {
             message: error.message,
             stack: error.stack,
           });
-        } else this.logger.error(error);
+        } else if (error instanceof Error)
+          this.logger
+            .debug(`Failed to check mined status for transaction ${txId}
+          error: ${error.message}
+          stack: ${error.stack}`);
       });
     return false;
   };

@@ -64,8 +64,8 @@ export const mockUserRequest: UserRequest = {
   timestamp: new Date(),
   destinationAddress: '3WxFE2x4KVDYeQyJhKvK912AHHME6wNLBT8p6w7M1KqMp71jCAWc',
   status: 'pending',
-  txSerialized: undefined,
-  txId: undefined,
+  txSerialized: null,
+  txId: null,
   creationHeight: 100,
   numberOfTries: 0,
 };
