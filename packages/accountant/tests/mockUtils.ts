@@ -48,8 +48,8 @@ export const mockedConfig: AccountantConfig = {
   accountantAction: {} as AccountantAction,
   nodeUrl: 'http://mock-node-url',
   mnemonic: 'test mnemonic',
-  minFee: 1000000,
-  minNanoErg: 1000000,
+  minFee: 1000000n,
+  minNanoErg: 1000000n,
   confirmationLimit: 10,
 };
 

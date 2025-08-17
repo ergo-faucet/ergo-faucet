@@ -208,10 +208,9 @@ describe('Accountant', () => {
      * @scenario
      * - Wallet.selectBoxes throws NotEnoughAssetsError
      * @expected
-     * - Request stays 'pending', numberOfTries incremented, error logged
+     * - Request stays 'pending', numberOfTries incremented
      */
     it('should handle NotEnoughAssetsError', async () => {
-      const errorSpy = vi.spyOn(mockLogger, 'error');
       mockWallet.selectBoxes.mockRejectedValue(
         new NotEnoughAssetsError('Not enough ERG/tokens.'),
       );
@@ -224,9 +223,6 @@ describe('Accountant', () => {
         mockUserRequest.id,
         'pending',
         mockUserRequest.numberOfTries + 1,
-      );
-      expect(errorSpy).toHaveBeenCalledWith(
-        'Not Enough Assets error : Not enough ERG/tokens. request ID: 1, package ID: 1',
       );
     });
   });

@@ -11,7 +11,7 @@ import {
 import { Network } from '@fleet-sdk/common';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
-import { DoubleSpendError } from './types/errors';
+import { DoubleSpendError } from './types';
 
 class Accountant {
   private static instance: Accountant;
@@ -21,8 +21,8 @@ class Accountant {
   private readonly accountantAction: AccountantAction;
   private readonly nodeModel: NodeModel;
   private readonly wallet: Wallet;
-  private readonly minNanoErg: number;
-  private readonly minFee: number;
+  private readonly minNanoErg: bigint;
+  private readonly minFee: bigint;
   private readonly confirmationLimit: number;
 
   /**
@@ -73,8 +73,8 @@ class Accountant {
   };
 
   /**
-   * Processes all unpaid user requests by handling their statuses.
-   * Logs the number of requests found and processes them accordingly.
+   * Processes all unpaid user requests.
+   * Handles requests based on their status ('pending' or 'submitted').
    * @returns {Promise<void>}
    */
   public processUserRequests = async (): Promise<void> => {
@@ -83,17 +83,21 @@ class Accountant {
       this.logger.debug(`Found ${requests.length} user requests to process.`);
 
       for (const r of requests) {
-        if (r.status === 'pending') {
-          this.logger.debug(`Processing pending request with ID: ${r.id}`);
-          await this.handlePendingRequest(r);
-        } else if (r.status === 'submitted') {
-          this.logger.debug(`Processing submitted request with ID: ${r.id}`);
-          await this.handleSubmittedRequest(r);
+        switch (r.status) {
+          case 'pending':
+            await this.handlePendingRequest(r);
+            break;
+          case 'submitted':
+            await this.handleSubmittedRequest(r);
+            break;
         }
       }
     } catch (error) {
       if (error instanceof Error) {
-        this.logger.error(`Error during processUserRequests: ${error.message}`);
+        this.logger.error('Error during processUserRequests', {
+          message: error.message,
+          stack: error.stack,
+        });
       }
     }
   };
@@ -105,6 +109,7 @@ class Accountant {
    * @returns {Promise<void>}
    */
   public handlePendingRequest = async (req: UserRequest): Promise<void> => {
+    this.logger.debug(`Processing pending request with ID: ${req.id}`);
     try {
       if (req.numberOfTries > this.tryLimit) {
         this.logger.debug(
@@ -166,10 +171,18 @@ class Accountant {
         transactionId,
       );
     } catch (error) {
-      if (error instanceof NotEnoughAssetsError) {
+      if (error instanceof DoubleSpendError) return;
+
+      if (error instanceof Error)
         this.logger.error(
-          `${error.message} request ID: ${req.id}, package ID: ${req.package.id}`,
+          `Error during handlePendingRequest for request ID: ${req.id}, package ID: ${req.package.id}`,
+          {
+            message: error.message,
+            stack: error.stack,
+          },
         );
+
+      if (error instanceof NotEnoughAssetsError) {
         await this.accountantAction.updateUserRequestPaymentInfo(
           req.id,
           'pending',
@@ -177,7 +190,6 @@ class Accountant {
         );
         return;
       }
-      if (error instanceof DoubleSpendError) return;
       throw error;
     }
   };
@@ -189,6 +201,7 @@ class Accountant {
    * @returns {Promise<void>}
    */
   public handleSubmittedRequest = async (req: UserRequest): Promise<void> => {
+    this.logger.debug(`Processing submitted request with ID: ${req.id}`);
     try {
       if (!req.txSerialized || !req.txId) {
         this.logger.debug(
@@ -251,11 +264,17 @@ class Accountant {
       }
     } catch (error) {
       if (error instanceof Error) {
+        if (error instanceof DoubleSpendError) return;
+
         this.logger.error(
-          `Error while processing submitted request ID: ${req.id}. ${error.message}`,
+          `Error during handleSubmittedRequest request ID: ${req.id}.`,
+          {
+            message: error.message,
+            stack: error.stack,
+          },
         );
       }
-      if (error instanceof DoubleSpendError) return;
+
       await this.accountantAction.updateUserRequestPaymentInfo(
         req.id,
         'pending',
