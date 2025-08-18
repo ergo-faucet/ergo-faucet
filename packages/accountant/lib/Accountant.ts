@@ -123,51 +123,13 @@ class Accountant {
         return;
       }
 
-      // Select input boxes
-      this.logger.debug(`Selecting input boxes for request ID: ${req.id}`);
-      const inputs = await this.wallet.selectBoxes(
-        BigInt(this.minFee + this.minNanoErg),
-        req.package.assets,
-      );
+      const { serializedTx, transactionId } = await this.sendTx(req);
 
-      // Generate unsigned transaction
-      const currentHeight = await this.nodeModel.getCurrentBlockchainHeight();
-      this.logger.debug(
-        `Current blockchain height: ${currentHeight}. Building transaction for request ID: ${req.id}`,
-      );
-
-      const unsignedTx: ErgoUnsignedTransaction = new TransactionBuilder(
-        currentHeight,
-      )
-        .from(inputs)
-        .to(
-          new OutputBuilder(
-            this.minNanoErg.toString(),
-            req.destinationAddress,
-          ).addTokens(req.package.assets),
-        )
-        .sendChangeTo(this.wallet.getWalletAddress())
-        .payFee(this.minFee.toString())
-        .build();
-
-      // Sign transaction
-      this.logger.debug(`Signing transaction for request ID: ${req.id}`);
-      const signedTx = this.wallet.signTransaction(unsignedTx);
-      const serialized = hex.encode(serializeTransaction(signedTx).toBytes());
-
-      // Submit transaction to the network
-      this.logger.debug(`Submitting transaction for request ID: ${req.id}`);
-      const transactionId =
-        await this.nodeModel.submitTransactionBytes(serialized);
-
-      this.logger.debug(
-        `Transaction submitted successfully for request ID: ${req.id}. Transaction ID: ${transactionId}`,
-      );
       await this.accountantAction.updateUserRequestPaymentInfo(
         req.id,
         'submitted',
         req.numberOfTries + 1,
-        serialized,
+        serializedTx,
         transactionId,
       );
     } catch (error) {
@@ -224,7 +186,7 @@ class Accountant {
       const isMined = await this.nodeModel.isTxMined(transactionId);
 
       if (isMined) {
-        if (!req.creationHeight) {
+        if (req.creationHeight == undefined) {
           req.creationHeight = await this.nodeModel.getInclusionHeight(
             req.txId,
           );
@@ -280,6 +242,79 @@ class Accountant {
         'pending',
         req.numberOfTries,
       );
+    }
+  };
+
+  public sendTx = async (
+    request: UserRequest,
+  ): Promise<{
+    serializedTx: string;
+    transactionId: string;
+  }> => {
+    switch (request.package.type) {
+      case 'normal': {
+        // Asume we have maximum one ERG asset in normal packages
+        const ergAsset = request.package.assets.find(
+          (a) => a.tokenId === 'ERG',
+        );
+        request.package.assets = request.package.assets.filter(
+          (a) => a.tokenId != 'ERG',
+        );
+
+        const outputBoxAmount = ergAsset ? ergAsset.amount : this.minNanoErg;
+
+        // Select input boxes
+        this.logger.debug(
+          `Selecting input boxes for request ID: ${request.id}`,
+        );
+        const inputs = await this.wallet.selectBoxes(
+          BigInt(this.minFee + this.minNanoErg + outputBoxAmount),
+          request.package.assets,
+        );
+
+        // Generate unsigned transaction
+        const currentHeight = await this.nodeModel.getCurrentBlockchainHeight();
+        this.logger.debug(
+          `Current blockchain height: ${currentHeight}. Building transaction for request ID: ${request.id}`,
+        );
+
+        const unsignedTx: ErgoUnsignedTransaction = new TransactionBuilder(
+          currentHeight,
+        )
+          .from(inputs)
+          .to(
+            new OutputBuilder(
+              outputBoxAmount,
+              request.destinationAddress,
+            ).addTokens(request.package.assets),
+          )
+          .sendChangeTo(this.wallet.getWalletAddress())
+          .payFee(this.minFee)
+          .build();
+
+        // Sign transaction
+        this.logger.debug(`Signing transaction for request ID: ${request.id}`);
+        const signedTx = this.wallet.signTransaction(unsignedTx);
+        const serializedTx = hex.encode(
+          serializeTransaction(signedTx).toBytes(),
+        );
+
+        // Submit transaction to the network
+        this.logger.debug(
+          `Submitting transaction for request ID: ${request.id}`,
+        );
+        const transactionId =
+          await this.nodeModel.submitTransactionBytes(serializedTx);
+
+        this.logger.debug(
+          `Transaction submitted successfully for request ID: ${request.id}. Transaction ID: ${transactionId}`,
+        );
+        return { serializedTx, transactionId };
+      }
+      case 'random': {
+        // what to do?
+        return { serializedTx: '', transactionId: '' };
+      }
     }
   };
 }

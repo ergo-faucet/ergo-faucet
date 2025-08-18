@@ -135,12 +135,12 @@ describe('Accountant', () => {
         .from(mockInput)
         .to(
           new OutputBuilder(
-            mockedConfig.minNanoErg.toString(),
+            mockedConfig.minNanoErg,
             request.destinationAddress,
           ).addTokens(request.package.assets),
         )
         .sendChangeTo(mockWallet.getWalletAddress())
-        .payFee(mockedConfig.minFee.toString())
+        .payFee(mockedConfig.minFee)
         .build();
 
       const signedTx: SignedTransaction = {
@@ -158,7 +158,11 @@ describe('Accountant', () => {
       await accountant.handlePendingRequest(request);
 
       expect(mockWallet.selectBoxes).toHaveBeenCalledWith(
-        BigInt(mockedConfig.minFee + mockedConfig.minNanoErg),
+        BigInt(
+          mockedConfig.minFee +
+            mockedConfig.minNanoErg +
+            mockedConfig.minNanoErg,
+        ),
         request.package.assets,
       );
       const serializedTx = hex.encode(serializeTransaction(signedTx).toBytes());
@@ -250,11 +254,13 @@ describe('Accountant', () => {
     it('should mark request as paid if transaction is mined and has enough confirmations', async () => {
       mockNodeModel.isTxMined.mockResolvedValue(true);
       mockNodeModel.isTxInMempool.mockResolvedValue(false);
+      mockNodeModel.getInclusionHeight.mockResolvedValue(1000);
       mockNodeModel.getCurrentBlockchainHeight.mockResolvedValue(1011); // 11 confirmations
 
       await accountant.handleSubmittedRequest(request);
 
       expect(mockNodeModel.isTxMined).toHaveBeenCalledWith('tx123');
+      expect(mockNodeModel.getInclusionHeight).toHaveBeenCalledWith('tx123');
       expect(mockNodeModel.getCurrentBlockchainHeight).toHaveBeenCalled();
       expect(
         mockAccountantAction.updateUserRequestPaymentInfo,
