@@ -125,7 +125,7 @@ class PackageAction {
     userId: number,
     packageId: number,
   ): Promise<boolean> => {
-    const pkg = await this.PackageRepository.findOne({
+    const pkg = await this.packageRepository.findOne({
       where: { id: packageId, status: 'show' },
     });
     if (!pkg)
@@ -247,7 +247,7 @@ class PackageAction {
     packageId: number,
     destAddress: string,
   ): Promise<number> => {
-    const pkg = await this.PackageRepository.findOne({
+    const pkg = await this.packageRepository.findOne({
       where: { id: packageId },
     });
     const usr = await this.userRepository.findOne({
@@ -269,15 +269,23 @@ class PackageAction {
     return userRequest.id;
   };
 
+  /**
+   * Checks if the specified user is an admin.
+   * @param userId - The ID of the user to validate.
+   * @returns {Promise<boolean>} True if the user is an admin, otherwise false.
+   */
   public validateAdminRequest = async (userId: number): Promise<boolean> => {
     this.logger.debug(`Validating admin request for userId: ${userId}`);
+
     const User = await this.userRepository.findOne({
       where: { id: userId, isAdmin: true },
     });
+
     if (!User) {
       this.logger.debug(`User with id ${userId} is not an admin.`);
       return false;
     }
+
     this.logger.debug(`User with id ${userId} is an admin.`);
     return true;
   };
