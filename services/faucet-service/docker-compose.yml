@@ -1,9 +1,6 @@
 services:
   ergo-faucet:
-    build:
-      context: ../..
-      dockerfile: services/faucet-service/Dockerfile
-    image: ergo-faucet
+    image: ghcr.io/TechStack-BlockChain/ergo-faucet:latest
     restart: unless-stopped
     ports:
       - '127.0.0.1:${FAUCET_PORT}:3000'
