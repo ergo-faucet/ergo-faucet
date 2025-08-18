@@ -10,8 +10,8 @@ import {
   RequestPackageBody,
 } from './types/schemas';
 import { PackageAction } from '@ergo-faucet/database';
-//import { CooldownLimitError, NotFoundError } from '@ergo-faucet/database';
-import { CooldownLimitError, NotFoundError } from '@ergo-faucet/database/lib/types/errors';
+import { CooldownLimitError, NotFoundError } from '@ergo-faucet/database';
+//import { CooldownLimitError, NotFoundError } from '@ergo-faucet/database/lib/types/errors';
 import { toPackageDTO } from './utils/mapper';
 import { PackageDTO } from './types/DTOs';
 import { RequestPackageBodyType, userRequestPayload } from './types';
