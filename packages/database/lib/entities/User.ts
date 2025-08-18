@@ -9,7 +9,7 @@ import { UserAddress } from './UserAddress';
 import { UserAuthStatus } from './UserAuthStatus';
 import { UserRequest } from './UserRequest';
 
-@Entity('user_entity')
+@Entity('ity')
 export class User {
   @PrimaryGeneratedColumn()
   id!: number;
