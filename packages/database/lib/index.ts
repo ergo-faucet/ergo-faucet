@@ -18,4 +18,4 @@ export {
   UserAuthStatus,
   UserRequest,
 } from './entities';
-export { NotFoundError, CooldownLimitError } from './types';
+export { NotFoundError, RequestLimitError } from './types';

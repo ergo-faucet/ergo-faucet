@@ -5,9 +5,9 @@ export class NotFoundError extends Error {
   }
 }
 
-export class CooldownLimitError extends Error {
+export class RequestLimitError extends Error {
   constructor(message: string) {
     super(message);
-    this.name = 'Cooldown error';
+    this.name = 'Request Limit Error';
   }
 }

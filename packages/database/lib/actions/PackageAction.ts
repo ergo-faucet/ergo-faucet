@@ -1,6 +1,8 @@
 import {
   DataSource,
+  Equal,
   FindOptionsOrder,
+  Not,
   Repository,
 } from '@rosen-bridge/extended-typeorm';
 import {
@@ -11,7 +13,7 @@ import {
   User,
 } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { CooldownLimitError, NotFoundError } from '../types';
+import { NotFoundError, RequestLimitError } from '../types';
 
 class PackageAction {
   private static instance: PackageAction;
@@ -114,7 +116,7 @@ class PackageAction {
    * @param userId - User ID to check
    * @returns {Promise<boolean>} - True if available, otherwise throws
    * @throws {NotFoundError} if package or user does not exist
-   * @throws {CooldownLimitError} if cooldown period is still active
+   * @throws {RequestLimitError} if cooldown period is still active
    */
   public isPackageAvailableForUser = async (
     userId: number,
@@ -145,9 +147,20 @@ class PackageAction {
         currentTime.getTime() - lastRequestTime.getTime();
 
       if (timeDifferenceMs < pkg.delay)
-        throw new CooldownLimitError('Cooldown period is still active.');
+        throw new RequestLimitError('Cooldown period is still active.');
     }
 
+    const requestsCount = await this.userRequestRepository.countBy({
+      package: { id: packageId },
+      user: { id: userId },
+      status: Not(Equal('failed')),
+    });
+
+    if (requestsCount + 1 > pkg.numberEachUser) {
+      throw new RequestLimitError(
+        'User has reached request limit for this package.',
+      );
+    }
     return true;
   };
 

@@ -16,7 +16,7 @@ import {
   mockPackageDTO,
 } from './mockUtils';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-import { CooldownLimitError, NotFoundError } from '@ergo-faucet/database';
+import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
 describe('PackageController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -279,7 +279,7 @@ describe('PackageController', () => {
      */
     it('should return 429 for cooldown limit', async () => {
       mockedPackageAction.isPackageAvailableForUser.mockRejectedValue(
-        new CooldownLimitError('Cooldown limit active'),
+        new RequestLimitError('Cooldown limit active'),
       );
 
       const result = await mockedServer.inject({
@@ -292,10 +292,10 @@ describe('PackageController', () => {
         },
       });
 
-      expect(result.statusCode).toEqual(429);
+      expect(result.statusCode).toEqual(403);
       expect(JSON.parse(result.body)).toEqual({
         error: 'Cooldown limit active',
-        code: 'COOLDOWN_LIMIT',
+        code: 'REQUEST_LIMIT',
       });
     });
 
