@@ -4,7 +4,6 @@ import {
   Asset,
   PackageAuthMethod,
 } from '@ergo-faucet/database';
-
 import fastify, { FastifyInstance } from 'fastify';
 import { vi } from 'vitest';
 import { PackageDTO } from '../lib/types/DTOs';
