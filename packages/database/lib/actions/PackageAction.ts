@@ -20,10 +20,11 @@ class PackageAction {
 
   private logger: AbstractLogger;
   private dataSource: DataSource;
-  private PackageRepository: Repository<Package>;
+  private packageRepository: Repository<Package>;
   private packageAuthMethodRepository: Repository<PackageAuthMethod>;
   private userAuthStatusRepository: Repository<UserAuthStatus>;
   private userRequestRepository: Repository<UserRequest>;
+
   private userRepository: Repository<User>;
 
   /**
@@ -34,12 +35,14 @@ class PackageAction {
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.dataSource = dataSource;
-    this.PackageRepository = this.dataSource.getRepository(Package);
+
+    this.packageRepository = this.dataSource.getRepository(Package);
     this.packageAuthMethodRepository =
       this.dataSource.getRepository(PackageAuthMethod);
     this.userAuthStatusRepository =
       this.dataSource.getRepository(UserAuthStatus);
     this.userRequestRepository = this.dataSource.getRepository(UserRequest);
+
     this.userRepository = this.dataSource.getRepository(User);
   }
 
@@ -95,7 +98,7 @@ class PackageAction {
     const orderOption: FindOptionsOrder<Package> = { [sort]: order };
 
     // Query the database for packages with status 'show'
-    const packages = await this.PackageRepository.find({
+    const packages = await this.packageRepository.find({
       where: { status: 'show' },
       order: orderOption,
       skip: offset,
@@ -264,6 +267,19 @@ class PackageAction {
       `Added UserRequest for user ID ${userId} and package ID ${packageId} to the database`,
     );
     return userRequest.id;
+  };
+
+  public validateAdminRequest = async (userId: number): Promise<boolean> => {
+    this.logger.debug(`Validating admin request for userId: ${userId}`);
+    const User = await this.userRepository.findOne({
+      where: { id: userId, isAdmin: true },
+    });
+    if (!User) {
+      this.logger.warn(`User with id ${userId} is not an admin.`);
+      return false;
+    }
+    this.logger.info(`User with id ${userId} is an admin.`);
+    return true;
   };
 }
 
