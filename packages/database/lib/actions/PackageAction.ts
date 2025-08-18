@@ -275,10 +275,10 @@ class PackageAction {
       where: { id: userId, isAdmin: true },
     });
     if (!User) {
-      this.logger.warn(`User with id ${userId} is not an admin.`);
+      this.logger.debug(`User with id ${userId} is not an admin.`);
       return false;
     }
-    this.logger.info(`User with id ${userId} is an admin.`);
+    this.logger.debug(`User with id ${userId} is an admin.`);
     return true;
   };
 }

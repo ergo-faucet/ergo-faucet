@@ -1,6 +1,8 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   FastifyAPIServer,
+  FastifyReply,
+  FastifyRequest,
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
 import {
@@ -13,7 +15,7 @@ import { PackageAction } from '@ergo-faucet/database';
 import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
 import { toPackageDTO } from './utils/mapper';
 import { PackageDTO } from './types/DTOs';
-import { RequestPackageBodyType, userRequestPayload } from './types';
+import { userRequestPayload } from '@ergo-faucet/common-types';
 
 class PackageController {
   private readonly logger: AbstractLogger;
@@ -83,6 +85,36 @@ class PackageController {
         }
       },
     );
+  };
+
+  public adminPreHandler = async <
+    T extends FastifyRequest,
+    U extends FastifyReply,
+  >(
+    req: T,
+    res: U,
+  ) => {
+    try {
+      const user = req.user as userRequestPayload;
+      if (!user.isAdmin) {
+        return res.status(403).send({ error: 'Forbidden' });
+      }
+      const isValid = await this.packageAction.validateAdminRequest(
+        user.userId,
+      );
+      if (!isValid) {
+        return res.status(403).send({ error: 'Forbidden' });
+      }
+    } catch (err) {
+      this.logger.error('Admin pre-handler error', {
+        message: err instanceof Error ? err.message : 'Unknown error',
+        stack: err instanceof Error ? err.stack : undefined,
+      });
+      return res.status(500).send({
+        error: 'Internal server error during admin validation',
+        code: 'admin-validation-error',
+      });
+    }
   };
 
   /**
