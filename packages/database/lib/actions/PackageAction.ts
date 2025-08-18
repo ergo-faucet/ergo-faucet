@@ -125,7 +125,7 @@ class PackageAction {
     userId: number,
     packageId: number,
   ): Promise<boolean> => {
-    const pkg = await this.PackageRepository.findOne({
+    const pkg = await this.packageRepository.findOne({
       where: { id: packageId, status: 'show' },
     });
     if (!pkg)
@@ -247,7 +247,7 @@ class PackageAction {
     packageId: number,
     destAddress: string,
   ): Promise<number> => {
-    const pkg = await this.PackageRepository.findOne({
+    const pkg = await this.packageRepository.findOne({
       where: { id: packageId },
     });
     const usr = await this.userRepository.findOne({
@@ -275,10 +275,10 @@ class PackageAction {
       where: { id: userId, isAdmin: true },
     });
     if (!User) {
-      this.logger.warn(`User with id ${userId} is not an admin.`);
+      this.logger.debug(`User with id ${userId} is not an admin.`);
       return false;
     }
-    this.logger.info(`User with id ${userId} is an admin.`);
+    this.logger.debug(`User with id ${userId} is an admin.`);
     return true;
   };
 }
