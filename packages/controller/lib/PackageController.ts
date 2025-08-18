@@ -10,7 +10,7 @@ import {
   RequestPackageBody,
 } from './types/schemas';
 import { PackageAction } from '@ergo-faucet/database';
-import { CooldownLimitError, NotFoundError } from '@ergo-faucet/database';
+import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
 import { toPackageDTO } from './utils/mapper';
 import { PackageDTO } from './types/DTOs';
 import { RequestPackageBodyType, userRequestPayload } from './types';
@@ -158,14 +158,18 @@ class PackageController {
               .status(404)
               .send({ error: error.message, code: 'NOT_FOUND' });
           }
-          if (error instanceof CooldownLimitError) {
+          if (error instanceof RequestLimitError) {
             this.logger.debug(error.message);
             return reply
-              .status(429)
-              .send({ error: error.message, code: 'COOLDOWN_LIMIT' });
+              .status(403)
+              .send({ error: error.message, code: 'REQUEST_LIMIT' });
           } else {
             this.logger.error(
-              `Error requesting package: ${error instanceof Error ? error.message : 'unknown error'}`,
+              `Error requesting package  ${packageId} for userId=${user.userId}`,
+              {
+                error: error instanceof Error ? error.message : 'unknown error',
+                stack: error instanceof Error ? error.stack : undefined,
+              },
             );
             return reply.status(500).send({
               error: 'Internal server error occured',
