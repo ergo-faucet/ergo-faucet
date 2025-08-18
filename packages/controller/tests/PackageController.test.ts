@@ -336,239 +336,286 @@ describe('PackageController', () => {
         code: 'internal-error',
       });
     });
-    describe('adminPreHandler', async () => {
-      let fastifyInstance: FastifyAPIServer;
-      beforeEach(async () => {
-        // Reset the singleton
-        // eslint-disable-next-line
-        (FastifyAPIServer as any).instance = undefined;
+  });
 
-        await FastifyAPIServer.initialize(mockConfig);
-        fastifyInstance = FastifyAPIServer.getInstance();
+  /**
+   * Tests for the adminPreHandler method of PackageController
+   * @description
+   * Tests the adminPreHandler functionality, ensuring that only admin users
+   * can access routes protected by this preHandler. Tests various scenarios
+   * including valid admin access, non-admin users, and internal server errors.
+   */
+  describe('adminPreHandler', async () => {
+    let fastifyInstance: FastifyAPIServer;
 
-        vi.clearAllMocks();
-      });
+    /**
+     * Initialize Fastify server and reset singleton instance before each test
+     */
+    beforeEach(async () => {
+      // Reset the singleton
+      // eslint-disable-next-line
+      (FastifyAPIServer as any).instance = undefined;
 
-      const packageController = new PackageController(
-        mockedPackageAction,
-        mockedFastifyServer,
-        Network.Testnet,
+      await FastifyAPIServer.initialize(mockConfig);
+      fastifyInstance = FastifyAPIServer.getInstance();
+
+      vi.clearAllMocks();
+    });
+    const packageController = new PackageController(
+      mockedPackageAction,
+      mockedFastifyServer,
+      Network.Testnet,
+    );
+
+    /**
+     * Test admin user access
+     * @scenario
+     * - POST /allow-admin with valid admin user
+     * @expected
+     * - Returns 200 and success response
+     */
+    it('should allow admin user', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        async (request) => {
+          request.user = {
+            userId: 12345,
+            address: 'mocked-user-address',
+            isAdmin: true, // Simulate admin user
+          };
+        },
       );
 
-      it('should allow admin user', async () => {
-        mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
-
-        vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-          async (request) => {
-            request.user = {
-              userId: 12345,
-              address: 'mocked-user-address',
-              isAdmin: true, // Simulate admin user
-            };
+      await fastifyInstance.register(async (fastify) => {
+        fastify.post(
+          '/allow-admin',
+          {
+            preHandler: [
+              fastifyInstance.authPreHandler,
+              packageController.adminPreHandler,
+            ],
           },
+          async () => ({ success: true }),
         );
-        await fastifyInstance.register(async (fastify) => {
-          fastify.post(
-            '/allow-admin',
-            {
-              preHandler: [
-                fastifyInstance.authPreHandler,
-                packageController.adminPreHandler,
-              ],
-            },
-            async () => ({ success: true }),
-          );
-        }, '');
+      }, '');
 
-        await fastifyInstance.start();
+      await fastifyInstance.start();
 
-        const response = await fastifyInstance['fastify'].inject({
-          method: 'POST',
-          url: '/allow-admin',
-          payload: {},
-        });
-
-        expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
-        expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
-          12345,
-        );
-        expect(response.statusCode).toBe(200);
-        expect(JSON.parse(response.body)).toEqual({ success: true });
-
-        await fastifyInstance.close();
+      const response = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/allow-admin',
+        payload: {},
       });
 
-      it('should deny non-admin user and return 403 forbidden when isAdmin is undefined ', async () => {
-        vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-          async (request) => {
-            request.user = {
-              userId: 12345,
-              address: 'mocked-user-address',
-              isAdmin: undefined,
-            };
-          },
-        );
+      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
+      expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
+        12345,
+      );
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({ success: true });
 
-        await fastifyInstance.register(async (fastify) => {
-          fastify.post(
-            '/deny-user',
-            {
-              preHandler: [
-                fastifyInstance.authPreHandler,
-                packageController.adminPreHandler,
-              ],
-            },
-            async () => ({ success: true }),
-          );
-        }, '');
-        await fastifyInstance.start();
+      await fastifyInstance.close();
+    });
 
-        const response = await fastifyInstance['fastify'].inject({
-          method: 'POST',
-          url: '/deny-user',
-          payload: {},
-        });
-
-        expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
-        expect(response.statusCode).toBe(403);
-        expect(JSON.parse(response.body)).toEqual({ error: 'Forbidden' });
-
-        await fastifyInstance.close();
-      });
-
-      it('should deny non-admin user and return 403 forbidden when isAdmin is false ', async () => {
-        vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-          async (request) => {
-            request.user = {
-              userId: 12345,
-              address: 'mocked-user-address',
-              isAdmin: false,
-            };
-          },
-        );
-
-        await fastifyInstance.register(async (fastify) => {
-          fastify.post(
-            '/deny-user',
-            {
-              preHandler: [
-                fastifyInstance.authPreHandler,
-                packageController.adminPreHandler,
-              ],
-            },
-            async () => ({ success: true }),
-          );
-        }, '');
-
-        await fastifyInstance.start();
-
-        const response = await fastifyInstance['fastify'].inject({
-          method: 'POST',
-          url: '/deny-user',
-          payload: {},
-        });
-
-        expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
-        expect(response.statusCode).toBe(403);
-        expect(JSON.parse(response.body)).toEqual({ error: 'Forbidden' });
-
-        await fastifyInstance.close();
-      });
-
-      it('should deny non-admin user and return 403 forbidden when isAdmin in DB or userId does not exits ', async () => {
-        const authPreHandlerMock = vi.fn();
-
-        authPreHandlerMock.mockImplementation(async (request) => {
+    /**
+     * Test non-admin user with isAdmin set to undefined
+     * @scenario
+     * - POST /deny-user with user where isAdmin is undefined
+     * @expected
+     * - Returns 403 Forbidden
+     */
+    it('should deny non-admin user and return 403 forbidden when isAdmin is undefined ', async () => {
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        async (request) => {
           request.user = {
             userId: 12345,
             address: 'mocked-user-address',
-            isAdmin: true,
+            isAdmin: undefined,
           };
-        });
-        vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-          authPreHandlerMock,
+        },
+      );
+
+      await fastifyInstance.register(async (fastify) => {
+        fastify.post(
+          '/deny-user',
+          {
+            preHandler: [
+              fastifyInstance.authPreHandler,
+              packageController.adminPreHandler,
+            ],
+          },
+          async () => ({ success: true }),
         );
+      }, '');
+      await fastifyInstance.start();
 
-        await fastifyInstance.register(async (fastify) => {
-          fastify.post(
-            '/deny-user',
-            {
-              preHandler: [
-                fastifyInstance.authPreHandler,
-                packageController.adminPreHandler,
-              ],
-            },
-            async () => ({ success: true }),
-          );
-        }, '');
-
-        mockedPackageAction.validateAdminRequest.mockResolvedValue(false);
-
-        await fastifyInstance.start();
-
-        const response = await fastifyInstance['fastify'].inject({
-          method: 'POST',
-          url: '/deny-user',
-          payload: {},
-        });
-
-        expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
-          12345,
-        );
-        expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
-        expect(response.statusCode).toBe(403);
-        expect(JSON.parse(response.body)).toEqual({ error: 'Forbidden' });
-
-        await fastifyInstance.close();
+      const response = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/deny-user',
+        payload: {},
       });
 
-      it('should return 500 on internal server error when an error ocured', async () => {
-        const authPreHandlerMock = vi.fn();
+      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body)).toEqual({ error: 'Forbidden' });
 
-        authPreHandlerMock.mockImplementation(async (request) => {
+      await fastifyInstance.close();
+    });
+
+    /**
+     * Test non-admin user with isAdmin set to false
+     * @scenario
+     * - POST /deny-user with user where isAdmin is false
+     * @expected
+     * - Returns 403 Forbidden
+     */
+    it('should deny non-admin user and return 403 forbidden when isAdmin is false ', async () => {
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        async (request) => {
           request.user = {
             userId: 12345,
             address: 'mocked-user-address',
-            isAdmin: true,
+            isAdmin: false,
           };
-        });
-        vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-          authPreHandlerMock,
+        },
+      );
+
+      await fastifyInstance.register(async (fastify) => {
+        fastify.post(
+          '/deny-user',
+          {
+            preHandler: [
+              fastifyInstance.authPreHandler,
+              packageController.adminPreHandler,
+            ],
+          },
+          async () => ({ success: true }),
         );
+      }, '');
 
-        await fastifyInstance.register(async (fastify) => {
-          fastify.post(
-            '/deny-user',
-            {
-              preHandler: [
-                fastifyInstance.authPreHandler,
-                packageController.adminPreHandler,
-              ],
-            },
-            async () => ({ success: true }),
-          );
-        }, '');
+      await fastifyInstance.start();
 
-        mockedPackageAction.validateAdminRequest.mockRejectedValue(
-          new Error('Database error'),
-        );
-
-        await fastifyInstance.start();
-
-        const response = await fastifyInstance['fastify'].inject({
-          method: 'POST',
-          url: '/deny-user',
-          payload: {},
-        });
-
-        expect(response.statusCode).toBe(500);
-        expect(JSON.parse(response.body)).toEqual({
-          error: 'Internal server error during admin validation',
-          code: 'admin-validation-error',
-        });
-
-        await fastifyInstance.close();
+      const response = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/deny-user',
+        payload: {},
       });
+
+      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body)).toEqual({ error: 'Forbidden' });
+
+      await fastifyInstance.close();
+    });
+
+    /**
+     * Test non-admin user or invalid user ID in database
+     * @scenario
+     * - POST /deny-user with user where validateAdminRequest returns false
+     * @expected
+     * - Returns 403 Forbidden
+     */
+    it('should deny non-admin user and return 403 forbidden when isAdmin in DB or userId does not exits ', async () => {
+      const authPreHandlerMock = vi.fn();
+
+      authPreHandlerMock.mockImplementation(async (request) => {
+        request.user = {
+          userId: 12345,
+          address: 'mocked-user-address',
+          isAdmin: true,
+        };
+      });
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        authPreHandlerMock,
+      );
+
+      await fastifyInstance.register(async (fastify) => {
+        fastify.post(
+          '/deny-user',
+          {
+            preHandler: [
+              fastifyInstance.authPreHandler,
+              packageController.adminPreHandler,
+            ],
+          },
+          async () => ({ success: true }),
+        );
+      }, '');
+
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(false);
+
+      await fastifyInstance.start();
+
+      const response = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/deny-user',
+        payload: {},
+      });
+
+      expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
+        12345,
+      );
+      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body)).toEqual({ error: 'Forbidden' });
+
+      await fastifyInstance.close();
+    });
+
+    /**
+     * Test internal server error during admin validation
+     * @scenario
+     * - POST /deny-user when validateAdminRequest throws an error
+     * @expected
+     * - Returns 500 Internal Server Error
+     */
+    it('should return 500 on internal server error when an error ocured', async () => {
+      const authPreHandlerMock = vi.fn();
+
+      authPreHandlerMock.mockImplementation(async (request) => {
+        request.user = {
+          userId: 12345,
+          address: 'mocked-user-address',
+          isAdmin: true,
+        };
+      });
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        authPreHandlerMock,
+      );
+
+      await fastifyInstance.register(async (fastify) => {
+        fastify.post(
+          '/deny-user',
+          {
+            preHandler: [
+              fastifyInstance.authPreHandler,
+              packageController.adminPreHandler,
+            ],
+          },
+          async () => ({ success: true }),
+        );
+      }, '');
+
+      mockedPackageAction.validateAdminRequest.mockRejectedValue(
+        new Error('Database error'),
+      );
+
+      await fastifyInstance.start();
+
+      const response = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/deny-user',
+        payload: {},
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(JSON.parse(response.body)).toEqual({
+        error: 'Internal server error during admin validation',
+        code: 'admin-validation-error',
+      });
+
+      await fastifyInstance.close();
     });
   });
 });

@@ -269,15 +269,23 @@ class PackageAction {
     return userRequest.id;
   };
 
+  /**
+   * Checks if the specified user is an admin.
+   * @param userId - The ID of the user to validate.
+   * @returns {Promise<boolean>} True if the user is an admin, otherwise false.
+   */
   public validateAdminRequest = async (userId: number): Promise<boolean> => {
     this.logger.debug(`Validating admin request for userId: ${userId}`);
+
     const User = await this.userRepository.findOne({
       where: { id: userId, isAdmin: true },
     });
+
     if (!User) {
       this.logger.debug(`User with id ${userId} is not an admin.`);
       return false;
     }
+
     this.logger.debug(`User with id ${userId} is an admin.`);
     return true;
   };
