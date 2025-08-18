@@ -17,10 +17,6 @@ import {
 } from './mockUtils';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { CooldownLimitError, NotFoundError } from '@ergo-faucet/database';
-// import {
-//   CooldownLimitError,
-//   NotFoundError,
-// } from '@ergo-faucet/database/lib/types/errors';
 describe('PackageController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
