@@ -16,6 +16,7 @@ import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
 import { toPackageDTO } from './utils/mapper';
 import { PackageDTO } from './types/DTOs';
 import { userRequestPayload } from '@ergo-faucet/common-types';
+import { RequestPackageBodyType } from './types';
 
 class PackageController {
   private readonly logger: AbstractLogger;

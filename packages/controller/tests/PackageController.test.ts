@@ -357,7 +357,10 @@ describe('PackageController', () => {
       vi.clearAllMocks();
     });
 
-    const packageController = new PackageController(mockedPackageAction);
+    const packageController = new PackageController(
+      mockedPackageAction,
+      mockedFastifyServer,
+    );
 
     /**
      * Test admin user access
