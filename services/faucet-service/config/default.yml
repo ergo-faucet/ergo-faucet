@@ -81,3 +81,6 @@ googleAuth:
   scope: 'email profile openid'
   expiresTime: 7200
   sessionTTL: 3600
+
+authJob:
+  jobInterval: 259200

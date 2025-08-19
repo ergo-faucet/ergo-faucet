@@ -1,4 +1,9 @@
-import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
+import {
+  DataSource,
+  LessThan,
+  Not,
+  Repository,
+} from '@rosen-bridge/extended-typeorm';
 import { User, UserAuthStatus, AuthMethod } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
@@ -186,6 +191,47 @@ class GoogleAction {
     await this.userAuthStatusRepository.save(authStatus);
     this.logger.debug(
       `Saved/Updated Google UserAuthStatus for user ID ${user.id}`,
+    );
+  };
+
+  /**
+   * Marks a user's Google authentication as expired.
+   * Updates UserAuthStatus record and logs the expiration.
+   *
+   * @param userAuthStatust
+   */
+  public expireGoogleAuth = async (
+    userAuthStatust: UserAuthStatus,
+  ): Promise<void> => {
+    userAuthStatust.status = 'failed';
+    await this.userAuthStatusRepository.save(userAuthStatust);
+
+    this.logger.info(
+      `Expired Google auth for user ID ${userAuthStatust.user.id}`,
+    );
+  };
+
+  /**
+   * Expires all Google auth records that are past their expiry.
+   */
+  public expireAllExpiredGoogleAuths = async (): Promise<void> => {
+    const now = new Date();
+    const expiredRecords: UserAuthStatus[] =
+      await this.userAuthStatusRepository.find({
+        where: {
+          authMethod: { id: this.googleAuthMethod.id },
+          expiresAt: LessThan(now),
+          status: 'passed',
+        },
+        relations: ['user', 'authMethod'],
+      });
+
+    for (const record of expiredRecords) {
+      await this.expireGoogleAuth(record);
+    }
+
+    this.logger.info(
+      `Processed ${expiredRecords.length} expired Google auth records`,
     );
   };
 }

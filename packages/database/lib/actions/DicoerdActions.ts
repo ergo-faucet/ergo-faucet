@@ -1,4 +1,9 @@
-import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
+import {
+  DataSource,
+  LessThan,
+  Not,
+  Repository,
+} from '@rosen-bridge/extended-typeorm';
 import { User, UserAuthStatus, AuthMethod } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
@@ -194,6 +199,47 @@ class DiscordAction {
     await this.userAuthStatusRepository.save(authStatus);
     this.logger.debug(
       `Saved/Updated Discord UserAuthStatus for user ID ${user.id}`,
+    );
+  };
+
+  /**
+   * Marks a user's Discord authentication as expired.
+   * Updates UserAuthStatus record and logs the expiration.
+   *
+   * @param userAuthStatust
+   */
+  public expireDiscordAuth = async (
+    userAuthStatust: UserAuthStatus,
+  ): Promise<void> => {
+    userAuthStatust.status = 'failed';
+    await this.userAuthStatusRepository.save(userAuthStatust);
+
+    this.logger.info(
+      `Expired Discord auth for user ID ${userAuthStatust.user.id}`,
+    );
+  };
+
+  /**
+   * Expires all Discord auth records that are past their expiry.
+   */
+  public expireAllExpiredDiscordAuths = async (): Promise<void> => {
+    const now = new Date();
+    const expiredRecords: UserAuthStatus[] =
+      await this.userAuthStatusRepository.find({
+        where: {
+          authMethod: { id: this.discordAuthMethod.id },
+          expiresAt: LessThan(now),
+          status: 'passed',
+        },
+        relations: ['user', 'authMethod'],
+      });
+
+    for (const record of expiredRecords) {
+      await this.expireDiscordAuth(record);
+    }
+
+    this.logger.info(
+      `Processed ${expiredRecords.length} expired Discord auth records`,
     );
   };
 }

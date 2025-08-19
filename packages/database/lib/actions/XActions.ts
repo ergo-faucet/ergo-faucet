@@ -1,4 +1,9 @@
-import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
+import {
+  DataSource,
+  LessThan,
+  Not,
+  Repository,
+} from '@rosen-bridge/extended-typeorm';
 import { User, UserAuthStatus, AuthMethod } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
@@ -187,6 +192,47 @@ class XAction {
     await this.userAuthStatusRepository.save(authStatus);
     this.logger.debug(
       `Saved/Updated X-platform UserAuthStatus for user ID ${user.id}`,
+    );
+  };
+
+  /**
+   * Marks a user's X-platform authentication as expired.
+   * Updates UserAuthStatus record and logs the expiration.
+   *
+   * @param userAuthStatust
+   */
+  public expireXAuth = async (
+    userAuthStatust: UserAuthStatus,
+  ): Promise<void> => {
+    userAuthStatust.status = 'failed';
+    await this.userAuthStatusRepository.save(userAuthStatust);
+
+    this.logger.info(
+      `Expired X-platform auth for user ID ${userAuthStatust.user.id}`,
+    );
+  };
+
+  /**
+   * Expires all X-platform auth records that are past their expiry.
+   */
+  public expireAllExpiredXAuths = async (): Promise<void> => {
+    const now = new Date();
+    const expiredRecords: UserAuthStatus[] =
+      await this.userAuthStatusRepository.find({
+        where: {
+          authMethod: { id: this.xAuthMethod.id },
+          expiresAt: LessThan(now),
+          status: 'passed',
+        },
+        relations: ['user', 'authMethod'],
+      });
+
+    for (const record of expiredRecords) {
+      await this.expireXAuth(record);
+    }
+
+    this.logger.info(
+      `Processed ${expiredRecords.length} expired X-platform auth records`,
     );
   };
 }

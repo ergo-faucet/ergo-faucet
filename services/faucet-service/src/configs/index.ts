@@ -7,3 +7,4 @@ export { discordConfig } from './discordAuth';
 export { xAuthConfig } from './xAuth';
 export { serverConfig, cookieConfig } from './fastify';
 export { googleAuthConfig } from './googleAuth';
+export { authJobConfig } from './authJob';
