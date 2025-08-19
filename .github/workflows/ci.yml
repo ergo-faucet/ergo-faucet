@@ -35,6 +35,15 @@ jobs:
       - name: Type Check
         run: npm run type-check
 
+      - name: Depcheck per package
+        run: |
+          IGNORE_PACKAGES="@changesets/cli,@rosen-bridge/changeset-formatter,@typescript-eslint/eslint-plugin,@typescript-eslint/parser,eslint,eslint-config-prettier,vitest,@vitest/coverage-istanbul,husky,lint-staged,@types/node,prettier,pg,typescript,tsx"
+          IGNORE_PATHS="vite.config.ts"
+
+          for dir in $(find packages services -name package.json -exec dirname {} \;); do
+            npx depcheck --ignores="$IGNORE_PACKAGES" --ignore-patterns="$IGNORE_PATHS" $dir
+          done
+
       - name: Run Tests
         run: npm run test
 
