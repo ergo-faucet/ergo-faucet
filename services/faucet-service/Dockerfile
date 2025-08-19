@@ -1,9 +1,14 @@
 # syntax=docker.io/docker/dockerfile:1.7-labs
 
-
 FROM node:20.11-slim AS base
 WORKDIR /app
 COPY . /app
+
+RUN find . -name "node_modules" -type d -prune -exec rm -rf '{}' + \
+ && find . -name "dist" -type d -prune -exec rm -rf '{}' + \
+ && find . -name ".next" -type d -prune -exec rm -rf '{}' + \
+ && find . -type f -name "tsconfig.tsbuildinfo" -exec rm {} + \
+ && find . -type f -name "tsconfig.build.tsbuildinfo" -exec rm {} +
 
 FROM base AS build
 RUN --mount=type=cache,target=/root/.npm npm ci
@@ -19,7 +24,6 @@ RUN for dir in $(find packages services -maxdepth 2 -name package.json -exec dir
 
 
 FROM base
-
 COPY --from=build --exclude=*/node_modules /app/packages /app/packages
 COPY --from=build --exclude=node_modules /app/services/faucet-service /app/services/faucet-service
 
