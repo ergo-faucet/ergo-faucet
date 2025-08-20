@@ -1,5 +1,4 @@
 import { vi } from 'vitest';
-import fastify from 'fastify';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { ErgoAuthConfig } from '../lib/types';
 
@@ -27,7 +26,7 @@ export const testAddress =
   '9ggSPfdEACEpRKMvpVwXxck9soLC1ZDmYRX9GA5gigSsAoZDNwJ';
 
 export const createMockFastifyAPIServer = () => {
-  const f = fastify();
+  const f = FastifyAPIServer.getInstance();
 
   return {
     fastify: f,

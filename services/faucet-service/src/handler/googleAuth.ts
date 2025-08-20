@@ -2,7 +2,7 @@ import { GoogleAuth } from '@ergo-faucet/google-auth';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { GoogleAction } from '@ergo-faucet/database';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
-import { googleAuthConfig, redisConfig } from 'src/configs';
+import { googleAuthConfig, redisConfig } from '../configs';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 

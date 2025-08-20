@@ -36,6 +36,7 @@ const getDepcheckCommand = (directory) => {
     'pg',
     'typescript',
     'tsx',
+    'extensionless',
   ];
 
   const paths = ['vite.config.ts'];
@@ -62,6 +63,5 @@ export default {
   '**/*.{js,jsx,ts,tsx,mjs}': perPackage(getDepcheckCommand),
   '**/package.json': perPackage(getDepcheckCommand),
 
-  // Run related tests
   '*.{js,jsx,ts,tsx}': 'npm run test:related',
 };
