@@ -171,24 +171,29 @@ export class FastifyAPIServer {
   };
 
   /**
-   * Pre-handler hook that verifies JWT before executing the route handler.
-   * If JWT validation fails, it sends an error Unauthorized.
-   * @param req - FastifyRequest (expects `JWT token`)
-   * @param res - FastifyReply (used to send early error responses)
+   * Pre-handler hook that conditionally verifies JWT before executing the route handler.
+   * If enabled (default) and JWT validation fails, it sends an error Unauthorized.
+   * If disabled, it only attempts verification but doesn't throw errors.
    *
+   * @param verifyAndEnforce - Whether to enforce JWT verification (default: true)
+   * @returns Pre-handler function
    */
-  public authPreHandler = async <
-    T extends FastifyRequest,
-    U extends FastifyReply,
-  >(
-    req: T,
-    res: U,
-  ) => {
-    try {
-      await req.jwtVerify();
-    } catch {
-      return res.status(401).send({ error: 'Unauthorized' });
-    }
+  public authPreHandler = (verifyAndEnforce: boolean = true) => {
+    return async <T extends FastifyRequest, U extends FastifyReply>(
+      req: T,
+      res: U,
+    ) => {
+      try {
+        await req.jwtVerify();
+      } catch {
+        // If enforcement is enabled, return 401 error
+        if (verifyAndEnforce) {
+          return res.status(401).send({ error: 'Unauthorized' });
+        }
+        // If enforcement is disabled, just let the verification fail silently
+        // The route handler can check req.user to see if authentication was successful
+      }
+    };
   };
 
   /**

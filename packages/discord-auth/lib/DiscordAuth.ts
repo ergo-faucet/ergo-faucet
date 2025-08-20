@@ -157,7 +157,7 @@ export class DiscordAuth {
     fastify.get(
       '/login',
       {
-        preHandler: this.fastifyServer.authPreHandler,
+        preHandler: this.fastifyServer.authPreHandler(),
         schema: {
           response: {
             302: { description: 'Redirect to Discord OAuth2 login' },
@@ -191,7 +191,7 @@ export class DiscordAuth {
     fastify.get<{ Querystring: CallBackRouteQueryType }>(
       '/callback',
       {
-        preHandler: this.fastifyServer.authPreHandler,
+        preHandler: this.fastifyServer.authPreHandler(),
         schema: {
           querystring: CallBackRouteQuery,
           response: {

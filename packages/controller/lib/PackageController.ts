@@ -18,15 +18,22 @@ class PackageController {
   private readonly logger: AbstractLogger;
   private readonly packageAction: PackageAction;
   private readonly PACKAGES_PREFIX = '/packages';
+  private readonly fastifyServer: FastifyAPIServer;
 
   /**
    * Constructs a new PackageController.
    * @param packageAction - Instance of PackageAction for DB operations.
+   * @param fastifyServer - Instance of fastify server
    * @param logger - Optional logger instance.
    */
-  public constructor(packageAction: PackageAction, logger?: AbstractLogger) {
+  public constructor(
+    packageAction: PackageAction,
+    fastifyServer: FastifyAPIServer,
+    logger?: AbstractLogger,
+  ) {
     this.logger = logger ? logger : new DummyLogger();
     this.packageAction = packageAction;
+    this.fastifyServer = fastifyServer;
   }
 
   /**
@@ -44,6 +51,7 @@ class PackageController {
     fastify.get(
       '',
       {
+        preHandler: this.fastifyServer.authPreHandler(false),
         schema: {
           querystring: PackagesRouteQuery,
           response: {
@@ -58,19 +66,7 @@ class PackageController {
         },
       },
       async (request, reply) => {
-        const offset = request.query.offset;
-        const limit = request.query.limit;
-        const sort = request.query.sort;
-        const order = request.query.order;
-        if (request.headers.authorization?.startsWith('Bearer ')) {
-          try {
-            await request.jwtVerify();
-          } catch {
-            return reply
-              .status(401)
-              .send({ error: 'Invalid token', code: 'unauthorized' });
-          }
-        }
+        const { offset, limit, sort, order } = request.query;
         const user = request.user as userRequestPayload;
 
         try {

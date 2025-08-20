@@ -10,7 +10,8 @@ import {
 import { PackageController } from '../lib';
 import {
   mockedPackageAction,
-  mockedServer,
+  createMockedServer,
+  mockedFastifyServer,
   mockPackage,
   mockPackageDTO,
 } from './mockUtils';
@@ -25,14 +26,23 @@ describe('PackageController', () => {
   });
 
   describe('GET /packages', async () => {
+    const mockedServer = createMockedServer();
     /**
      * Register the /packages route before running the tests in this block.
      */
     beforeAll(async () => {
-      const instance = new PackageController(mockedPackageAction);
+      const instance = new PackageController(
+        mockedPackageAction,
+        mockedFastifyServer,
+      );
       await mockedServer.register(instance.fetchPackagesRoute, {
         prefix: '/packages',
       });
+    });
+
+    afterAll(async () => {
+      vi.restoreAllMocks();
+      await mockedServer.close();
     });
 
     // Default mock for getPackages to return a package

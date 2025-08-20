@@ -4,12 +4,17 @@ import {
   Asset,
   PackageAuthMethod,
 } from '@ergo-faucet/database';
-
-import fastify from 'fastify';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+import fastify, { FastifyInstance } from 'fastify';
 import { vi } from 'vitest';
 import { PackageDTO } from '../lib/types/DTOs';
 
-export const mockedServer = fastify();
+/**
+ * Factory function to create a new Fastify instance for testing.
+ */
+export const createMockedServer = (): FastifyInstance => {
+  return fastify();
+};
 
 /**
  * A mocked PackageAction instance with a spyable getPackages method.
@@ -18,6 +23,33 @@ export const mockedPackageAction: PackageAction & {
   getPackages: ReturnType<typeof vi.fn>;
 } = {
   getPackages: vi.fn(),
+  // eslint-disable-next-line
+} as any;
+
+export const mockedFastifyServer: FastifyAPIServer & {
+  authPreHandler: ReturnType<typeof vi.fn>;
+  register: ReturnType<typeof vi.fn>;
+  captchaPreHandler: ReturnType<typeof vi.fn>;
+  setAuthCookie: ReturnType<typeof vi.fn>;
+} = {
+  authPreHandler: vi.fn((verifyAndEnforce: boolean = false) => {
+    if (!verifyAndEnforce) return;
+    // eslint-disable-next-line
+    return async (request: any) => {
+      // Simulate JWT verification and set request.user
+      request.user = {
+        userId: 123,
+        address: 'mocked-user-address',
+      };
+    };
+  }),
+
+  register: vi.fn(async () => {}),
+  captchaPreHandler: vi.fn(async () => {
+    return;
+  }),
+
+  setAuthCookie: vi.fn(),
   // eslint-disable-next-line
 } as any;
 
