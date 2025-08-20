@@ -204,6 +204,8 @@ class GoogleAction {
     userAuthStatust: UserAuthStatus,
   ): Promise<void> => {
     userAuthStatust.status = 'failed';
+    userAuthStatust.metadata.refresh_token = '';
+    userAuthStatust.metadata.token = '';
     await this.userAuthStatusRepository.save(userAuthStatust);
 
     this.logger.info(
