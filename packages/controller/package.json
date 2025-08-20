@@ -1,6 +1,6 @@
 {
   "name": "@ergo-faucet/controller",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "API service for fetching faucet packages with pagination, part of the Ergo Faucet backend.",
   "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
   "license": "GPL-3.0",
@@ -34,6 +34,7 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
+    "@ergo-faucet/common-types": "^0.1.0",
     "@ergo-faucet/database": "^0.1.0",
     "@ergo-faucet/fastify-server": "^0.1.0",
     "@rosen-bridge/abstract-logger": "^2.0.1",

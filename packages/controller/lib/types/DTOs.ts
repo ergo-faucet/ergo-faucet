@@ -10,6 +10,7 @@ export interface AssetDTO {
 export interface AuthMethodDTO {
   id: number;
   name: string;
+  status?: 'passed' | 'failed' | 'pending';
 }
 
 export interface PackageDTO {

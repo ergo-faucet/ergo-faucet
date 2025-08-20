@@ -3,7 +3,7 @@ import {
   FindOptionsOrder,
   Repository,
 } from '@rosen-bridge/extended-typeorm';
-import { Package } from '../entities';
+import { Package, UserAuthStatus } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 class PackageAction {
@@ -84,6 +84,22 @@ class PackageAction {
       relations: ['assets', 'authMethods', 'authMethods.authMethod'],
     });
     return packages;
+  };
+
+  /**
+   * Fetches user authentication statuses from the database for a specific user.
+   * Includes related authMethod and package data.
+   *
+   * @param userId - The ID of the user to fetch authentication statuses for.
+   * @returns {Promise<UserAuthStatus[]>} A promise that resolves to an array of UserAuthStatus entities.
+   */
+  public getUserAuthStatuses = async (
+    userId: number,
+  ): Promise<UserAuthStatus[]> => {
+    return this.dataSource.getRepository(UserAuthStatus).find({
+      where: { user: { id: userId } },
+      relations: ['authMethod', 'package'],
+    });
   };
 }
 

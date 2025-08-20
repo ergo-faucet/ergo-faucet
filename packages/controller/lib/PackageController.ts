@@ -3,14 +3,16 @@ import {
   FastifyAPIServer,
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
+
+import { PackageAction, UserAuthStatus } from '@ergo-faucet/database';
+import { toPackageDTO } from './utils';
 import {
+  PackageDTO,
   GetPackageErrorResponse,
   GetPackagesResponse200,
   PackagesRouteQuery,
-} from './types/packagesRouteSchemas';
-import { PackageAction } from '@ergo-faucet/database';
-import { toPackageDTO } from './utils/mapper';
-import { PackageDTO } from './types/DTOs';
+} from './types';
+import { userRequestPayload } from '@ergo-faucet/common-types';
 
 class PackageController {
   private readonly logger: AbstractLogger;
@@ -30,7 +32,8 @@ class PackageController {
   /**
    * Registers the /packages GET route on the provided Fastify instance.
    * Handles query parameters for pagination and sorting, and returns a list of packages.
-   * Responds with 200 and a list of packages or 500 if an internal server error occurs.
+   * Includes user authentication status data when a valid JWT token is provided.
+   * Responds with 200 and a list of packages, 401 for invalid token, or 500 if an internal server error occurs.
    *
    * @param fastify - The Fastify server instance to register the route on.
    * @returns {Promise<void>}
@@ -47,6 +50,11 @@ class PackageController {
             200: GetPackagesResponse200,
             500: GetPackageErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
@@ -54,6 +62,16 @@ class PackageController {
         const limit = request.query.limit;
         const sort = request.query.sort;
         const order = request.query.order;
+        if (request.headers.authorization?.startsWith('Bearer ')) {
+          try {
+            await request.jwtVerify();
+          } catch {
+            return reply
+              .status(401)
+              .send({ error: 'Invalid token', code: 'unauthorized' });
+          }
+        }
+        const user = request.user as userRequestPayload;
 
         try {
           const packages = await this.packageAction.getPackages(
@@ -63,7 +81,17 @@ class PackageController {
             order,
           );
 
-          const packageDTOs: PackageDTO[] = toPackageDTO(packages);
+          let userStatuses: UserAuthStatus[] | undefined;
+          if (user?.userId) {
+            userStatuses = await this.packageAction.getUserAuthStatuses(
+              user.userId,
+            );
+          }
+
+          const packageDTOs: PackageDTO[] = toPackageDTO(
+            packages,
+            userStatuses,
+          );
 
           return reply.status(200).send(packageDTOs);
         } catch (err) {

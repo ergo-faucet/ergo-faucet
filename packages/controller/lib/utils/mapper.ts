@@ -1,9 +1,17 @@
-import { Asset, PackageAuthMethod } from '@ergo-faucet/database';
-import { Package } from '@ergo-faucet/database';
-import { AssetDTO, AuthMethodDTO, PackageDTO } from '../types/DTOs';
+import {
+  Asset,
+  PackageAuthMethod,
+  UserAuthStatus,
+  Package,
+} from '@ergo-faucet/database';
+import { AssetDTO, AuthMethodDTO, PackageDTO } from '../types';
 
-export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
+export const toPackageDTO = (
+  packages: Package[],
+  userStatuses?: UserAuthStatus[],
+): PackageDTO[] => {
   return packages.map((p: Package): PackageDTO => {
+    // Map assets
     const assetDTOs: AssetDTO[] = p.assets.map(
       (a: Asset): AssetDTO => ({
         id: a.id,
@@ -13,11 +21,20 @@ export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
       }),
     );
 
+    // Map auth methods
     const authMethodDTOs: AuthMethodDTO[] = p.authMethods.map(
-      (a: PackageAuthMethod): AuthMethodDTO => ({
-        id: a.authMethod.id,
-        name: a.authMethod.name,
-      }),
+      (pam: PackageAuthMethod): AuthMethodDTO => {
+        // Find matching user status
+        const status = userStatuses?.find(
+          (s) =>
+            s.package?.id === p.id && s.authMethod.id === pam.authMethod.id,
+        );
+        return {
+          id: pam.authMethod.id,
+          name: pam.authMethod.name,
+          status: status?.status,
+        };
+      },
     );
 
     return {
