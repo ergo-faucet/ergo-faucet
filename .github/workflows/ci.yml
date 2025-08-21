@@ -37,8 +37,9 @@ jobs:
 
       - name: Depcheck per changed directory using lint-staged
         run: |
+          git fetch --all
           REMOTE_BRANCH="origin/$(git branch --show-current)"
-          npx lint-staged --diff="$REMOTE_BRANCH...HEAD" --verbose --relative --quiet
+          npx lint-staged --diff="$REMOTE_BRANCH...HEAD" --verbose --relative
 
       - name: Run Tests
         run: npm run test
