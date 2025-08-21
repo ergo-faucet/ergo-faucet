@@ -5,19 +5,30 @@ import {
   DoubleSpendError,
   tokenByIdResponseSuccess,
   InvalidTokenPrecisionError,
-} from '.';
+} from './types';
 import { Box } from '@fleet-sdk/common';
 
 export class NodeModel {
   private static instance: NodeModel;
   private readonly logger: AbstractLogger;
-  private axiosInstance: AxiosInstance | undefined;
+  private axiosInstance: AxiosInstance;
 
-  private constructor(nodeUrl: string, logger?: AbstractLogger) {
+  /**
+   * Creates a new NodeModel instance.
+   *
+   * @param {string} nodeUrl - The base URL of the Ergo node to connect to.
+   * @param {number} timeout - The request timeout in milliseconds.
+   * @param {AbstractLogger} [logger] - Optional custom logger. Defaults to DummyLogger if not provided.
+   */
+  private constructor(
+    nodeUrl: string,
+    timeout: number,
+    logger?: AbstractLogger,
+  ) {
     this.logger = logger ? logger : new DummyLogger();
     this.axiosInstance = axios.create({
       baseURL: `${nodeUrl}`,
-      timeout: 1000,
+      timeout,
       headers: {
         accept: 'application/json',
       },
@@ -27,12 +38,21 @@ export class NodeModel {
   /**
    * Initializes the NodeModel with an Axios instance configured for API requests.
    * This method must be called before using the NodeModel.
+   *
+   * @param {string} nodeUrl - The base URL of the Ergo node to connect to.
+   * @param {number} timeout - The request timeout in milliseconds.
+   * @param {AbstractLogger} [logger] - Optional custom logger. Defaults to DummyLogger if not provided.
+   * @throws {Error} If the NodeModel has already been initialized.
    */
-  public static initialize = (nodeUrl: string, logger?: AbstractLogger) => {
+  public static initialize = (
+    nodeUrl: string,
+    timeout: number,
+    logger?: AbstractLogger,
+  ) => {
     if (this.instance) {
       throw new Error('NodeModel instance has already been initialized.');
     }
-    NodeModel.instance = new NodeModel(nodeUrl, logger);
+    NodeModel.instance = new NodeModel(nodeUrl, timeout, logger);
   };
 
   /**

@@ -9,7 +9,7 @@ import {
 } from '@fleet-sdk/common';
 import { ErgoHDKey, Prover } from '@fleet-sdk/wallet';
 import { NodeModel } from './NodeModel';
-import { NotEnoughAssetsError } from '.';
+import { NotEnoughAssetsError } from './types';
 
 export class Wallet {
   private static instance: Wallet;

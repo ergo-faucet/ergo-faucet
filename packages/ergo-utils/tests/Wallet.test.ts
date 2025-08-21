@@ -17,7 +17,7 @@ describe('Wallet - selectBoxes', () => {
   beforeAll(async () => {
     const mnemonic =
       'steel wet husband avoid surround trial insect stone gauge trick zone dry famous family mechanic';
-    await NodeModel.initialize('nodeUrl');
+    await NodeModel.initialize('nodeUrl', 1000);
     await Wallet.initialize(mnemonic, Network.Testnet);
   });
 
