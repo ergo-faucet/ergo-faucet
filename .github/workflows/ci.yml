@@ -35,19 +35,19 @@ jobs:
       - name: Type Check
         run: npm run type-check
 
-      - name: Get changed files
-        id: changed-files
-        uses: tj-actions/changed-files@v46
-        with:
-          files: .{js,jsx,ts,tsx,mjs}
-
-      - name: Depcheck per file changed
-        env:
-          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+      - name: Depcheck per changed directory
         run: |
-          for dir in $(echo $ALL_CHANGED_FILES | xargs -n1 dirname | sort -u); do
+          echo "Running depcheck on changed directories"
+          CHANGED_FILES=$(npx lint-staged --diff="HEAD...origin/${{ github.base_ref }}" --relative --quiet --print-pending-files)
+
+          if [ -z "$CHANGED_FILES" ]; then
+            echo "No changed files detected"
+            exit 0
+          fi
+
+          for dir in $(echo "$CHANGED_FILES" | xargs -n1 dirname | sort -u); do
             echo "Running depcheck in $dir"
-            npx depcheck $dir
+            npx depcheck "$dir"
           done
 
       - name: Run Tests
