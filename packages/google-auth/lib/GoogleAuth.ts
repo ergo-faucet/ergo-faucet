@@ -246,7 +246,7 @@ export class GoogleAuth {
     fastify.get(
       '/login',
       {
-        preHandler: this.fastifyServer.authPreHandler,
+        // preHandler: this.fastifyServer.authPreHandler,
         schema: {
           response: {
             302: { description: 'Redirect to Google OAuth2 login' },

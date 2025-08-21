@@ -49,7 +49,6 @@ jobs:
           echo "Changed files:"
           echo "$CHANGED_FILES"
 
-          # اجرای depcheck روی دایرکتوری‌های یکتا که package.json دارند
           for dir in $(echo "$CHANGED_FILES" | xargs -n1 dirname | sort -u); do
             if [ -f "$dir/package.json" ]; then
               echo "Running depcheck in $dir"
