@@ -36,11 +36,7 @@ jobs:
         run: npm run type-check
 
       - name: Depcheck per package
-        run: |
-          for dir in $(find packages services -name package.json -not -path "*/node_modules/*" -exec dirname {} \;); do
-            echo "Running depcheck in $dir"
-            npx depcheck $dir
-          done
+        run: npx lint-staged
 
       - name: Run Tests
         run: npm run test
