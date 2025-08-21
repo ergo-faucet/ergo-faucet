@@ -35,8 +35,20 @@ jobs:
       - name: Type Check
         run: npm run type-check
 
-      - name: Depcheck per package
-        run: npx lint-staged
+      - name: Get changed files
+        id: changed-files
+        uses: tj-actions/changed-files@v46
+        with:
+          files: .{js,jsx,ts,tsx,mjs}
+
+      - name: Depcheck per file changed
+        env:
+          ALL_CHANGED_FILES: ${{ steps.changed-files.outputs.all_changed_files }}
+        run: |
+          for dir in $(echo $ALL_CHANGED_FILES | xargs -n1 dirname | sort -u); do
+            echo "Running depcheck in $dir"
+            npx depcheck $dir
+          done
 
       - name: Run Tests
         run: npm run test
