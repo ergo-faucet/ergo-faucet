@@ -1,0 +1,29 @@
+{
+  "ignores": [
+    "@changesets/cli",
+    "@rosen-bridge/changeset-formatter",
+    "@typescript-eslint/eslint-plugin",
+    "@typescript-eslint/parser",
+    "eslint",
+    "eslint-config-prettier",
+    "vitest",
+    "@vitest/coverage-istanbul",
+    "husky",
+    "lint-staged",
+    "@types/node",
+    "prettier",
+    "pg",
+    "typescript",
+    "tsx",
+    "extensionless"
+  ],
+  "ignorePatterns": ["vite.config.ts"],
+  "ignorePaths": [
+    "node_modules",
+    "dist",
+    "coverage",
+    "*.tsbuildinfo",
+    ".vite",
+    ".turbo"
+  ]
+}

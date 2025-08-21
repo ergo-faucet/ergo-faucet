@@ -20,33 +20,7 @@ const perPackage = (resolver) => (files) => {
 };
 
 const getDepcheckCommand = (directory) => {
-  const packages = [
-    '@changesets/cli',
-    '@rosen-bridge/changeset-formatter',
-    '@typescript-eslint/eslint-plugin',
-    '@typescript-eslint/parser',
-    'eslint',
-    'eslint-config-prettier',
-    'vitest',
-    '@vitest/coverage-istanbul',
-    'husky',
-    'lint-staged',
-    '@types/node',
-    'prettier',
-    'pg',
-    'typescript',
-    'tsx',
-    'extensionless',
-  ];
-
-  const paths = ['vite.config.ts'];
-
-  return `npx depcheck --ignores="${packages.join(
-    ',',
-  )}" --ignore-patterns="${paths.join(',')}" ${path.relative(
-    process.cwd(),
-    directory,
-  )}`;
+  return `npx depcheck ${path.relative(process.cwd(), directory)}`;
 };
 
 export default {
