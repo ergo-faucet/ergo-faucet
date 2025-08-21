@@ -23,12 +23,14 @@ const getDepcheckCommand = (directory) => {
   return `npx depcheck  ${path.relative(process.cwd(), directory)}`;
 };
 
+const runDepcheck = {
+  '**/*.{js,jsx,ts,tsx,mjs}': perPackage(getDepcheckCommand),
+  '**/package.json': perPackage(getDepcheckCommand),
+};
+
 export default {
   ...(process.env.CI === 'true'
-    ? {
-        '**/*.{js,jsx,ts,tsx,mjs}': perPackage(getDepcheckCommand),
-        '**/package.json': perPackage(getDepcheckCommand),
-      }
+    ? runDepcheck
     : {
         '*': 'prettier --ignore-unknown --write',
 
@@ -41,8 +43,7 @@ export default {
           )}`;
         }),
 
-        '**/*.{js,jsx,ts,tsx,mjs}': perPackage(getDepcheckCommand),
-        '**/package.json': perPackage(getDepcheckCommand),
+        ...runDepcheck,
 
         '*.{js,jsx,ts,tsx}': 'npm run test:related',
       }),
