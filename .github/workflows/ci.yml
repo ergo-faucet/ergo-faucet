@@ -39,7 +39,7 @@ jobs:
         run: |
           echo "Running depcheck on changed directories using lint-staged"
 
-          CHANGED_FILES=$(npx lint-staged --diff="HEAD~${{ github.event.commits }}" --quiet --relative 2>/dev/null | grep -E '\.(js|jsx|ts|tsx|json)$' || true)
+          CHANGED_FILES=$(npx lint-staged --diff="origin/${{ github.base_ref }}...HEAD" --quiet --relative 2>/dev/null | grep -E '\.(js|jsx|ts|tsx|json)$' || true)
 
           if [ -z "$CHANGED_FILES" ]; then
             echo "No relevant changed files detected"
