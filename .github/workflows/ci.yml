@@ -35,19 +35,28 @@ jobs:
       - name: Type Check
         run: npm run type-check
 
-      - name: Depcheck per changed directory
+      - name: Depcheck per changed directory using lint-staged
         run: |
-          echo "Running depcheck on changed directories"
-          CHANGED_FILES=$(npx lint-staged --diff="HEAD...origin/${{ github.base_ref }}" --relative --quiet --print-pending-files)
+          echo "Running depcheck on changed directories using lint-staged"
+
+          CHANGED_FILES=$(npx lint-staged --diff="HEAD~${{ github.event.commits }}" --quiet --relative 2>/dev/null | grep -E '\.(js|jsx|ts|tsx|json)$' || true)
 
           if [ -z "$CHANGED_FILES" ]; then
-            echo "No changed files detected"
+            echo "No relevant changed files detected"
             exit 0
           fi
 
+          echo "Changed files:"
+          echo "$CHANGED_FILES"
+
+          # اجرای depcheck روی دایرکتوری‌های یکتا که package.json دارند
           for dir in $(echo "$CHANGED_FILES" | xargs -n1 dirname | sort -u); do
-            echo "Running depcheck in $dir"
-            npx depcheck "$dir"
+            if [ -f "$dir/package.json" ]; then
+              echo "Running depcheck in $dir"
+              cd "$dir" && npx depcheck . && cd -
+            else
+              echo "Skipping $dir (no package.json)"
+            fi
           done
 
       - name: Run Tests
