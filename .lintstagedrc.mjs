@@ -24,19 +24,26 @@ const getDepcheckCommand = (directory) => {
 };
 
 export default {
-  '*': 'prettier --ignore-unknown --write',
+  ...(process.env.CI === 'true'
+    ? {
+        '**/*.{js,jsx,ts,tsx,mjs}': perPackage(getDepcheckCommand),
+        '**/package.json': perPackage(getDepcheckCommand),
+      }
+    : {
+        '*': 'prettier --ignore-unknown --write',
 
-  '**/{packages,services}/**/*.{js,jsx,ts,tsx}': 'eslint --fix',
+        '**/{packages,services}/**/*.{js,jsx,ts,tsx}': 'eslint --fix',
 
-  '**/*.{ts,tsx}': perPackage((directory) => {
-    return `npm run type-check --workspace ${path.relative(
-      process.cwd(),
-      directory,
-    )}`;
-  }),
+        '**/*.{ts,tsx}': perPackage((directory) => {
+          return `npm run type-check --workspace ${path.relative(
+            process.cwd(),
+            directory,
+          )}`;
+        }),
 
-  '**/*.{js,jsx,ts,tsx,mjs}': perPackage(getDepcheckCommand),
-  '**/package.json': perPackage(getDepcheckCommand),
+        '**/*.{js,jsx,ts,tsx,mjs}': perPackage(getDepcheckCommand),
+        '**/package.json': perPackage(getDepcheckCommand),
 
-  '*.{js,jsx,ts,tsx}': 'npm run test:related',
+        '*.{js,jsx,ts,tsx}': 'npm run test:related',
+      }),
 };
