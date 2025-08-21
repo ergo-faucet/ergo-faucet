@@ -1,5 +1,5 @@
 {
-  "name": "@ergo-faucet/node-model",
+  "name": "@ergo-faucet/ergo-utils",
   "version": "0.1.0",
   "description": "node model utilities for ergo-faucet",
   "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",

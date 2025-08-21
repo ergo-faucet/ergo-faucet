@@ -1,4 +1,4 @@
-# @ergo-faucet/node-model
+# @ergo-faucet/ergo-utils
 
 ## Table of contents
 
@@ -7,18 +7,18 @@
 
 ## Introduction
 
-node model utilities for ergo-faucet
+ergo utilities for ergo-faucet
 
 ## Installation
 
 npm:
 
 ```sh
-npm i @ergo-faucet/node-model
+npm i @ergo-faucet/ergo-utils
 ```
 
 yarn:
 
 ```sh
-yarn add @ergo-faucet/node-model
+yarn add @ergo-faucet/ergo-utils
 ```
