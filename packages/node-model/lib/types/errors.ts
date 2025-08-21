@@ -11,3 +11,14 @@ export class DoubleSpendError extends Error {
     this.name = 'DoubleSpendError';
   }
 }
+
+export class InvalidTokenPrecisionError extends Error {
+  /**
+   * Constructs the error with details.
+   * @param details - The details about the failure.
+   */
+  constructor(details: string) {
+    super(`Invalid Token Precision error : ${details}`);
+    this.name = 'InvalidTokenPrecision';
+  }
+}

@@ -1,4 +1,8 @@
-export { DoubleSpendError, NotEnoughAssetsError } from './errors';
+export {
+  DoubleSpendError,
+  NotEnoughAssetsError,
+  InvalidTokenPrecisionError,
+} from './errors';
 export {
   errorResponse,
   tokenByIdResponse,
