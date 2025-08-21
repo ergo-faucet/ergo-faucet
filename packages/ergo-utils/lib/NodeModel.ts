@@ -5,7 +5,7 @@ import {
   DoubleSpendError,
   tokenByIdResponseSuccess,
   InvalidTokenPrecisionError,
-} from './types';
+} from '.';
 import { Box } from '@fleet-sdk/common';
 
 export class NodeModel {

@@ -7,8 +7,6 @@
 
 ## Introduction
 
-ergo utilities for ergo-faucet
-
 ## Installation
 
 npm:
