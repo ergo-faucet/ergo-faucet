@@ -15,7 +15,8 @@
     "pg",
     "typescript",
     "tsx",
-    "extensionless"
+    "extensionless",
+    "js-yaml"
   ],
   "ignorePatterns": ["vite.config.ts"],
   "ignorePaths": [
