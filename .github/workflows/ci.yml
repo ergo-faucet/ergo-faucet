@@ -37,8 +37,13 @@ jobs:
 
       - name: Depcheck per changed directory using lint-staged
         run: |
-          REMOTE_BRANCH="origin/$(git branch --show-current)"
-          npx lint-staged --diff="$REMOTE_BRANCH...HEAD" --verbose --relative
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            echo "Running on pull request - comparing against base branch: ${{ github.base_ref }}"
+            npx lint-staged --diff="origin/${{ github.base_ref }}...HEAD" --verbose --relative
+          else
+            REMOTE_BRANCH="origin/$(git branch --show-current)"
+            npx lint-staged --diff="$REMOTE_BRANCH...HEAD" --verbose --relative
+          fi
 
       - name: Run Tests
         run: npm run test
