@@ -37,26 +37,8 @@ jobs:
 
       - name: Depcheck per changed directory using lint-staged
         run: |
-          echo "Running depcheck on changed directories using lint-staged"
-
-          CHANGED_FILES=$(npx lint-staged --diff="origin/${{ github.base_ref }}...HEAD" --quiet --relative 2>/dev/null | grep -E '\.(js|jsx|ts|tsx|json)$' || true)
-
-          if [ -z "$CHANGED_FILES" ]; then
-            echo "No relevant changed files detected"
-            exit 0
-          fi
-
-          echo "Changed files:"
-          echo "$CHANGED_FILES"
-
-          for dir in $(echo "$CHANGED_FILES" | xargs -n1 dirname | sort -u); do
-            if [ -f "$dir/package.json" ]; then
-              echo "Running depcheck in $dir"
-              cd "$dir" && npx depcheck . && cd -
-            else
-              echo "Skipping $dir (no package.json)"
-            fi
-          done
+          REMOTE_BRANCH="origin/$(git branch --show-current)"
+          npx lint-staged --diff="$REMOTE_BRANCH...HEAD" --verbose --relative --quiet
 
       - name: Run Tests
         run: npm run test
