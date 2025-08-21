@@ -16,7 +16,8 @@
     "release": "npm run release --workspaces",
     "test": "npm run test --workspaces",
     "type-check": "npm run type-check --workspaces",
-    "version": "npx changeset version && npm i"
+    "version": "npx changeset version && npm i",
+    "depcheck": "chmod +x ./scripts/depcheck-runner.ts && ./scripts/depcheck-runner.ts"
   },
   "devDependencies": {
     "@changesets/cli": "^2.27.1",

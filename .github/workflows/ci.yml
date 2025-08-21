@@ -36,15 +36,7 @@ jobs:
         run: npm run type-check
 
       - name: Depcheck per package
-        run: |
-          IGNORE_PACKAGES="@changesets/cli,@rosen-bridge/changeset-formatter,@typescript-eslint/eslint-plugin,@typescript-eslint/parser,eslint,eslint-config-prettier,vitest,@vitest/coverage-istanbul,husky,lint-staged,@types/node,prettier,pg,typescript,tsx,extensionless"
-          IGNORE_PATHS="node_modules,dist,coverage,*.tsbuildinfo,.vite,.turbo"
-
-
-          for dir in $(find packages services -name package.json -not -path "*/node_modules/*" -exec dirname {} \;); do
-            echo "Running depcheck in $dir"
-            npx depcheck --ignores="$IGNORE_PACKAGES" --ignore-patterns="$IGNORE_PATHS"  $dir
-          done
+        run: npm run depcheck
 
       - name: Run Tests
         run: npm run test
