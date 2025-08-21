@@ -4,7 +4,7 @@ import path from 'path';
 const perPackage = (resolver) => (files) => {
   return Array.from(
     files.reduce((packages, file) => {
-      let directory = path.dirname(file);
+      let directory = path.dirname(path.resolve(file));
       while (directory && directory !== process.cwd()) {
         if (fs.existsSync(path.join(directory, 'package.json'))) {
           packages.add(resolver(directory, file));
@@ -42,10 +42,11 @@ const getDepcheckCommand = (directory) => {
   const paths = ['vite.config.ts'];
 
   return `npx depcheck --ignores="${packages.join(
-    ', ',
-  )}" --ignore-patterns="${paths.join(
-    ', ',
-  )}" ${path.relative(process.cwd(), directory)}`;
+    ',',
+  )}" --ignore-patterns="${paths.join(',')}" ${path.relative(
+    process.cwd(),
+    directory,
+  )}`;
 };
 
 export default {
