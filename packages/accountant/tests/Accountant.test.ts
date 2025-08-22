@@ -33,20 +33,6 @@ describe('Accountant', () => {
   let accountant: Accountant;
   let mockLogger: AbstractLogger;
 
-  vi.mock('../lib/NodeModel', () => ({
-    NodeModel: {
-      initialize: vi.fn(),
-      getInstance: vi.fn(),
-    },
-  }));
-
-  vi.mock('../lib/Wallet', () => ({
-    Wallet: {
-      initialize: vi.fn(),
-      getInstance: vi.fn(),
-    },
-  }));
-
   /**
    * Setup mocks and Accountant singleton before each test
    */
