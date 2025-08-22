@@ -8,8 +8,6 @@ export interface AccountantConfig {
   network: Network;
   tryLimit: number;
   accountantAction: AccountantAction;
-  mnemonic: string;
-  nodeUrl: string;
   minNanoErg: bigint;
   minFee: bigint;
   confirmationLimit: number;

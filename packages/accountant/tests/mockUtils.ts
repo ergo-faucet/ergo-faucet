@@ -46,8 +46,6 @@ export const mockedConfig: AccountantConfig = {
   network: Network.Mainnet,
   tryLimit: 3,
   accountantAction: {} as AccountantAction,
-  nodeUrl: 'http://mock-node-url',
-  mnemonic: 'test mnemonic',
   minFee: 1000000n,
   minNanoErg: 1000000n,
   confirmationLimit: 10,
