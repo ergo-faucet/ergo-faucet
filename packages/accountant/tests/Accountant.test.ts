@@ -1,5 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { Accountant, NotEnoughAssetsError, DoubleSpendError } from '../lib';
+import {
+  NotEnoughAssetsError,
+  DoubleSpendError,
+} from '@ergo-faucet/ergo-utils';
+import { Accountant } from '../lib';
 import { Asset, UserRequest } from '@ergo-faucet/database';
 import {
   ErgoUnsignedTransaction,
@@ -19,7 +23,6 @@ import {
   mockUserRequest,
 } from './mockUtils';
 import { mockInput } from './boxes.data';
-
 /**
  * Test suite for Accountant class
  * @target Accountant

@@ -1,8 +1,12 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { AccountantAction, UserRequest } from '@ergo-faucet/database';
-import { AccountantConfig, NotEnoughAssetsError } from './types';
-import { NodeModel } from './NodeModel';
-import { Wallet } from './Wallet';
+import { AccountantConfig } from './types';
+import {
+  NodeModel,
+  Wallet,
+  DoubleSpendError,
+  NotEnoughAssetsError,
+} from '@ergo-faucet/ergo-utils';
 import {
   ErgoUnsignedTransaction,
   OutputBuilder,
@@ -11,7 +15,6 @@ import {
 import { Network } from '@fleet-sdk/common';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
-import { DoubleSpendError } from './types';
 
 class Accountant {
   private static instance: Accountant;
