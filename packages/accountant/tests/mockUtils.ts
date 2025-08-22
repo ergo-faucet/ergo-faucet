@@ -19,15 +19,15 @@ const mockLogger = {
 const mockAccountantAction = {
   getUnpaidRequests: vi.fn(),
   updateUserRequestPaymentInfo: vi.fn(),
+  updateCreationHeight: vi.fn(),
   // eslint-disable-next-line
 } as any;
 
 const mockNodeModel = {
   getCurrentBlockchainHeight: vi.fn(),
-  submitTransaction: vi.fn(),
   submitTransactionBytes: vi.fn(),
   isTxInMempool: vi.fn(),
-  isTxMined: vi.fn(),
+  getInclusionHeight: vi.fn(),
   // eslint-disable-next-line
 } as any;
 
@@ -57,6 +57,7 @@ export const mockUserRequest: UserRequest = {
   package: {
     id: 1,
     name: 'Test Package',
+    type: 'normal',
     assets: [{ tokenId: 'token1', amount: 100n }],
   } as Package,
   timestamp: new Date(),

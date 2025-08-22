@@ -147,7 +147,11 @@ describe('Accountant', () => {
       await accountant.handlePendingRequest(request);
 
       expect(mockWallet.selectBoxes).toHaveBeenCalledWith(
-        BigInt(mockedConfig.minFee + mockedConfig.minNanoErg),
+        BigInt(
+          mockedConfig.minFee +
+            mockedConfig.minNanoErg +
+            mockedConfig.minNanoErg,
+        ),
         request.package.assets,
       );
       const serializedTx = hex.encode(serializeTransaction(signedTx).toBytes());
@@ -237,13 +241,13 @@ describe('Accountant', () => {
      * - Request updated to 'paid'
      */
     it('should mark request as paid if transaction is mined and has enough confirmations', async () => {
-      mockNodeModel.isTxMined.mockResolvedValue(true);
+      mockNodeModel.getInclusionHeight.mockResolvedValue(1000);
       mockNodeModel.isTxInMempool.mockResolvedValue(false);
       mockNodeModel.getCurrentBlockchainHeight.mockResolvedValue(1011); // 11 confirmations
 
       await accountant.handleSubmittedRequest(request);
 
-      expect(mockNodeModel.isTxMined).toHaveBeenCalledWith('tx123');
+      expect(mockNodeModel.getInclusionHeight).toHaveBeenCalledWith('tx123');
       expect(mockNodeModel.getCurrentBlockchainHeight).toHaveBeenCalled();
       expect(
         mockAccountantAction.updateUserRequestPaymentInfo,
@@ -258,7 +262,7 @@ describe('Accountant', () => {
      * - Transaction resubmitted, request not updated
      */
     it('should resubmit transaction if not in mempool', async () => {
-      mockNodeModel.isTxMined.mockResolvedValue(false);
+      mockNodeModel.getInclusionHeight.mockResolvedValue(-1);
       mockNodeModel.isTxInMempool.mockResolvedValue(false);
       mockNodeModel.submitTransactionBytes.mockResolvedValue('tx123');
 
@@ -308,7 +312,7 @@ describe('Accountant', () => {
         txSerialized: 'txSerialized',
       };
 
-      mockNodeModel.isTxMined.mockResolvedValue(false);
+      mockNodeModel.getInclusionHeight.mockResolvedValue(-1);
       mockNodeModel.isTxInMempool.mockResolvedValue(false);
       mockNodeModel.submitTransactionBytes.mockRejectedValue(
         new DoubleSpendError('Double spend detected'),

@@ -12,7 +12,14 @@ import {
   OutputBuilder,
   TransactionBuilder,
 } from '@fleet-sdk/core';
-import { Network } from '@fleet-sdk/common';
+import {
+  Amount,
+  Box,
+  Network,
+  OneOrMore,
+  TokenAmount,
+  TokenTargetAmount,
+} from '@fleet-sdk/common';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
 
@@ -108,183 +115,233 @@ class Accountant {
   /**
    * Handles a user request with a 'pending' status.
    * Attempts to create and submit a transaction for the request.
-   * @param req - The user request to process.
+   * @param request - The user request to process.
    * @returns {Promise<void>}
    */
-  public handlePendingRequest = async (req: UserRequest): Promise<void> => {
-    this.logger.debug(`Processing pending request with ID: ${req.id}`);
+  public handlePendingRequest = async (request: UserRequest): Promise<void> => {
+    this.logger.debug(`Processing pending request with ID: ${request.id}`);
     try {
-      if (req.numberOfTries > this.tryLimit) {
+      if (request.numberOfTries > this.tryLimit) {
         this.logger.debug(
-          `Request with ID: ${req.id} exceeded try limit. Marking as failed.`,
+          `Request with ID: ${request.id} exceeded try limit. Marking as failed.`,
         );
         await this.accountantAction.updateUserRequestPaymentInfo(
-          req.id,
+          request.id,
           'failed',
-          req.numberOfTries,
+          request.numberOfTries,
         );
         return;
       }
 
-      // Select input boxes
-      this.logger.debug(`Selecting input boxes for request ID: ${req.id}`);
-      const inputs = await this.wallet.selectBoxes(
-        BigInt(this.minFee + this.minNanoErg),
-        req.package.assets,
-      );
-
-      // Generate unsigned transaction
-      const currentHeight = await this.nodeModel.getCurrentBlockchainHeight();
-      this.logger.debug(
-        `Current blockchain height: ${currentHeight}. Building transaction for request ID: ${req.id}`,
-      );
-
-      const unsignedTx: ErgoUnsignedTransaction = new TransactionBuilder(
-        currentHeight,
-      )
-        .from(inputs)
-        .to(
-          new OutputBuilder(
-            this.minNanoErg.toString(),
-            req.destinationAddress,
-          ).addTokens(req.package.assets),
-        )
-        .sendChangeTo(this.wallet.getWalletAddress())
-        .payFee(this.minFee.toString())
-        .build();
-
-      // Sign transaction
-      this.logger.debug(`Signing transaction for request ID: ${req.id}`);
-      const signedTx = this.wallet.signTransaction(unsignedTx);
-      const serialized = hex.encode(serializeTransaction(signedTx).toBytes());
-
-      // Submit transaction to the network
-      this.logger.debug(`Submitting transaction for request ID: ${req.id}`);
-      const transactionId =
-        await this.nodeModel.submitTransactionBytes(serialized);
-
-      this.logger.debug(
-        `Transaction submitted successfully for request ID: ${req.id}. Transaction ID: ${transactionId}`,
-      );
+      const { serializedTx, transactionId } =
+        await this.processTransaction(request);
       await this.accountantAction.updateUserRequestPaymentInfo(
-        req.id,
+        request.id,
         'submitted',
-        req.numberOfTries + 1,
-        serialized,
+        request.numberOfTries + 1,
+        serializedTx,
         transactionId,
       );
     } catch (error) {
-      if (error instanceof DoubleSpendError) return;
-
-      if (error instanceof Error)
-        this.logger.error(
-          `Error during handlePendingRequest for request ID: ${req.id}, package ID: ${req.package.id}`,
-          {
-            message: error.message,
-            stack: error.stack,
-          },
+      if (error instanceof DoubleSpendError) {
+        this.logger.debug(
+          `Double spend error during handlePendingRequest with id: ${request.id}`,
+        );
+      } else if (error instanceof NotEnoughAssetsError) {
+        this.logger.debug(
+          `Not Enough Assets Error for request with id: ${request.id} , packageId: ${request.package.id}`,
         );
 
-      if (error instanceof NotEnoughAssetsError) {
         await this.accountantAction.updateUserRequestPaymentInfo(
-          req.id,
+          request.id,
           'pending',
-          req.numberOfTries + 1,
+          request.numberOfTries + 1,
         );
-        return;
-      }
-      throw error;
+      } else throw error;
     }
   };
 
   /**
    * Handles a user request with a 'submitted' status.
    * Checks the transaction status and updates the request accordingly.
-   * @param req - The user request to process.
+   * @param request - The user request to process.
    * @returns {Promise<void>}
    */
-  public handleSubmittedRequest = async (req: UserRequest): Promise<void> => {
-    this.logger.debug(`Processing submitted request with ID: ${req.id}`);
+  public handleSubmittedRequest = async (
+    request: UserRequest,
+  ): Promise<void> => {
+    this.logger.debug(`Processing submitted request with ID: ${request.id}`);
     try {
-      if (!req.txSerialized || !req.txId) {
+      if (!request.txSerialized || !request.txId) {
         this.logger.debug(
-          `Request ID: ${req.id} has no serialized transaction. Marking as pending.`,
+          `Request ID: ${request.id} has no serialized transaction. Marking as pending.`,
         );
         await this.accountantAction.updateUserRequestPaymentInfo(
-          req.id,
+          request.id,
           'pending',
-          req.numberOfTries,
+          request.numberOfTries,
         );
         return;
       }
 
-      const transactionId = req.txId!;
+      const transactionId = request.txId!;
       this.logger.debug(
-        `Checking transaction status for request ID: ${req.id}, Transaction ID: ${transactionId}`,
+        `Checking transaction status for request ID: ${request.id}, Transaction ID: ${transactionId}`,
       );
 
-      const isInMempool = await this.nodeModel.isTxInMempool(transactionId);
-      const isMined = await this.nodeModel.isTxMined(transactionId);
+      const inclusionHeight = await this.nodeModel.getInclusionHeight(
+        request.txId,
+      );
 
-      if (isMined) {
-        if (!req.creationHeight) {
-          req.creationHeight = await this.nodeModel.getInclusionHeight(
-            req.txId,
-          );
-          this.accountantAction.updateCreationHeight(
-            req.id,
-            req.creationHeight,
+      if (inclusionHeight > 0) {
+        if (request.creationHeight == undefined) {
+          request.creationHeight = inclusionHeight;
+          await this.accountantAction.updateCreationHeight(
+            request.id,
+            inclusionHeight,
           );
         }
         const currentHeight = await this.nodeModel.getCurrentBlockchainHeight();
 
-        const confirmations = currentHeight - req.creationHeight!;
+        const confirmations = currentHeight - request.creationHeight!;
         this.logger.debug(
-          `Transaction for request ID: ${req.id} has ${confirmations} confirmations.`,
+          `Transaction for request ID: ${request.id} has ${confirmations} confirmations.`,
         );
         if (confirmations > this.confirmationLimit) {
           this.logger.debug(
-            `Transaction for request ID: ${req.id} confirmed. Marking as paid.`,
+            `Transaction for request ID: ${request.id} confirmed. Marking as paid.`,
           );
 
           await this.accountantAction.updateUserRequestPaymentInfo(
-            req.id,
+            request.id,
             'paid',
-            req.numberOfTries,
+            request.numberOfTries,
           );
         }
         return;
       }
+      const isInMempool = await this.nodeModel.isTxInMempool(transactionId);
 
       if (!isInMempool) {
-        this.logger.warn(
-          `Transaction for request ID: ${req.id} not in mempool. Resubmitting...`,
+        this.logger.debug(
+          `Transaction for request ID: ${request.id} not in mempool. Resubmitting...`,
         );
-        const newTransactionId = await this.nodeModel.submitTransactionBytes(
-          req.txSerialized,
+        const transactionId = await this.nodeModel.submitTransactionBytes(
+          request.txSerialized,
         );
         this.logger.debug(
-          `Transaction resubmitted for request ID: ${req.id}. New Transaction ID: ${newTransactionId}`,
+          `Transaction resubmitted for request ID: ${request.id}. Transaction ID: ${transactionId}`,
         );
       }
     } catch (error) {
-      if (error instanceof Error) {
-        if (error instanceof DoubleSpendError) return;
-
-        this.logger.error(
-          `Error during handleSubmittedRequest request ID: ${req.id}.`,
-          {
-            message: error.message,
-            stack: error.stack,
-          },
+      if (error instanceof DoubleSpendError) {
+        this.logger.debug(
+          `Double spend error during handlePendingRequest with id: ${request.id}`,
         );
+      } else {
+        await this.accountantAction.updateUserRequestPaymentInfo(
+          request.id,
+          'pending',
+          request.numberOfTries,
+        );
+        throw error;
       }
+    }
+  };
 
-      await this.accountantAction.updateUserRequestPaymentInfo(
-        req.id,
-        'pending',
-        req.numberOfTries,
-      );
+  /**
+   * Builds, signs, and submits an Ergo transaction based on the given request.
+   *
+   * For `normal` packages:
+   *  - Selects input boxes, builds and signs a transaction, then submits it.
+   * For `random` packages: returns empty transaction data (not implemented).
+   *
+   * @param request - User request with package details and destination.
+   * @returns Promise with the serialized transaction and transaction ID.
+   */
+  public processTransaction = async (
+    request: UserRequest,
+  ): Promise<{
+    serializedTx: string;
+    transactionId: string;
+  }> => {
+    switch (request.package.type) {
+      case 'normal': {
+        // Assume we have maximum one ERG asset in normal packages
+        const ergAsset = request.package.assets.find(
+          (a) => a.tokenId === 'ERG',
+        );
+        request.package.assets = request.package.assets.filter(
+          (a) => a.tokenId != 'ERG',
+        );
+
+        const outputBoxAmount = ergAsset ? ergAsset.amount : this.minNanoErg;
+
+        const tokens: OneOrMore<TokenAmount<Amount>> =
+          request.package.assets.map((asset) => ({
+            tokenId: asset.tokenId,
+            amount: asset.amount.toString(),
+          }));
+
+        const targetTokens: TokenTargetAmount<bigint>[] =
+          request.package.assets.map((asset) => ({
+            tokenId: asset.tokenId,
+            amount: asset.amount,
+          }));
+
+        // Select input boxes
+        this.logger.debug(
+          `Selecting input boxes for request ID: ${request.id}`,
+        );
+        const inputs: Box<bigint>[] = await this.wallet.selectBoxes(
+          this.minFee + this.minNanoErg + outputBoxAmount,
+          targetTokens,
+        );
+
+        // Generate unsigned transaction
+        const currentHeight = await this.nodeModel.getCurrentBlockchainHeight();
+        this.logger.debug(
+          `Current blockchain height: ${currentHeight}. Building transaction for request ID: ${request.id}`,
+        );
+
+        const unsignedTx: ErgoUnsignedTransaction = new TransactionBuilder(
+          currentHeight,
+        )
+          .from(inputs)
+          .to(
+            new OutputBuilder(
+              outputBoxAmount,
+              request.destinationAddress,
+            ).addTokens(tokens),
+          )
+          .sendChangeTo(this.wallet.getWalletAddress())
+          .payFee(this.minFee)
+          .build();
+
+        // Sign transaction
+        this.logger.debug(`Signing transaction for request ID: ${request.id}`);
+        const signedTx = this.wallet.signTransaction(unsignedTx);
+        const serializedTx = hex.encode(
+          serializeTransaction(signedTx).toBytes(),
+        );
+
+        // Submit transaction to the network
+        this.logger.debug(
+          `Submitting transaction for request ID: ${request.id}`,
+        );
+        const transactionId =
+          await this.nodeModel.submitTransactionBytes(serializedTx);
+
+        this.logger.debug(
+          `Transaction submitted successfully for request ID: ${request.id}. Transaction ID: ${transactionId}`,
+        );
+        return { serializedTx, transactionId };
+      }
+      case 'random': {
+        // what to do?
+        this.logger.info('Currently there is no support for random packages');
+        return { serializedTx: '', transactionId: '' };
+      }
     }
   };
 }
