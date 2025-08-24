@@ -24,7 +24,7 @@ const getDepcheckCommand = (directory) => {
 };
 
 const runDepcheck = {
-  '**/*.{js,jsx,ts,tsx,mjs}': perPackage(getDepcheckCommand),
+  '**/*.{js,ts,mjs}': perPackage(getDepcheckCommand),
   '**/package.json': perPackage(getDepcheckCommand),
 };
 
@@ -34,9 +34,9 @@ export default {
     : {
         '*': 'prettier --ignore-unknown --write',
 
-        '**/{packages,services}/**/*.{js,jsx,ts,tsx}': 'eslint --fix',
+        '*.{js,ts}': ['eslint --fix', 'npm run test -- related -- --run'],
 
-        '**/*.{ts,tsx}': perPackage((directory) => {
+        '**/*.{ts}': perPackage((directory) => {
           return `npm run type-check --workspace ${path.relative(
             process.cwd(),
             directory,
@@ -44,7 +44,5 @@ export default {
         }),
 
         ...runDepcheck,
-
-        '*.{js,jsx,ts,tsx}': 'npm run test:related',
       }),
 };
