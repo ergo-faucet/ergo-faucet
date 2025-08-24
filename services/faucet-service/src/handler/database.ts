@@ -6,7 +6,7 @@ import {
   UserAddressAction,
   XAction,
 } from '@ergo-faucet/database';
-import { dbConfig } from '../configs';
+import { dbConfig } from '@configs';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
