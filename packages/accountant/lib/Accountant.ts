@@ -104,12 +104,10 @@ class Accountant {
         }
       }
     } catch (error) {
-      if (error instanceof Error) {
-        this.logger.error('Error during processUserRequests', {
-          message: error.message,
-          stack: error.stack,
-        });
-      }
+      this.logger.warn('Error during processUserRequests', {
+        message: error instanceof Error ? error.message : '',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
     }
   };
 
@@ -320,9 +318,8 @@ class Accountant {
           .build();
 
         // Sign transaction
-        const unsignedTxObject = unsignedTx.toEIP12Object();
         this.logger.debug(
-          `Signing transaction for request ID: ${request.id}, transaction: ${JSON.stringify(unsignedTxObject)} `,
+          `Signing transaction for request ID: ${request.id}, transaction: ${JSON.stringify(unsignedTx.toEIP12Object())} `,
         );
 
         const signedTx = this.wallet.signTransaction(unsignedTx);

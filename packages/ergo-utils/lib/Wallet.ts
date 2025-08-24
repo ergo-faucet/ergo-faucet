@@ -1,12 +1,11 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { BoxSelector } from '@fleet-sdk/core';
+import { BoxSelector, ErgoUnsignedTransaction } from '@fleet-sdk/core';
 import {
   SignedTransaction,
   Box,
   TokenTargetAmount,
   ensureUTxOBigInt,
   Network,
-  EIP12UnsignedTransaction,
 } from '@fleet-sdk/common';
 import { ErgoHDKey, Prover } from '@fleet-sdk/wallet';
 import { NodeModel } from './NodeModel';
@@ -68,12 +67,12 @@ export class Wallet {
   /**
    * Signs an unsigned Ergo transaction using the first derived child key from the mnemonic.
    *
-   * @param {EIP12UnsignedTransaction} unsignedTx - The unsigned Ergo transaction to be signed.
+   * @param {ErgoUnsignedTransaction} unsignedTx - The unsigned Ergo transaction to be signed.
    * @returns {Promise<SignedTransaction>} A promise that resolves to the signed transaction.
    *
    */
   public signTransaction = (
-    unsignedTx: EIP12UnsignedTransaction,
+    unsignedTx: ErgoUnsignedTransaction,
   ): SignedTransaction => {
     const signedTx: SignedTransaction = this.prover.signTransaction(
       unsignedTx,
