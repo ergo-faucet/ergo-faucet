@@ -18,6 +18,7 @@ import {
   Network,
   OneOrMore,
   TokenAmount,
+  ensureBigInt,
   TokenTargetAmount,
 } from '@fleet-sdk/common';
 import { hex } from '@fleet-sdk/crypto';
@@ -280,7 +281,7 @@ class Accountant {
         const tokens: OneOrMore<TokenAmount<Amount>> =
           request.package.assets.map((asset) => ({
             tokenId: asset.tokenId,
-            amount: asset.amount.toString(),
+            amount: ensureBigInt(asset.amount),
           }));
 
         const targetTokens: TokenTargetAmount<bigint>[] =
@@ -319,7 +320,11 @@ class Accountant {
           .build();
 
         // Sign transaction
-        this.logger.debug(`Signing transaction for request ID: ${request.id}`);
+        const unsignedTxObject = unsignedTx.toEIP12Object();
+        this.logger.debug(
+          `Signing transaction for request ID: ${request.id}, transaction: ${JSON.stringify(unsignedTxObject)} `,
+        );
+
         const signedTx = this.wallet.signTransaction(unsignedTx);
         const serializedTx = hex.encode(
           serializeTransaction(signedTx).toBytes(),
