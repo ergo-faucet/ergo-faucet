@@ -1,5 +1,5 @@
 import WinstonLogger from '@rosen-bridge/winston-logger';
-import { LoggerConfig } from './configs';
+import { LoggerConfig } from '@configs';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 
 const loggerConfig = new LoggerConfig();
