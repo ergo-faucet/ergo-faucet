@@ -19,6 +19,7 @@
   },
   "devDependencies": {
     "@fleet-sdk/mock-chain": "^0.12.0",
+    "@fleet-sdk/wallet": "^0.12.0",
     "@types/node": "^20.11.9",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
@@ -39,6 +40,7 @@
     "@fleet-sdk/common": "^0.10.0",
     "@fleet-sdk/core": "^0.12.0",
     "@fleet-sdk/crypto": "^0.11.0",
-    "@fleet-sdk/serializer": "^0.11.0"
+    "@fleet-sdk/serializer": "^0.11.0",
+    "@rosen-bridge/abstract-logger": "^2.1.0"
   }
 }
