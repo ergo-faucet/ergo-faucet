@@ -18,6 +18,7 @@ import {
 } from './types';
 import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
+import { isValidErgoAddress } from '@ergo-faucet/ergo-utils';
 
 class PackageController {
   private readonly logger: AbstractLogger;
@@ -33,6 +34,7 @@ class PackageController {
   public constructor(
     packageAction: PackageAction,
     fastifyServer: FastifyAPIServer,
+    private readonly NETWORK_TYPE: 'mainnet' | 'testnet',
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
@@ -109,6 +111,15 @@ class PackageController {
         preHandler: [
           this.fastifyServer.authPreHandler,
           this.fastifyServer.captchaPreHandler,
+          async (req, res) => {
+            const { destAddress } = req.body;
+            if (!isValidErgoAddress(destAddress, this.NETWORK_TYPE)) {
+              return res.status(400).send({
+                error: 'Invalid Ergo address',
+                code: 'invalid-address-network',
+              });
+            }
+          },
         ],
         schema: {
           body: RequestPackageBody,

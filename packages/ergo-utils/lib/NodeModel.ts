@@ -4,7 +4,6 @@ import {
   errorResponse,
   DoubleSpendError,
   tokenByIdResponseSuccess,
-  InvalidTokenPrecisionError,
 } from './types';
 import { Box } from '@fleet-sdk/common';
 
@@ -393,24 +392,6 @@ export class NodeModel {
         });
 
       throw new Error('FetchingDecimalsTokenError: Unknown error occurred');
-    }
-  };
-
-  /**
-   * Validates the precision of the provided amount against the token's decimals.
-   * @param amount - The amount to validate.
-   * @param tokenDecimals - The allowed decimal precision for the token.
-   * @throws Error if the amount exceeds the allowed precision.
-   */
-  public validateAmountPrecision = (
-    amount: number,
-    tokenDecimals: number,
-  ): void => {
-    const amountDecimalPlaces = amount.toString().split('.')[1]?.length || 0;
-    if (amountDecimalPlaces > tokenDecimals) {
-      const errorMessage = `Amount has too many decimal places. Token supports up to ${tokenDecimals} decimal places, but received ${amountDecimalPlaces}.`;
-      this.logger.error(errorMessage, { amount, tokenDecimals });
-      throw new InvalidTokenPrecisionError(errorMessage);
     }
   };
 }

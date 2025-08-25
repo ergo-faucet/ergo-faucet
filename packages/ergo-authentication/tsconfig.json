@@ -8,6 +8,7 @@
   "references": [
     { "path": "../fastify-server" },
     { "path": "../database" },
-    { "path": "../common-types" }
+    { "path": "../common-types" },
+    { "path": "../ergo-utils" }
   ]
 }

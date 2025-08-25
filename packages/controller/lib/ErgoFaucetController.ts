@@ -18,6 +18,7 @@ class ErgoFaucetController {
   private constructor(
     fastifyServer: FastifyAPIServer,
     private readonly packageAction: PackageAction,
+    private readonly NETWORK_TYPE: 'mainnet' | 'testnet',
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
@@ -25,6 +26,7 @@ class ErgoFaucetController {
     this.packageController = new PackageController(
       this.packageAction,
       fastifyServer,
+      this.NETWORK_TYPE,
       logger,
     );
   }
@@ -52,6 +54,7 @@ class ErgoFaucetController {
   public static initialize = async (
     fastifyServer: FastifyAPIServer,
     packageAction: PackageAction,
+    networkType: 'mainnet' | 'testnet',
     logger?: AbstractLogger,
   ) => {
     if (this.instance) {
@@ -62,6 +65,7 @@ class ErgoFaucetController {
     this.instance = new ErgoFaucetController(
       fastifyServer,
       packageAction,
+      networkType,
       logger,
     );
     await this.instance.registerRoutes(this.instance.CONTROLLER_PREFIX);
