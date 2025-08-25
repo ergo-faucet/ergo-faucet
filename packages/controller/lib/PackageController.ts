@@ -4,16 +4,20 @@ import {
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
 import {
+  RequestLimitError,
+  NotFoundError,
+  PackageAction,
+} from '@ergo-faucet/database';
+import {
   ErrorResponse,
   GetPackagesResponse200,
   PackagesRouteQuery,
   RequestPackageBody,
-} from './types/schemas';
-import { PackageAction } from '@ergo-faucet/database';
-import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
-import { toPackageDTO } from './utils/mapper';
-import { PackageDTO } from './types/DTOs';
-import { RequestPackageBodyType, userRequestPayload } from './types';
+  RequestPackageBodyType,
+  PackageDTO,
+} from './types';
+import { toPackageDTO } from './utils';
+import { userRequestPayload } from '@ergo-faucet/common-types';
 
 class PackageController {
   private readonly logger: AbstractLogger;
