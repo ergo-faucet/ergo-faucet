@@ -1,5 +1,5 @@
 import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
-import { serverConfig } from '../configs';
+import { serverConfig } from '@configs';
 import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 

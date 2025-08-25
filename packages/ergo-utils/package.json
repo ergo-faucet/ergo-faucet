@@ -1,39 +1,47 @@
 {
-  "name": "@ergo-faucet/x-auth",
+  "name": "@ergo-faucet/ergo-utils",
   "version": "0.1.0",
-  "description": "X authentication utilities for ergo-faucet",
+  "description": "",
   "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
   "license": "GPL-3.0",
   "author": "TechStack-BlockChain",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
+    "coverage": "npm run test -- --coverage",
     "lint": "eslint --fix . && npm run prettify",
     "prettify": "prettier --write . --ignore-path ./.gitignore",
-    "release": "npm run build && npm publish --access public",
+    "release": "npm run test -- --run && npm run build && npm publish --access public",
+    "test": "NODE_OPTIONS='--import tsx' vitest",
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@fleet-sdk/mock-chain": "^0.12.0",
     "@types/node": "^20.11.9",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
+    "@vitest/coverage-istanbul": "^3.1.4",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.2.4",
-    "typescript": "^5.3.3"
+    "tsx": "^4.19.4",
+    "typescript": "^5.3.3",
+    "vitest": "^3.1.4"
   },
   "engines": {
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@ergo-faucet/common-types": "^0.1.0",
-    "@ergo-faucet/database": "^0.1.0",
-    "@ergo-faucet/fastify-server": "^0.1.0",
-    "@rosen-bridge/abstract-logger": "^2.0.1",
-    "@sinclair/typebox": "^0.34.38",
-    "axios": "^1.11.0",
-    "ioredis": "^5.7.0"
+    "@fleet-sdk/common": "^0.10.0",
+    "@fleet-sdk/core": "^0.12.0",
+    "@fleet-sdk/wallet": "^0.12.0",
+    "@rosen-bridge/abstract-logger": "^2.1.0",
+    "axios": "^1.11.0"
   }
 }
