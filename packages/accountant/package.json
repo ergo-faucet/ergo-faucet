@@ -1,7 +1,7 @@
 {
-  "name": "@ergo-faucet/ergo-authentication",
+  "name": "@ergo-faucet/accountant",
   "version": "0.1.0",
-  "description": "ergo authentication utilities for ergo-faucet",
+  "description": "accountant utilities for ergo-faucet",
   "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
   "license": "GPL-3.0",
   "author": "TechStack-BlockChain",
@@ -18,6 +18,8 @@
     "type-check": "tsc --noEmit"
   },
   "devDependencies": {
+    "@fleet-sdk/mock-chain": "^0.12.0",
+    "@fleet-sdk/wallet": "^0.12.0",
     "@types/node": "^20.11.9",
     "@typescript-eslint/eslint-plugin": "^6.19.1",
     "@typescript-eslint/parser": "^6.19.1",
@@ -33,15 +35,12 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
-    "@ergo-faucet/common-types": "^0.1.0",
     "@ergo-faucet/database": "^0.1.0",
-    "@ergo-faucet/fastify-server": "^0.1.0",
+    "@ergo-faucet/ergo-utils": "^0.1.0",
+    "@fleet-sdk/common": "^0.10.0",
     "@fleet-sdk/core": "^0.12.0",
     "@fleet-sdk/crypto": "^0.11.0",
-    "@fleet-sdk/wallet": "^0.12.0",
-    "@rosen-bridge/abstract-logger": "^2.0.1",
-    "@sinclair/typebox": "^0.34.38",
-    "ioredis": "^5.6.1",
-    "uuid": "^11.1.0"
+    "@fleet-sdk/serializer": "^0.11.0",
+    "@rosen-bridge/abstract-logger": "^2.1.0"
   }
 }

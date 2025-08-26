@@ -1,5 +1,5 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { ErgoUnsignedTransaction, BoxSelector } from '@fleet-sdk/core';
+import { BoxSelector, ErgoUnsignedTransaction } from '@fleet-sdk/core';
 import {
   SignedTransaction,
   Box,
@@ -74,8 +74,6 @@ export class Wallet {
   public signTransaction = (
     unsignedTx: ErgoUnsignedTransaction,
   ): SignedTransaction => {
-    this.logger.debug(`Signing transaction: ${JSON.stringify(unsignedTx)}`);
-
     const signedTx: SignedTransaction = this.prover.signTransaction(
       unsignedTx,
       [this.childKey],

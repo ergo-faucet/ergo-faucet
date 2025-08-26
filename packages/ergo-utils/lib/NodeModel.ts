@@ -128,11 +128,15 @@ export class NodeModel {
   };
 
   /**
-   * Fetches the inclusion height of a transaction by its ID.
+   * Retrieves the blockchain inclusion height of a transaction by its ID.
    *
+   * @param {string} transactionId - The unique identifier of the transaction.
+   * @returns {Promise<number>} A promise that resolves to:
+   *   - the block height where the transaction was included,
+   *   - `-1` if the transaction does not exist or has not been mined,
+   *   - or rejects with an error if the request fails or the network instance is not initialized.
    * @param {string} transactionId - The ID of the transaction.
-   * @returns {Promise<number | undefined>} A promise that resolves to the inclusion height of the transaction.
-   */
+   * @returns {Promise<number | undefined>} A promise that resolves to the inclusion height of the transaction.   */
   public getInclusionHeight = async (
     transactionId: string,
   ): Promise<number> => {
@@ -148,8 +152,14 @@ export class NodeModel {
     return this.axiosInstance
       .get(`/blockchain/transaction/byId/${transactionId}`)
       .then((response) => {
+        if (response.status === 404) {
+          this.logger.debug(
+            `There is no mined transaction with id: ${transactionId}`,
+          );
+          return -1;
+        }
         const inclusionHeight = response.data.inclusionHeight;
-        this.logger.info(
+        this.logger.debug(
           `Fetched inclusionHeight for transaction ${transactionId}: ${inclusionHeight}`,
         );
         return inclusionHeight;
@@ -184,7 +194,7 @@ export class NodeModel {
       .get(`/blockchain/indexedHeight`)
       .then((response) => {
         const currentHeight = response.data.fullHeight;
-        this.logger.info(`Current blockchain height: ${currentHeight}`);
+        this.logger.debug(`Current blockchain height: ${currentHeight}`);
         return currentHeight;
       })
       .catch((error) => {
@@ -229,7 +239,7 @@ export class NodeModel {
         },
       })
       .then((response) => {
-        this.logger.info('The Boxes retrieved successfully.');
+        this.logger.debug('The Boxes retrieved successfully.');
         return response.data;
       })
       .catch((error) => {
@@ -365,11 +375,11 @@ export class NodeModel {
    * @throws Error if fetching decimals fails.
    */
   public fetchDecimalsToken = async (tokenId: string): Promise<number> => {
-    this.logger.info(`Fetching token decimals. Token ID: ${tokenId}`);
+    this.logger.debug(`Fetching token decimals. Token ID: ${tokenId}`);
 
     try {
       const data = await this.getTokenById(tokenId);
-      this.logger.info(
+      this.logger.debug(
         `Successfully fetched token decimals. Token ID: ${tokenId}, Decimals: ${data.decimals}`,
       );
 
