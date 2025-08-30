@@ -40,7 +40,6 @@ server:
 
 database:
   type: 'postgres'
-  # path: './sqlite'
   database: ''
   host: 'postgres'
   port: 5432
