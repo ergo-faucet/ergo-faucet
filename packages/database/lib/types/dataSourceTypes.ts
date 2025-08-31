@@ -1,7 +1,6 @@
 export interface SqliteDataSourceConfig {
   type: 'sqlite';
   database: string;
-  path: string;
   logging: boolean;
 }
 
