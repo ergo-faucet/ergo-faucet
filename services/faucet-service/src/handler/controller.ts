@@ -2,7 +2,7 @@ import { ErgoFaucetController } from '@ergo-faucet/controller';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { PackageAction } from '@ergo-faucet/database';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
-import config from 'config';
+import { controllerConfig } from '../configs/controller';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
@@ -16,9 +16,7 @@ export const setupController = async () => {
   await ErgoFaucetController.initialize(
     fastify,
     packageAction,
-    config.get<string>('ergoAuth.networkAddress').toLowerCase() === 'mainnet'
-      ? 'mainnet'
-      : 'testnet',
+    controllerConfig.networkType,
     controllerLogger,
   );
   logger.info('Controller initialized successfully');

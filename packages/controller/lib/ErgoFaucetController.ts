@@ -2,6 +2,7 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { PackageController } from './PackageController';
 import { PackageAction } from '@ergo-faucet/database';
+import { Network } from '@fleet-sdk/common';
 
 class ErgoFaucetController {
   private static instance: ErgoFaucetController;
@@ -18,7 +19,7 @@ class ErgoFaucetController {
   private constructor(
     fastifyServer: FastifyAPIServer,
     private readonly packageAction: PackageAction,
-    private readonly NETWORK_TYPE: 'mainnet' | 'testnet',
+    private readonly NETWORK_TYPE: Network,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
@@ -54,7 +55,7 @@ class ErgoFaucetController {
   public static initialize = async (
     fastifyServer: FastifyAPIServer,
     packageAction: PackageAction,
-    networkType: 'mainnet' | 'testnet',
+    networkType: Network,
     logger?: AbstractLogger,
   ) => {
     if (this.instance) {

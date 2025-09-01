@@ -26,12 +26,9 @@ export const validateAmountPrecision = (
  */
 export const isValidErgoAddress = (
   address: string,
-  networkType: Network | 'testnet' | 'mainnet',
+  networkType: Network,
 ): boolean => {
   try {
-    if (networkType === 'mainnet') networkType = Network.Mainnet;
-    else if (networkType === 'testnet') networkType = Network.Testnet;
-
     const network = ErgoAddress.fromBase58(address).network;
     return networkType === network;
   } catch {

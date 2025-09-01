@@ -18,6 +18,7 @@ import {
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
 import * as ergo_utils from '@ergo-faucet/ergo-utils';
+import { Network } from '@fleet-sdk/common';
 
 describe('PackageController', () => {
   beforeEach(() => {
@@ -39,7 +40,7 @@ describe('PackageController', () => {
         mockedPackageAction,
         // eslint-disable-next-line
         {} as any as FastifyAPIServer,
-        'testnet',
+        Network.Testnet,
       );
       await mockedServer.register(instance.fetchPackagesRoute, {
         prefix: '/packages',
@@ -132,7 +133,7 @@ describe('PackageController', () => {
       const instance = new PackageController(
         mockedPackageAction,
         mockedFastifyServer,
-        'testnet',
+        Network.Testnet,
       );
       await mockedServer.register(instance.requestPackageRoute, {
         prefix: '/packages',

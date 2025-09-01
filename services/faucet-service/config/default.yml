@@ -81,3 +81,9 @@ googleAuth:
   scope: 'email profile openid'
   expiresTime: 7200
   sessionTTL: 3600
+
+ergo:
+  network: 'mainnet'
+  nodeURL: 'https://node.ergopool.io/panel'
+  minNanoErg: 10000000
+  minFee: 1000000

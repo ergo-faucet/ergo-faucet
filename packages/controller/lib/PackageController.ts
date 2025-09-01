@@ -19,6 +19,7 @@ import {
 import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import { isValidErgoAddress } from '@ergo-faucet/ergo-utils';
+import { Network } from '@fleet-sdk/common';
 
 class PackageController {
   private readonly logger: AbstractLogger;
@@ -34,7 +35,7 @@ class PackageController {
   public constructor(
     packageAction: PackageAction,
     fastifyServer: FastifyAPIServer,
-    private readonly NETWORK_TYPE: 'mainnet' | 'testnet',
+    private readonly NETWORK_TYPE: Network,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
