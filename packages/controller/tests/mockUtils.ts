@@ -6,8 +6,9 @@ import {
 } from '@ergo-faucet/database';
 import fastify, { FastifyInstance } from 'fastify';
 import { vi } from 'vitest';
-import { PackageDTO } from '../lib/types';
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+import { PackageDTO } from '../lib/types/DTOs';
+
+import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
 
 /**
  * Factory function to create a new Fastify instance for testing.
@@ -25,12 +26,14 @@ export const mockedPackageAction: PackageAction & {
   hasUserPassedAllAuthMethods: ReturnType<typeof vi.fn>;
   getPassedUserAuthByPackage: ReturnType<typeof vi.fn>;
   addUserRequest: ReturnType<typeof vi.fn>;
+  validateAdminRequest: ReturnType<typeof vi.fn>;
 } = {
   getPackages: vi.fn(),
   isPackageAvailableForUser: vi.fn(),
   hasUserPassedAllAuthMethods: vi.fn(),
   getPassedUserAuthByPackage: vi.fn(),
   addUserRequest: vi.fn(),
+  validateAdminRequest: vi.fn(),
   // eslint-disable-next-line
 } as any;
 
@@ -152,5 +155,40 @@ export const mockPackageDTO: PackageDTO[] = [
     ],
   },
 ];
+
+export const mockConfig: ServerConfig = {
+  port: 3000,
+  host: 'localhost',
+  corsOrigins: '*',
+  jwtSecret: 'test_secret',
+  jwtExpiration: 300,
+  // eslint-disable-next-line
+  googleRecaptcha: {} as any,
+  swagger: {
+    exposeHeadRoutes: true,
+    openapi: {
+      info: {
+        title: 'Test API',
+        description: 'API Documentation',
+        version: '1.0.0',
+      },
+    },
+  },
+  swaggerUi: {
+    routePrefix: '/docs',
+  },
+  activeFastifyLogger: false,
+  cookie: {
+    secret: 'test_cookie_secret',
+    name: 'auth_token',
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict',
+    path: '/',
+    maxAge: 3600,
+    domain: 'localhost',
+    signed: false,
+  },
+};
 
 export { mockPackage };
