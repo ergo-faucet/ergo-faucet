@@ -7,7 +7,7 @@
       "@configs": ["src/configs"]
     }
   },
-  "include": ["src"],
+  "include": ["src", "package.json"],
   "references": [
     { "path": "../../packages/google-recaptcha" },
     { "path": "../../packages/fastify-server" },
