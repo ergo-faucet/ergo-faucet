@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1754627185778 implements MigrationInterface {
-  name = 'Migration1754627185778';
+export class Migration1756796313837 implements MigrationInterface {
+  name = 'Migration1756796313837';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -40,6 +40,7 @@ export class Migration1754627185778 implements MigrationInterface {
                 "name" character varying,
                 "metadata" text,
                 "lastLogin" bigint,
+                "isAdmin" boolean NOT NULL DEFAULT false,
                 CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
                 CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
                 CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),

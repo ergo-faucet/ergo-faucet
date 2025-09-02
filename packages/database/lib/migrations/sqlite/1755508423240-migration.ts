@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1756040608895 implements MigrationInterface {
-  name = 'Migration1756040608895';
+export class Migration1755508423240 implements MigrationInterface {
+  name = 'Migration1755508423240';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -45,9 +45,90 @@ export class Migration1756040608895 implements MigrationInterface {
     await queryRunner.query(`
             CREATE INDEX "IDX_941e620c721dbd2ec1a03bdef3" ON "asset_entity" ("tokenId")
         `);
+    await queryRunner.query(`
+            CREATE TABLE "temporary_user_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "discord_id" varchar,
+                "x_id" varchar,
+                "google_id" varchar,
+                "name" varchar,
+                "metadata" text,
+                "lastLogin" bigint,
+                "isAdmin" boolean NOT NULL DEFAULT (0),
+                CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),
+                CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
+                CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id")
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "temporary_user_entity"(
+                    "id",
+                    "discord_id",
+                    "x_id",
+                    "google_id",
+                    "name",
+                    "metadata",
+                    "lastLogin"
+                )
+            SELECT "id",
+                "discord_id",
+                "x_id",
+                "google_id",
+                "name",
+                "metadata",
+                "lastLogin"
+            FROM "user_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "user_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "temporary_user_entity"
+                RENAME TO "user_entity"
+        `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+            ALTER TABLE "user_entity"
+                RENAME TO "temporary_user_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "user_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "discord_id" varchar,
+                "x_id" varchar,
+                "google_id" varchar,
+                "name" varchar,
+                "metadata" text,
+                "lastLogin" bigint,
+                CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),
+                CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
+                CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id")
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "user_entity"(
+                    "id",
+                    "discord_id",
+                    "x_id",
+                    "google_id",
+                    "name",
+                    "metadata",
+                    "lastLogin"
+                )
+            SELECT "id",
+                "discord_id",
+                "x_id",
+                "google_id",
+                "name",
+                "metadata",
+                "lastLogin"
+            FROM "temporary_user_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "temporary_user_entity"
+        `);
     await queryRunner.query(`
             DROP INDEX "IDX_941e620c721dbd2ec1a03bdef3"
         `);
