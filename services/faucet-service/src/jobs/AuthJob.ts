@@ -1,6 +1,6 @@
 import WinstonLogger from '@rosen-bridge/winston-logger';
 import { DiscordAction, GoogleAction, XAction } from '@ergo-faucet/database';
-import { AuthJobType } from 'src/types';
+import { AuthJobType } from '../types';
 
 const logger = WinstonLogger.getInstance().getLogger(import.meta.url);
 
