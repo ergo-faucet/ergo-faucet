@@ -6,6 +6,7 @@ export {
   DiscordAction,
   XAction,
   GoogleAction,
+  AccountantAction,
 } from './actions';
 export {
   Asset,

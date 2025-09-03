@@ -1,5 +1,5 @@
 import { DiscordAuth } from '@ergo-faucet/discord-auth';
-import { discordConfig } from '../configs';
+import { discordConfig } from '@configs';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { DiscordAction } from '@ergo-faucet/database';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';

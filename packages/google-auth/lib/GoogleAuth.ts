@@ -38,7 +38,6 @@ export class GoogleAuth {
   private readonly GOOGLE_API_URL =
     'https://www.googleapis.com/oauth2/v2/userinfo';
   private readonly GRANT_TYPE = 'authorization_code';
-  private readonly REFRESH_GRANT_TYPE = 'refresh_token';
 
   /**
    * Private constructor to enforce singleton pattern.

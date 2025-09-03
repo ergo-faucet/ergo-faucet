@@ -1,5 +1,5 @@
 import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
-import { recaptchaConfig } from '../configs';
+import { recaptchaConfig } from '@configs';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
