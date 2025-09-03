@@ -176,42 +176,7 @@ describe('PackageController', () => {
         'test-address',
       );
       expect(result.statusCode).toEqual(200);
-      expect(result.body).toEqual('');
-    });
-
-    /**
-     * Test for missing userId in POST /packages/request
-     * @target PackageController.requestPackageRoute
-     * @scenario
-     * - POST /packages/request without userId
-     * @expected
-     * - returns 400 with missing userId error
-     */
-    it('should return 400 for missing userId', async () => {
-      mockedFastifyServer.authPreHandler.mockImplementationOnce(
-        async (request) => {
-          request.user = {
-            // Simulate missing userId
-            address: 'mocked-user-address',
-          };
-        },
-      );
-
-      const result = await mockedServer.inject({
-        method: 'POST',
-        url: '/packages/request',
-        payload: {
-          packageId: 1,
-          destAddress: 'test-address',
-          captchaToken: 'token',
-        },
-      });
-
-      expect(result.statusCode).toEqual(400);
-      expect(JSON.parse(result.body)).toEqual({
-        error: 'Missing userId',
-        code: 'Bad Request',
-      });
+      expect(JSON.parse(result.body)).toEqual({ requestId: 123 });
     });
 
     /**

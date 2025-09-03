@@ -56,3 +56,7 @@ export const RequestPackageBody = Type.Object({
   destAddress: Type.String({ minLength: 1 }),
   captchaToken: Type.String({ minLength: 1 }),
 });
+
+export const RequestPackageResponse200 = Type.Object({
+  requestId: Type.Number({ minimum: 1 }),
+});
