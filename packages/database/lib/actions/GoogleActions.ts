@@ -1,9 +1,4 @@
-import {
-  DataSource,
-  LessThan,
-  Not,
-  Repository,
-} from '@rosen-bridge/extended-typeorm';
+import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
 import { User, UserAuthStatus, AuthMethod } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
@@ -195,45 +190,26 @@ class GoogleAction {
   };
 
   /**
-   * Marks a user's Google authentication as expired.
-   * Updates UserAuthStatus record and logs the expiration.
-   *
-   * @param userAuthStatust
-   */
-  public expireGoogleAuth = async (
-    userAuthStatust: UserAuthStatus,
-  ): Promise<void> => {
-    userAuthStatust.status = 'failed';
-    userAuthStatust.metadata.refresh_token = '';
-    userAuthStatust.metadata.token = '';
-    await this.userAuthStatusRepository.save(userAuthStatust);
-
-    this.logger.info(
-      `Expired Google auth for user ID ${userAuthStatust.user.id}`,
-    );
-  };
-
-  /**
    * Expires all Google auth records that are past their expiry.
    */
   public expireAllExpiredGoogleAuths = async (): Promise<void> => {
     const now = new Date();
-    const expiredRecords: UserAuthStatus[] =
-      await this.userAuthStatusRepository.find({
-        where: {
-          authMethod: { id: this.googleAuthMethod.id },
-          expiresAt: LessThan(now),
-          status: 'passed',
-        },
-        relations: ['user', 'authMethod'],
-      });
+    now.setHours(0, 0, 0, 0);
 
-    for (const record of expiredRecords) {
-      await this.expireGoogleAuth(record);
-    }
+    const result = await this.userAuthStatusRepository
+      .createQueryBuilder()
+      .update(UserAuthStatus)
+      .set({
+        status: 'expired',
+        metadata: () => `'{"refresh_token": "", "token": ""}'`,
+      })
+      .where('authMethodId = :methodId', { methodId: this.googleAuthMethod.id })
+      .andWhere('expiresAt < :now', { now })
+      .andWhere('status = :status', { status: 'passed' })
+      .execute();
 
     this.logger.info(
-      `Processed ${expiredRecords.length} expired Google auth records`,
+      `Expired ${result.affected ?? 0} Google auth records in bulk`,
     );
   };
 }
