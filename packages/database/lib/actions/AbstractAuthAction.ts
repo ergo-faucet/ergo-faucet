@@ -118,7 +118,7 @@ abstract class AbstractAuthAction {
     userAuthStatus.metadata.token = '';
     await this.userAuthStatusRepository.save(userAuthStatus);
 
-    this.logger.info(
+    this.logger.debug(
       `Expired ${this.getAuthMethodName()} auth for user ID ${userAuthStatus.user.id}`,
     );
   };
@@ -143,7 +143,7 @@ abstract class AbstractAuthAction {
       await this.expireAuth(record);
     }
 
-    this.logger.info(
+    this.logger.debug(
       `Processed ${expiredRecords.length} expired ${this.getAuthMethodName()} auth records`,
     );
   };

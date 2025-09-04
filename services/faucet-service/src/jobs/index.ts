@@ -1,1 +1,1 @@
-export { AuthJob } from './AuthJob';
+export { scheduleExpiringJob } from './AuthJob';

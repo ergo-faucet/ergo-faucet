@@ -82,4 +82,4 @@ googleAuth:
   sessionTTL: 3600
 
 authJob:
-  jobInterval: 259200
+  jobInterval: 300

@@ -10,8 +10,8 @@ import {
   setupXAuth,
   setupController,
   startServerService,
-  startAuthJob,
 } from './handler';
+import { scheduleExpiringJob } from './jobs/AuthJob';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
@@ -28,7 +28,7 @@ const main = async () => {
     await setupGoogleAuth();
     logger.info('All packages was initialized successfuly');
     await startServerService();
-    await startAuthJob();
+    await scheduleExpiringJob();
   } catch (err) {
     logger.debug('Error in initialize the packages', err);
   }

@@ -1,54 +1,47 @@
 import WinstonLogger from '@rosen-bridge/winston-logger';
 import { DiscordAction, GoogleAction, XAction } from '@ergo-faucet/database';
-import { AuthJobType } from '../types';
+import { authJobConfig } from '@configs';
 
 const logger = WinstonLogger.getInstance().getLogger(import.meta.url);
 
-export class AuthJob {
-  private static instance: AuthJob;
-  private discordAction: DiscordAction;
-  private googleAction: GoogleAction;
-  private xAction: XAction;
-  private jobInterval: number;
+const jobExpireDiscordAuths = async (): Promise<void> => {
+  const discordAction = DiscordAction.getInstance();
+  discordAction
+    .expireAllExpiredDiscordAuths()
+    .then()
+    .catch((err) => {
+      logger.error('Error in expiring Discord Auths', err);
+    });
+  logger.info('Expired Discord Auths job done');
+};
 
-  private constructor(configs: AuthJobType) {
-    this.discordAction = configs.discordAction;
-    this.googleAction = configs.googleAction;
-    this.xAction = configs.xAction;
-    this.jobInterval = configs.jobInterval;
-  }
+const jobExpireGoogleAuths = async (): Promise<void> => {
+  const googleAction = GoogleAction.getInstance();
+  googleAction
+    .expireAllExpiredGoogleAuths()
+    .then()
+    .catch((err) => {
+      logger.error('Error in expiring Google Auths', err);
+    });
+  logger.info('Expired Google Auths job done');
+};
 
-  public static initialize(configs: AuthJobType) {
-    if (this.instance) throw new Error('AuthJob instance already initialized.');
-    this.instance = new AuthJob(configs);
-  }
+const jobExpireXAuths = async (): Promise<void> => {
+  const xAction = XAction.getInstance();
+  xAction
+    .expireAllExpiredXAuths()
+    .then()
+    .catch((err) => {
+      logger.error('Error in expiring X Auths', err);
+    });
+  logger.info('Expired X Auths job done');
+};
 
-  public static getInstance(): AuthJob {
-    if (!this.instance) throw new Error('AuthJob instance not initialized.');
-    return this.instance;
-  }
-
-  private async processExpired(): Promise<void> {
-    logger.debug('Starting auth expiration job');
-    try {
-      this.discordAction.expireAllExpiredDiscordAuths();
-      this.googleAction.expireAllExpiredGoogleAuths();
-      this.xAction.expireAllExpiredXAuths();
-    } catch (error) {
-      logger.error('Error in auth expiration job:', {
-        error: error instanceof Error ? error.message : error,
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-    }
-    logger.info('Auth expiration job completed');
-  }
-
-  /** Schedule the job repeatedly using setTimeout */
-  public async scheduleJob(): Promise<void> {
-    try {
-      await this.processExpired();
-    } finally {
-      setTimeout(() => this.scheduleJob(), this.jobInterval);
-    }
-  }
-}
+export const scheduleExpiringJob = async (): Promise<void> => {
+  const jobInterval = authJobConfig.authJobInterval * 1000; //convert to ms
+  setInterval(async () => {
+    await jobExpireDiscordAuths();
+    await jobExpireGoogleAuths();
+    await jobExpireXAuths();
+  }, jobInterval);
+};
