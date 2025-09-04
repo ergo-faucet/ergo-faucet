@@ -1,15 +1,9 @@
-import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
-import { User, UserAuthStatus, AuthMethod } from '../entities';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { DataSource, Not } from '@rosen-bridge/extended-typeorm';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
+import { AbstractAuthAction } from './AbstractAuthAction';
 
-class DiscordAction {
+class DiscordAction extends AbstractAuthAction {
   private static instance: DiscordAction;
-
-  private logger: AbstractLogger;
-  private userRepository: Repository<User>;
-  private userAuthStatusRepository: Repository<UserAuthStatus>;
-  private authMethodRepository: Repository<AuthMethod>;
-  private discordAuthMethod!: AuthMethod;
 
   /**
    * Private constructor to enforce singleton usage.
@@ -18,11 +12,7 @@ class DiscordAction {
    * @param logger - Optional logger instance (defaults to DummyLogger)
    */
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
-    this.logger = logger ?? new DummyLogger();
-
-    this.userRepository = dataSource.getRepository(User);
-    this.userAuthStatusRepository = dataSource.getRepository(UserAuthStatus);
-    this.authMethodRepository = dataSource.getRepository(AuthMethod);
+    super(dataSource, logger);
   }
 
   /**
@@ -53,29 +43,12 @@ class DiscordAction {
   };
 
   /**
-   * Ensures the `discord` AuthMethod is seeded in the database.
-   *
-   * - Checks if an AuthMethod with name `discord` exists.
-   * - If missing, creates it with an empty config.
-   *
-   * @returns Promise<void>
+   * Returns the name of the authentication method
+   * @returns Authentication method name as a string
    */
-  public async ensureDiscordAuthMethod(): Promise<void> {
-    let discordMethod = await this.authMethodRepository.findOne({
-      where: { name: 'discord' },
-    });
-    if (!discordMethod) {
-      discordMethod = this.authMethodRepository.create({
-        name: 'discord',
-        config: JSON.stringify({}),
-      });
-      this.discordAuthMethod =
-        await this.authMethodRepository.save(discordMethod);
-    } else {
-      this.discordAuthMethod = discordMethod;
-    }
-    this.logger.debug('Seeded AuthMethod: discord');
-  }
+  protected getAuthMethodName = (): string => {
+    return 'discord';
+  };
 
   /**
    * Links a Discord account to an already existing User.
@@ -139,87 +112,11 @@ class DiscordAction {
 
     const expiresAt = new Date(Date.now() + expiresTime * 1000);
 
-    await this.saveOrUpdateDiscordAuthStatus(
+    await this.saveOrUpdateAuthStatus(
       savedUser,
       expiresAt,
       access_token,
       refresh_token,
-    );
-  };
-
-  /**
-   * Creates or updates the `UserAuthStatus` record for a user's Discord authentication.
-   *
-   * @param user - User entity already saved in DB
-   * @param accessToken - Discord OAuth2 access token
-   * @param refreshToken - Discord OAuth2 refresh token
-   * @returns Promise<void>
-   */
-  private saveOrUpdateDiscordAuthStatus = async (
-    user: User,
-    expiresAt: Date,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<void> => {
-    let authStatus = await this.userAuthStatusRepository.findOne({
-      where: {
-        user: { id: user.id },
-        authMethod: { id: this.discordAuthMethod.id },
-      },
-      relations: ['authMethod', 'user'],
-    });
-
-    if (!authStatus) {
-      authStatus = this.userAuthStatusRepository.create({
-        user,
-        authMethod: this.discordAuthMethod,
-        verifiedAt: new Date(),
-        status: 'passed',
-        expiresAt,
-        metadata: {
-          token: accessToken,
-          refresh_token: refreshToken,
-        },
-      });
-    } else {
-      authStatus.verifiedAt = new Date();
-      authStatus.status = 'passed';
-      authStatus.expiresAt = expiresAt;
-      authStatus.metadata = {
-        token: accessToken,
-        refresh_token: refreshToken,
-      };
-    }
-
-    await this.userAuthStatusRepository.save(authStatus);
-    this.logger.debug(
-      `Saved/Updated Discord UserAuthStatus for user ID ${user.id}`,
-    );
-  };
-
-  /**
-   * Expires all Discord auth records that are past their expiry.
-   */
-  public expireAllExpiredDiscordAuths = async (): Promise<void> => {
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-
-    const result = await this.userAuthStatusRepository
-      .createQueryBuilder()
-      .update(UserAuthStatus)
-      .set({
-        status: 'expired',
-        metadata: () => `'{"refresh_token": "", "token": ""}'`,
-      })
-      .where('authMethodId = :methodId', {
-        methodId: this.discordAuthMethod.id,
-      })
-      .andWhere('expiresAt < :now', { now })
-      .andWhere('status = :status', { status: 'passed' })
-      .execute();
-
-    this.logger.info(
-      `Expired ${result.affected ?? 0} Discord auth records in bulk`,
     );
   };
 }
