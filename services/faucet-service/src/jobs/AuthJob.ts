@@ -7,7 +7,7 @@ const logger = WinstonLogger.getInstance().getLogger(import.meta.url);
 const jobExpireDiscordAuths = async (): Promise<void> => {
   const discordAction = DiscordAction.getInstance();
   discordAction
-    .expireAllExpiredDiscordAuths()
+    .expireAllExpiredAuths()
     .then()
     .catch((err) => {
       logger.error('Error in expiring Discord Auths', err);
@@ -18,7 +18,7 @@ const jobExpireDiscordAuths = async (): Promise<void> => {
 const jobExpireGoogleAuths = async (): Promise<void> => {
   const googleAction = GoogleAction.getInstance();
   googleAction
-    .expireAllExpiredGoogleAuths()
+    .expireAllExpiredAuths()
     .then()
     .catch((err) => {
       logger.error('Error in expiring Google Auths', err);
@@ -29,7 +29,7 @@ const jobExpireGoogleAuths = async (): Promise<void> => {
 const jobExpireXAuths = async (): Promise<void> => {
   const xAction = XAction.getInstance();
   xAction
-    .expireAllExpiredXAuths()
+    .expireAllExpiredAuths()
     .then()
     .catch((err) => {
       logger.error('Error in expiring X Auths', err);

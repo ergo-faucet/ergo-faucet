@@ -72,7 +72,7 @@ export class GoogleAuth {
       throw new Error('GoogleAuth has already been initialized.');
     }
     this.instance = new GoogleAuth(config, logger);
-    await this.instance.googleAction.ensureGoogleAuthMethod();
+    await this.instance.googleAction.ensureAuthMethod();
     await this.instance.registerRoutes(this.instance.GOOGLE_AUTH_PREFIX);
     this.instance.logger.info(`GoogleAuth initialized successfully.`);
   };
