@@ -23,6 +23,7 @@
     "@rosen-bridge/changeset-formatter": "^0.1.0",
     "@typescript-eslint/eslint-plugin": "^8.32.1",
     "@typescript-eslint/parser": "^8.32.1",
+    "depcheck": "^1.4.7",
     "eslint": "^8.57.1",
     "eslint-config-prettier": "^9.1.0",
     "husky": "^8.0.0",

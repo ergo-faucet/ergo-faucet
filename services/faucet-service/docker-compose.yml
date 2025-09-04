@@ -1,13 +1,17 @@
 services:
   ergo-faucet:
-    image: ghcr.io/TechStack-BlockChain/ergo-faucet:latest
+    image: ghcr.io/techstack-blockchain/ergo-faucet:latest
     restart: unless-stopped
     ports:
       - '127.0.0.1:${FAUCET_PORT}:3000'
     env_file:
       - .env
     volumes:
-      - ./services/faucet-service/logs:/app/services/faucet-service/logs
+      - ./logs:/app/services/faucet-service/logs
+      - type: 'bind'
+        source: ./config/local.yaml
+        target: /app/services/faucet-service/config/local.yaml
+
     depends_on:
       - postgres
       - redis
