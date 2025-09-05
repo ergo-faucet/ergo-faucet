@@ -32,11 +32,15 @@ export const RefreshTokenResponse401 = Type.Object({
 });
 
 export const ChallengeBody = Type.Object({
-  address: Type.String({ description: 'User wallet address' }),
+  changedAddress: Type.String({ description: 'Changed address' }),
+  addresses: Type.Array(Type.String(), {
+    description: 'Set of user addresses',
+  }),
 });
 
 export const ChallengeResponse200 = Type.Object({
   challenge: Type.String(),
+  address: Type.String(),
 });
 
 export const ChallengeErrorResponse = Type.Object({

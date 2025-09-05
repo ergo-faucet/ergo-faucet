@@ -254,8 +254,14 @@ export class ErgoAuth {
           },
         },
         preHandler: async (req, res) => {
-          const { address } = req.body;
-          if (!this.isValidErgoAddress(address)) {
+          const { changedAddress, addresses } = req.body;
+
+          if (!addresses.includes(changedAddress)) {
+            return res.status(400).send({
+              error: 'changedAddress must be inside addresses list',
+              code: 'invalid-changedAddress',
+            });
+          } else if (!this.isValidErgoAddress(changedAddress)) {
             return res.status(400).send({
               error: 'Invalid Ergo address',
               code: 'invalid-address-network',
@@ -265,9 +271,17 @@ export class ErgoAuth {
       },
 
       async (request, reply) => {
-        const { address } = request.body;
-        const challenge = await this.createChallenge(address);
-        return reply.status(200).send({ challenge, address });
+        const { changedAddress, addresses } = request.body;
+        let finallyAddress = changedAddress;
+        for (const addr of addresses) {
+          const user = await this.userAddressAction.getUserByAddress(addr);
+          if (user) {
+            finallyAddress = addr;
+            break;
+          }
+        }
+        const challenge = await this.createChallenge(finallyAddress);
+        return reply.status(200).send({ challenge, finallyAddress });
       },
     );
   };
