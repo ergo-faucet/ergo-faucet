@@ -281,7 +281,7 @@ export class ErgoAuth {
           }
         }
         const challenge = await this.createChallenge(finallyAddress);
-        return reply.status(200).send({ challenge, finallyAddress });
+        return reply.status(200).send({ challenge, address: finallyAddress });
       },
     );
   };
