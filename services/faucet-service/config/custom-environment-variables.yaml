@@ -28,3 +28,6 @@ googleAuth:
   clientID: GOOGLE_CLIENT_ID
   clientSecret: GOOGLE_CLIENT_SECRET
   redirectURL: GOOGLE_REDIRECT_URL
+
+ergo:
+  nodeURL: NODE_URL

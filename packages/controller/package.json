@@ -24,7 +24,7 @@
     "@vitest/coverage-istanbul": "^3.1.4",
     "eslint": "^8.56.0",
     "eslint-config-prettier": "^9.1.0",
-    "fastify": "^5.4.0",
+    "fastify": "^5.5.0",
     "prettier": "^3.2.4",
     "tsx": "^4.19.4",
     "typescript": "^5.3.3",
@@ -34,8 +34,11 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
+    "@ergo-faucet/common-types": "^0.1.0",
     "@ergo-faucet/database": "^0.1.0",
+    "@ergo-faucet/ergo-utils": "^0.1.0",
     "@ergo-faucet/fastify-server": "^0.1.0",
+    "@fleet-sdk/common": "^0.10.0",
     "@rosen-bridge/abstract-logger": "^2.0.1",
     "@sinclair/typebox": "^0.34.38"
   }

@@ -1,6 +1,5 @@
-import { Asset, PackageAuthMethod } from '@ergo-faucet/database';
-import { Package } from '@ergo-faucet/database';
-import { AssetDTO, AuthMethodDTO, PackageDTO } from '../types/DTOs';
+import { Asset, PackageAuthMethod, Package } from '@ergo-faucet/database';
+import { AssetDTO, AuthMethodDTO, PackageDTO } from '../types';
 
 export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
   return packages.map((p: Package): PackageDTO => {
