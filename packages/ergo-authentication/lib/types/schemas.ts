@@ -31,10 +31,19 @@ export const RefreshTokenResponse401 = Type.Object({
   error: Type.String(),
 });
 
+const ErgoAddress = Type.String({
+  description: 'Ergo blockchain address',
+  minLength: 51,
+  maxLength: 52,
+  pattern: '^[123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz]+$',
+});
+
 export const ChallengeBody = Type.Object({
-  changedAddress: Type.String({ description: 'Changed address' }),
-  addresses: Type.Array(Type.String(), {
+  changedAddress: ErgoAddress,
+  addresses: Type.Array(ErgoAddress, {
     description: 'Set of user addresses',
+    minItems: 1,
+    uniqueItems: true,
   }),
 });
 

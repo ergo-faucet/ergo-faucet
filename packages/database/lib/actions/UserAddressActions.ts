@@ -1,4 +1,4 @@
-import { DataSource, Repository } from '@rosen-bridge/extended-typeorm';
+import { DataSource, In, Repository } from '@rosen-bridge/extended-typeorm';
 import { User, UserAddress } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
@@ -75,27 +75,37 @@ class UserAddressAction {
   };
 
   /**
-   * Finds and returns the User entity associated with the given address.
-   * @param address - Ergo address to search for
-   * @returns The User entity or undefind if not found
+   * Finds and returns User entities associated with the given addresses.
+   * @param addresses - List of Ergo addresses
+   * @returns Array of User entities (empty if none found)
    */
-  getUserByAddress = async (address: string): Promise<User | undefined> => {
-    this.logger.debug(`Looking for user by address: ${address}`);
+  getUsersByAddresses = async (addresses: string[]): Promise<User[]> => {
+    this.logger.debug(
+      `Looking for users by addresses: ${addresses.join(', ')}`,
+    );
 
-    const userAddress = await this.UserAddressReposotory.findOne({
-      where: { value: address },
-      relations: ['user'],
+    const userAddresses = await this.UserAddressReposotory.find({
+      where: { value: In(addresses) },
+      relations: ['user', 'user.addresses'],
     });
 
-    if (userAddress?.user) {
-      this.logger.debug(
-        `User ID ${userAddress.user.id} found for address: ${address}`,
-      );
-    } else {
-      this.logger.debug(`No user found for address: ${address}`);
-    }
+    const users = userAddresses
+      .map((ua) => ua.user)
+      .filter((user): user is User => !!user);
 
-    return userAddress?.user;
+    this.logger.debug(`Found ${users.length} users for provided addresses`);
+
+    return users;
+  };
+
+  /**
+   * Finds and returns the User entity associated with the given address.
+   * @param address - Ergo address to search for
+   * @returns The User entity or undefined if not found
+   */
+  getUserByAddress = async (address: string): Promise<User | undefined> => {
+    const users = await this.getUsersByAddresses([address]);
+    return users.length > 0 ? users[0] : undefined;
   };
 
   /**

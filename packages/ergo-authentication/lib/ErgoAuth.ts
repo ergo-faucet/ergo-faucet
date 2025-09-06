@@ -272,14 +272,13 @@ export class ErgoAuth {
 
       async (request, reply) => {
         const { changedAddress, addresses } = request.body;
-        let finallyAddress = changedAddress;
-        for (const addr of addresses) {
-          const user = await this.userAddressAction.getUserByAddress(addr);
-          if (user) {
-            finallyAddress = addr;
-            break;
-          }
-        }
+
+        const users =
+          await this.userAddressAction.getUsersByAddresses(addresses);
+
+        const finallyAddress =
+          users.length > 0 ? users[0].addresses[0].value : changedAddress;
+
         const challenge = await this.createChallenge(finallyAddress);
         return reply.status(200).send({ challenge, address: finallyAddress });
       },
