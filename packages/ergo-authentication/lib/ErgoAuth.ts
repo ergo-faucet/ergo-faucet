@@ -25,6 +25,7 @@ import { UserAddressAction } from '@ergo-faucet/database';
 import { hex } from '@fleet-sdk/crypto';
 import { ErgoAddress, ErgoMessage, Network } from '@fleet-sdk/core';
 import { Prover } from '@fleet-sdk/wallet';
+import { isValidErgoAddress } from '@ergo-faucet/ergo-utils';
 
 export class ErgoAuth {
   private static instance: ErgoAuth;
@@ -82,26 +83,6 @@ export class ErgoAuth {
       throw new Error('ErgoAuth instance has not been initialized.');
     }
     return this.instance;
-  };
-
-  /**
-   * Validates if the provided Ergo address is valid for the configured network.
-   * @param address - The Ergo address to validate.
-   * @returns `true` if valid, otherwise `false`.
-   */
-  public isValidErgoAddress = (address: string): boolean => {
-    try {
-      const network = ErgoAddress.fromBase58(address).network;
-      return this.NETWORK_TYPE === network;
-    } catch (err) {
-      if (err instanceof Error) {
-        this.logger.debug(`Invalid Ergo address Network: ${address}`, {
-          message: err.message,
-          stack: err.stack,
-        });
-      }
-      return false;
-    }
   };
 
   /**
@@ -261,7 +242,7 @@ export class ErgoAuth {
               error: 'changedAddress must be inside addresses list',
               code: 'invalid-changedAddress',
             });
-          } else if (!this.isValidErgoAddress(changedAddress)) {
+          } else if (!isValidErgoAddress(changedAddress, this.NETWORK_TYPE)) {
             return res.status(400).send({
               error: 'Invalid Ergo address',
               code: 'invalid-address-network',
@@ -309,7 +290,7 @@ export class ErgoAuth {
           this.fastifyServer.captchaPreHandler,
           async (req, res) => {
             const { address } = req.body;
-            if (!this.isValidErgoAddress(address)) {
+            if (!isValidErgoAddress(address, this.NETWORK_TYPE)) {
               return res.status(400).send({
                 error: 'Invalid Ergo address',
                 code: 'invalid-address-network',
