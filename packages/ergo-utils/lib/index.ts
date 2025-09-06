@@ -8,3 +8,4 @@ export {
   tokenByIdResponse,
   tokenByIdResponseSuccess,
 } from './types';
+export { isValidErgoAddress, validateAmountPrecision } from './utils';

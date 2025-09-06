@@ -7,7 +7,11 @@ services:
     env_file:
       - .env
     volumes:
-      - ./services/faucet-service/logs:/app/services/faucet-service/logs
+      - ./logs:/app/services/faucet-service/logs
+      - type: 'bind'
+        source: ./config/local.yaml
+        target: /app/services/faucet-service/config/local.yaml
+
     depends_on:
       - postgres
       - redis

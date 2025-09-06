@@ -83,3 +83,9 @@ googleAuth:
 
 authJob:
   jobInterval: 300
+
+ergo:
+  network: 'mainnet'
+  nodeURL: ''
+  minNanoErg: 10000000
+  minFee: 1000000
