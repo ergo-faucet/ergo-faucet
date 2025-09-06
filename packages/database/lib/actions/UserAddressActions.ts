@@ -54,58 +54,23 @@ class UserAddressAction {
   };
 
   /**
-   * Creates and stores a new UserAddress entity linked to a specific user.
-   * @param user - User entity or user ID to associate the address with
-   * @param address - Ergo blockchain address to store
-   * @returns The created UserAddress entity
-   */
-  createUserAddress = async (
-    user: User,
-    address: string,
-  ): Promise<UserAddress> => {
-    const userAddress = this.UserAddressReposotory.create({
-      user: user,
-      value: address,
-    });
-
-    const saved = await this.UserAddressReposotory.save(userAddress);
-    this.logger.debug(`New address [${address}] linked to user ID ${user.id}`);
-
-    return saved;
-  };
-
-  /**
    * Finds and returns User entities associated with the given addresses.
    * @param addresses - List of Ergo addresses
    * @returns Array of User entities (empty if none found)
    */
-  getUsersByAddresses = async (addresses: string[]): Promise<User[]> => {
+  getUsersByAddresses = async (addresses: string[]): Promise<UserAddress[]> => {
     this.logger.debug(
       `Looking for users by addresses: ${addresses.join(', ')}`,
     );
 
     const userAddresses = await this.UserAddressReposotory.find({
       where: { value: In(addresses) },
-      relations: ['user', 'user.addresses'],
+      relations: ['user'],
     });
 
-    const users = userAddresses
-      .map((ua) => ua.user)
-      .filter((user): user is User => !!user);
+    this.logger.debug(`Found ${userAddresses.length} user-address matches`);
 
-    this.logger.debug(`Found ${users.length} users for provided addresses`);
-
-    return users;
-  };
-
-  /**
-   * Finds and returns the User entity associated with the given address.
-   * @param address - Ergo address to search for
-   * @returns The User entity or undefined if not found
-   */
-  getUserByAddress = async (address: string): Promise<User | undefined> => {
-    const users = await this.getUsersByAddresses([address]);
-    return users.length > 0 ? users[0] : undefined;
+    return userAddresses;
   };
 
   /**
@@ -117,7 +82,8 @@ class UserAddressAction {
   findOrCreateUserWithAddress = async (address: string): Promise<User> => {
     this.logger.debug(`Finding or creating user for address: ${address}`);
 
-    const user = await this.getUserByAddress(address);
+    const users = await this.getUsersByAddresses([address]);
+    const user = users.length > 0 ? users[0].user : undefined;
     const now = Date.now();
 
     if (user) {
