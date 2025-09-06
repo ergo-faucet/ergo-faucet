@@ -26,6 +26,9 @@ export class Asset {
   @Column({ type: 'bigint', transformer: new BigIntValueTransformer() })
   amount!: bigint;
 
+  @Column({ type: 'int' })
+  decimals!: number;
+
   @Column({ type: 'text' })
   usageDescription!: string;
 }

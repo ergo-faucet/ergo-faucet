@@ -17,6 +17,7 @@ import {
   RequestPackageBody,
   RequestPackageBodyType,
   PackageDTO,
+  AddPackageBodyType,
 } from './types';
 import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
@@ -147,7 +148,7 @@ class PackageController {
    * Validates userId, package availability, and required authentication methods.
    * Adds a new user request if all checks pass.
    * Responds with 200 on success, 400 for missing userId, 403 if auth methods are incomplete,
-   * 404 if user or package not found, 429 if cooldown limit is active, or 500 for internal errors.
+   * 404 if user or package not found, 403 if request limit is active, or 500 for internal errors.
    *
    * @param fastify - The Fastify server instance to register the route on.
    * @returns {Promise<void>}
@@ -177,7 +178,6 @@ class PackageController {
             400: ErrorResponse,
             403: ErrorResponse,
             500: ErrorResponse,
-            429: ErrorResponse,
           },
         },
       },
@@ -244,6 +244,65 @@ class PackageController {
         }
       },
     );
+  };
+
+  public addPackageRoute = async (
+    fastify: FastifySeverInstance,
+  ): Promise<void> => {
+    fastify.post<{ Body: AddPackageBodyType }>(
+      '/request',
+      {
+        preHandler: [this.fastifyServer.authPreHandler, this.adminPreHandler],
+        schema: {
+          body: RequestPackageBody,
+          response: {
+            400: ErrorResponse,
+            500: ErrorResponse,
+            404: ErrorResponse,
+          },
+        },
+      },
+
+      async (request, reply) => {
+        const copyOfAssets = structuredClone(request.body.assets);
+        try {
+          const assets = await this.processAssets(copyOfAssets);
+
+          const packageData = { ...request.body, assets };
+
+          // add package to database
+          const packageId = await this.packageAction.addPackage(packageData);
+          this.logger.debug(`Package with ID: ${packageId} successfully added`);
+
+          return reply.status(200).send({
+            packageId,
+          });
+        } catch (error) {
+          // TODO
+          this.logger.debug(
+            error instanceof Error ? error.message : 'Unknown error',
+          );
+        }
+      },
+    );
+  };
+
+  processAssets = async (
+    assets: {
+      tokenId: string;
+      amount: number;
+      usageDescription: string;
+    }[],
+  ): Promise<
+    {
+      tokenId: string;
+      amount: bigint;
+      decimals: number;
+      usageDescription: string;
+    }[]
+  > => {
+    this.logger.debug(JSON.stringify(assets));
+    throw new Error('Method not implemented.');
   };
 
   /**

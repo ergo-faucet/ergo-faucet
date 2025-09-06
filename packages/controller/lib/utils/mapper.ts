@@ -5,9 +5,9 @@ export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
   return packages.map((p: Package): PackageDTO => {
     const assetDTOs: AssetDTO[] = p.assets.map(
       (a: Asset): AssetDTO => ({
-        id: a.id,
         tokenId: a.tokenId,
         amount: a.amount.toString(),
+        decimals: a.decimals,
         usageDescription: a.usageDescription,
       }),
     );

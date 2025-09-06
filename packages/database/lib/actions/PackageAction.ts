@@ -2,6 +2,7 @@ import {
   DataSource,
   Equal,
   FindOptionsOrder,
+  In,
   Not,
   Repository,
 } from '@rosen-bridge/extended-typeorm';
@@ -11,9 +12,11 @@ import {
   UserAuthStatus,
   UserRequest,
   User,
+  Asset,
+  AuthMethod,
 } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { NotFoundError, RequestLimitError } from '../types';
+import { NotFoundError, PackageToAdd, RequestLimitError } from '../types';
 
 class PackageAction {
   private static instance: PackageAction;
@@ -24,8 +27,9 @@ class PackageAction {
   private packageAuthMethodRepository: Repository<PackageAuthMethod>;
   private userAuthStatusRepository: Repository<UserAuthStatus>;
   private userRequestRepository: Repository<UserRequest>;
-
+  private assetRepository: Repository<Asset>;
   private userRepository: Repository<User>;
+  private authMethodRepository: Repository<AuthMethod>;
 
   /**
    * Protected constructor to enforce singleton pattern.
@@ -44,6 +48,8 @@ class PackageAction {
     this.userRequestRepository = this.dataSource.getRepository(UserRequest);
 
     this.userRepository = this.dataSource.getRepository(User);
+    this.assetRepository = this.dataSource.getRepository(Asset);
+    this.authMethodRepository = this.dataSource.getRepository(AuthMethod);
   }
 
   /**
@@ -269,6 +275,87 @@ class PackageAction {
     return userRequest.id;
   };
 
+  public addPackage = async (packageData: PackageToAdd): Promise<number> => {
+    this.logger.debug(
+      `Adding new package with data: ${JSON.stringify(packageData)}`,
+    );
+
+    // Create a new Package entity
+    const newPackage = this.packageRepository.create({
+      name: packageData.name,
+      description: packageData.description,
+      type: packageData.type,
+      status: packageData.status,
+      openAt: packageData.openAt ? new Date(packageData.openAt) : undefined,
+      closeAt: packageData.closeAt ? new Date(packageData.closeAt) : undefined,
+      delay: packageData.delay,
+      numberEachUser: packageData.numberEachUser,
+    });
+
+    // Save the package to the database
+    const savedPackage = await this.packageRepository.save(newPackage);
+    this.logger.debug(`New package saved with ID ${savedPackage.id}`);
+
+    await this.addAssets(packageData.assets, savedPackage);
+    await this.addPackageAuthMethods(packageData.authMethods, savedPackage);
+
+    return savedPackage.id;
+  };
+
+  public addAssets = async (
+    assets: {
+      tokenId: string;
+      amount: bigint;
+      decimals: number;
+      usageDescription: string;
+    }[],
+    pkg: Package,
+  ) => {
+    // Create Asset entities
+    const newAssets = this.assetRepository.create(
+      assets.map((asset) => ({
+        tokenId: asset.tokenId,
+        amount: asset.amount,
+        decimals: asset.decimals,
+        usageDescription: asset.usageDescription,
+        package: pkg, // Associate with the saved package
+      })),
+    );
+    // Save given assets to the database
+    await this.assetRepository.save(newAssets);
+    this.logger.debug(`Assets for package ID ${pkg.id} saved successfully`);
+  };
+
+  public addPackageAuthMethods = async (
+    authMethods: { id: number; order?: number }[],
+    pkg: Package,
+  ) => {
+    // Create PackageAuthMethod entities
+    const packageAuthMethods: PackageAuthMethod[] = [];
+
+    for (let i = 0; i < authMethods.length; i++) {
+      const authMethod = await this.authMethodRepository.findOne({
+        where: { id: authMethods[i].id },
+      });
+
+      if (!authMethod)
+        throw new NotFoundError(
+          `Auth method with id ${authMethods[i]} not found`,
+        );
+
+      const pam = this.packageAuthMethodRepository.create({
+        authMethod,
+        package: pkg,
+        order: authMethods[i].order,
+      });
+
+      packageAuthMethods.push(pam);
+    }
+
+    // Save PackageAuthMethod entities to the database
+    await this.packageAuthMethodRepository.save(packageAuthMethods);
+  };
+
   /**
    * Checks if the specified user is an admin.
    * @param userId - The ID of the user to validate.
@@ -288,6 +375,26 @@ class PackageAction {
 
     this.logger.debug(`User with id ${userId} is an admin.`);
     return true;
+  };
+
+  validateAuthMethods = async (authMethods: number[]) => {
+    // Find AuthMethods by IDs
+    const existingAuthMethods = (
+      await this.authMethodRepository.findBy({
+        id: In(authMethods),
+      })
+    ).map((am) => am.id);
+
+    // Check if all provided IDs exist
+    if (authMethods.length !== authMethods.length) {
+      const notFoundAuths = authMethods.filter(
+        (a) => !existingAuthMethods.includes(a),
+      );
+
+      throw new NotFoundError(
+        `Some auth methods not found for IDs: ${JSON.stringify(notFoundAuths)}`,
+      );
+    }
   };
 }
 

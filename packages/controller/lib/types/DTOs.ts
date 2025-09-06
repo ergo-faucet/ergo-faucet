@@ -1,9 +1,9 @@
 export type PackageType = 'normal' | 'random';
 
 export interface AssetDTO {
-  id: number;
   tokenId: string;
   amount: string;
+  decimals: number;
   usageDescription: string;
 }
 

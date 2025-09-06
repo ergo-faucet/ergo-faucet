@@ -66,6 +66,7 @@ const mockAsset1: Asset = {
   package: mockPackage,
   tokenId: 'token-abc-123',
   amount: BigInt(1000),
+  decimals: 1,
   usageDescription: 'Initial reward',
 };
 
@@ -74,6 +75,7 @@ const mockAsset2: Asset = {
   package: mockPackage,
   tokenId: 'token-def-456',
   amount: BigInt(500),
+  decimals: 1,
   usageDescription: 'Bonus item',
 };
 
@@ -131,15 +133,15 @@ export const mockPackageDTO: PackageDTO[] = [
     numberEachUser: 1,
     assets: [
       {
-        id: 1,
         tokenId: 'token-abc-123',
         amount: '1000',
+        decimals: 1,
         usageDescription: 'Initial reward',
       },
       {
-        id: 2,
         tokenId: 'token-def-456',
         amount: '500',
+        decimals: 1,
         usageDescription: 'Bonus item',
       },
     ],
