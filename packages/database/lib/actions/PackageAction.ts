@@ -3,6 +3,7 @@ import {
   Equal,
   FindOptionsOrder,
   In,
+  IsNull,
   Not,
   Repository,
 } from '@rosen-bridge/extended-typeorm';
@@ -144,26 +145,26 @@ class PackageAction {
     });
     if (!usr) throw new NotFoundError(`There is no user with id ${userId}`);
 
-    const userReq = await this.userRequestRepository.findOne({
-      where: { package: { id: packageId }, user: { id: userId } },
+    const userRequests = await this.userRequestRepository.find({
+      where: {
+        package: { id: packageId },
+        user: { id: userId },
+        status: Not(Equal('failed')),
+      },
       order: { id: 'DESC' }, // checking the latest request
     });
+    const requestsCount = userRequests.length;
 
-    if (userReq) {
+    if (userRequests) {
+      const latestRequest = userRequests[0];
       const currentTime = new Date();
-      const lastRequestTime = userReq.timestamp;
+      const lastRequestTime = latestRequest.timestamp;
       const timeDifferenceMs =
         currentTime.getTime() - lastRequestTime.getTime();
 
       if (timeDifferenceMs < pkg.delay)
         throw new RequestLimitError('Cooldown period is still active.');
     }
-
-    const requestsCount = await this.userRequestRepository.countBy({
-      package: { id: packageId },
-      user: { id: userId },
-      status: Not(Equal('failed')),
-    });
 
     if (requestsCount + 1 > pkg.numberEachUser) {
       throw new RequestLimitError(
@@ -197,7 +198,7 @@ class PackageAction {
       this.logger.debug(
         `No auth methods required for packageId=${packageId}, userId=${userId}`,
       );
-      return true; //package has no auth status then we do not need to check user auth status
+      return true; //package has no auth method then we do not need to check user auth status
     }
 
     const requiredAuthMethodIds = new Set(
@@ -226,13 +227,21 @@ class PackageAction {
     packageId: number,
   ): Promise<number[]> => {
     const passedAuthStatuses = await this.userAuthStatusRepository.find({
-      where: {
-        user: { id: userId },
-        package: { id: packageId },
-        status: 'passed',
-      },
+      where: [
+        {
+          user: { id: userId },
+          package: { id: packageId },
+          status: 'passed',
+        },
+        {
+          user: { id: userId },
+          package: IsNull(), //since package is optional we need to get those entries with null in package field
+          status: 'passed',
+        },
+      ],
       relations: ['authMethod'],
     });
+
     this.logger.debug(
       `Fetched ${passedAuthStatuses.length} passed UserAuthStatus for userId=${userId}, packageId=${packageId}`,
     );

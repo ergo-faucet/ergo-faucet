@@ -18,6 +18,7 @@ import {
   RequestPackageBodyType,
   PackageDTO,
   AddPackageBodyType,
+  RequestPackageResponse200,
 } from './types';
 import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
@@ -145,10 +146,8 @@ class PackageController {
   /**
    * Registers the /packages/request POST route on the provided Fastify instance.
    * Handles user requests for packages, including authentication and captcha checks.
-   * Validates userId, package availability, and required authentication methods.
+   * Validates package availability and required authentication methods.
    * Adds a new user request if all checks pass.
-   * Responds with 200 on success, 400 for missing userId, 403 if auth methods are incomplete,
-   * 404 if user or package not found, 403 if request limit is active, or 500 for internal errors.
    *
    * @param fastify - The Fastify server instance to register the route on.
    * @returns {Promise<void>}
@@ -175,6 +174,7 @@ class PackageController {
         schema: {
           body: RequestPackageBody,
           response: {
+            200: RequestPackageResponse200,
             400: ErrorResponse,
             403: ErrorResponse,
             500: ErrorResponse,
@@ -185,11 +185,6 @@ class PackageController {
       async (request, reply) => {
         this.logger.debug(`New request for package ${request.body.packageId}`);
         const user = request.user as userRequestPayload;
-        if (!user.userId) {
-          return reply
-            .status(400)
-            .send({ error: 'Missing userId', code: 'Bad Request' });
-        }
 
         const { packageId, destAddress } = request.body;
 
@@ -215,7 +210,7 @@ class PackageController {
           this.logger.debug(
             `UserRequest with ID: ${requestId} successfully added for userId=${user.userId}, packageId=${packageId}`,
           );
-          return reply.status(200).send();
+          return reply.status(200).send({ requestId });
         } catch (error) {
           if (error instanceof NotFoundError) {
             this.logger.debug(error.message);

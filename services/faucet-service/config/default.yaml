@@ -40,7 +40,6 @@ server:
 
 database:
   type: 'postgres'
-  # path: './sqlite'
   database: ''
   host: 'postgres'
   port: 5432
@@ -84,6 +83,6 @@ googleAuth:
 
 ergo:
   network: 'mainnet'
-  nodeURL: 'https://node.ergopool.io/panel'
+  nodeURL: ''
   minNanoErg: 10000000
   minFee: 1000000

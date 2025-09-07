@@ -3,6 +3,7 @@ export {
   AddPackageBody,
   PackagesRouteQuery,
   GetPackagesResponse200,
+  RequestPackageResponse200,
   ErrorResponse,
 } from './schemas';
 export type { PackageDTO, AssetDTO, AuthMethodDTO } from './DTOs';

@@ -11,7 +11,6 @@ export const dbConfig: DatabaseConfig =
     ? {
         type: dbType,
         database: config.get<string>('database.database'),
-        path: config.get<string>('database.path'),
         logging: config.get<boolean>('database.logging'),
       }
     : {

@@ -84,3 +84,7 @@ export const AddPackageBody = Type.Object({
 export const AddPackageResponse20 = Type.Object({
   packageId: Type.Number({ minimum: 0 }),
 });
+
+export const RequestPackageResponse200 = Type.Object({
+  requestId: Type.Number({ minimum: 1 }),
+});
