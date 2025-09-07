@@ -27,6 +27,8 @@ export const mockedPackageAction: PackageAction & {
   getPassedUserAuthByPackage: ReturnType<typeof vi.fn>;
   addUserRequest: ReturnType<typeof vi.fn>;
   validateAdminRequest: ReturnType<typeof vi.fn>;
+  validateAuthMethods: ReturnType<typeof vi.fn>;
+  addPackage: ReturnType<typeof vi.fn>;
 } = {
   getPackages: vi.fn(),
   isPackageAvailableForUser: vi.fn(),
@@ -34,6 +36,8 @@ export const mockedPackageAction: PackageAction & {
   getPassedUserAuthByPackage: vi.fn(),
   addUserRequest: vi.fn(),
   validateAdminRequest: vi.fn(),
+  validateAuthMethods: vi.fn(),
+  addPackage: vi.fn(),
   // eslint-disable-next-line
 } as any;
 
@@ -48,6 +52,7 @@ export const mockedFastifyServer: FastifyAPIServer & {
     request.user = {
       userId: 123,
       address: 'mocked-user-address',
+      isAdmin: false,
     };
   }),
 
@@ -56,6 +61,15 @@ export const mockedFastifyServer: FastifyAPIServer & {
     return;
   }),
   setAuthCookie: vi.fn(),
+  // eslint-disable-next-line
+} as any;
+
+export const mockNodeModel = {
+  getCurrentBlockchainHeight: vi.fn(),
+  submitTransactionBytes: vi.fn(),
+  isTxInMempool: vi.fn(),
+  getInclusionHeight: vi.fn(),
+  fetchDecimalsToken: vi.fn(),
   // eslint-disable-next-line
 } as any;
 

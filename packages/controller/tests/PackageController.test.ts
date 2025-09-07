@@ -15,12 +15,17 @@ import {
   mockedPackageAction,
   mockPackage,
   mockPackageDTO,
+  mockNodeModel,
 } from './mockUtils';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
 import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
 import * as ergo_utils from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
+import {
+  InvalidTokenPrecisionError,
+  TokenNotFoundError,
+} from '@ergo-faucet/ergo-utils';
 
 describe('PackageController', () => {
   beforeEach(() => {
@@ -38,12 +43,13 @@ describe('PackageController', () => {
      * Register the /packages route before running the tests in this block.
      */
     beforeAll(async () => {
-      const instance = new PackageController(
-        mockedPackageAction,
+      const instance = new PackageController({
+        packageAction: mockedPackageAction,
         // eslint-disable-next-line
-        {} as any as FastifyAPIServer,
-        Network.Testnet,
-      );
+        fastifyServer: {} as any as FastifyAPIServer,
+        networkType: Network.Testnet,
+        nodeModel: mockNodeModel,
+      });
       await mockedServer.register(instance.fetchPackagesRoute, {
         prefix: '/packages',
       });
@@ -132,11 +138,12 @@ describe('PackageController', () => {
      * Register the /packages/request route before running the tests in this block.
      */
     beforeAll(async () => {
-      const instance = new PackageController(
-        mockedPackageAction,
-        mockedFastifyServer,
-        Network.Testnet,
-      );
+      const instance = new PackageController({
+        packageAction: mockedPackageAction,
+        fastifyServer: mockedFastifyServer,
+        networkType: Network.Testnet,
+        nodeModel: mockNodeModel,
+      });
       await mockedServer.register(instance.requestPackageRoute, {
         prefix: '/packages',
       });
@@ -326,11 +333,12 @@ describe('PackageController', () => {
 
       vi.clearAllMocks();
     });
-    const packageController = new PackageController(
-      mockedPackageAction,
-      mockedFastifyServer,
-      Network.Testnet,
-    );
+    const packageController = new PackageController({
+      packageAction: mockedPackageAction,
+      fastifyServer: mockedFastifyServer,
+      networkType: Network.Testnet,
+      nodeModel: mockNodeModel,
+    });
 
     /**
      * Test admin user access
@@ -581,6 +589,250 @@ describe('PackageController', () => {
       });
 
       await fastifyInstance.close();
+    });
+  });
+
+  describe('POST /packages/add', () => {
+    let fastifyInstance: FastifyAPIServer;
+    let packageController: PackageController;
+    // eslint-disable-next-line
+    let adminPreHandlerSpy: any;
+
+    beforeAll(async () => {
+      // eslint-disable-next-line
+      (FastifyAPIServer as any).instance = undefined;
+      await FastifyAPIServer.initialize(mockConfig);
+      fastifyInstance = FastifyAPIServer.getInstance();
+
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        async (request) => {
+          request.user = {
+            userId: 12345,
+            address: 'mocked-user-address',
+            isAdmin: true,
+          };
+        },
+      );
+      packageController = new PackageController({
+        packageAction: mockedPackageAction,
+        fastifyServer: fastifyInstance,
+        networkType: Network.Testnet,
+        nodeModel: mockNodeModel,
+      });
+
+      // Set up spy before registering the route
+      adminPreHandlerSpy = vi.spyOn(packageController, 'adminPreHandler');
+
+      await fastifyInstance.register(
+        packageController.addPackageRoute,
+        '/packages',
+      );
+
+      await fastifyInstance.start();
+    });
+
+    afterAll(async () => {
+      vi.restoreAllMocks();
+      await fastifyInstance.close();
+    });
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
+    /**
+     * Test for successful POST /packages/add
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages/add with valid admin user and package data
+     * @expected
+     * - returns 200 and the package ID
+     */
+    it('should successfully add a package', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+      mockedPackageAction.validateAuthMethods.mockImplementation(() => {});
+      mockedPackageAction.addPackage.mockResolvedValue(1);
+      mockNodeModel.fetchDecimalsToken.mockResolvedValue(2);
+
+      vi.spyOn(packageController, 'processAssets').mockImplementation(
+        async (
+          assets: {
+            tokenId: string;
+            amount: number;
+            usageDescription: string;
+          }[],
+        ): Promise<
+          {
+            tokenId: string;
+            amount: bigint;
+            decimals: number;
+            usageDescription: string;
+          }[]
+        > => [
+          {
+            tokenId: assets[0].tokenId,
+            amount: 10000n,
+            decimals: 2,
+            usageDescription: assets[0].usageDescription,
+          },
+        ],
+      );
+
+      const payload = {
+        name: 'Test Package',
+        description: 'A test package',
+        type: 'normal',
+        status: 'show',
+        delay: 360000,
+        numberEachUser: 1,
+        authMethods: [{ id: 1 }],
+        assets: [
+          { tokenId: 'TOKEN1', amount: 100, usageDescription: 'Test asset' },
+        ],
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages/add',
+        payload,
+      });
+
+      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
+      expect(adminPreHandlerSpy).toHaveBeenCalled();
+      expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
+        12345,
+      );
+
+      expect(mockedPackageAction.validateAuthMethods).toHaveBeenCalledWith([1]);
+      expect(mockedPackageAction.addPackage).toHaveBeenCalledWith({
+        name: 'Test Package',
+        description: 'A test package',
+        type: 'normal',
+        status: 'show',
+        delay: 360000,
+        numberEachUser: 1,
+        authMethods: [{ id: 1 }],
+        assets: [
+          {
+            tokenId: 'TOKEN1',
+            amount: 10000n,
+            decimals: 2,
+            usageDescription: 'Test asset',
+          },
+        ],
+      });
+      expect(result.statusCode).toEqual(200);
+      expect(JSON.parse(result.body)).toEqual({ packageId: 1 });
+    });
+  });
+  describe('PackageController - processAssets', () => {
+    let packageController: PackageController;
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      packageController = new PackageController({
+        packageAction: mockedPackageAction,
+        fastifyServer: mockedFastifyServer,
+        networkType: Network.Testnet,
+        nodeModel: mockNodeModel,
+      });
+    });
+
+    /**
+     * Test for successful processing of assets with ERG token
+     * @target PackageController.processAssets
+     * @scenario
+     * - Process assets with ERG token
+     * @expected
+     * - Correctly converts ERG amount and returns processed assets
+     */
+    it('should successfully process ERG token', async () => {
+      const assets = [
+        { tokenId: 'ERG', amount: 1.5, usageDescription: 'Test ERG' },
+      ];
+
+      const result = await packageController.processAssets(assets);
+
+      expect(result).toEqual([
+        {
+          tokenId: 'ERG',
+          amount: BigInt(1500000000),
+          decimals: 9,
+          usageDescription: 'Test ERG',
+        },
+      ]);
+    });
+
+    /**
+     * Test for successful processing of non-ERG token
+     * @target PackageController.processAssets
+     * @scenario
+     * - Process assets with non-ERG token and valid decimals
+     * @expected
+     * - Correctly converts amount based on token decimals
+     */
+    it('should successfully process non-ERG token', async () => {
+      mockNodeModel.fetchDecimalsToken.mockResolvedValue(2);
+      const assets = [
+        { tokenId: 'TOKEN1', amount: 100.25, usageDescription: 'Test token' },
+      ];
+
+      const result = await packageController.processAssets(assets);
+
+      expect(mockNodeModel.fetchDecimalsToken).toHaveBeenCalledWith('TOKEN1');
+
+      expect(result).toEqual([
+        {
+          tokenId: 'TOKEN1',
+          amount: BigInt(10025),
+          decimals: 2,
+          usageDescription: 'Test token',
+        },
+      ]);
+    });
+
+    /**
+     * Test for TokenNotFoundError in processAssets
+     * @target PackageController.processAssets
+     * @scenario
+     * - Process assets with invalid token ID
+     * @expected
+     * - Throws TokenNotFoundError
+     */
+    it('should throw TokenNotFoundError for invalid token', async () => {
+      mockNodeModel.fetchDecimalsToken.mockRejectedValue(
+        new TokenNotFoundError('Token not found'),
+      );
+      const assets = [
+        {
+          tokenId: 'INVALID_TOKEN',
+          amount: 100,
+          usageDescription: 'Test token',
+        },
+      ];
+
+      await expect(packageController.processAssets(assets)).rejects.toThrow(
+        TokenNotFoundError,
+      );
+    });
+
+    /**
+     * Test for InvalidTokenPrecisionError in processAssets
+     * @target PackageController.processAssets
+     * @scenario
+     * - Process assets with amount exceeding token precision
+     * @expected
+     * - Throws InvalidTokenPrecisionError
+     */
+    it('should throw InvalidTokenPrecisionError for invalid precision', async () => {
+      mockNodeModel.fetchDecimalsToken.mockResolvedValue(2);
+      const assets = [
+        { tokenId: 'TOKEN1', amount: 100.123, usageDescription: 'Test token' },
+      ];
+
+      await expect(packageController.processAssets(assets)).rejects.toThrow(
+        InvalidTokenPrecisionError,
+      );
     });
   });
 });
