@@ -6,6 +6,7 @@ import {
   tokenByIdResponseSuccess,
 } from './types';
 import { Box } from '@fleet-sdk/common';
+import { TokenNotFoundError } from './types/errors';
 
 export class NodeModel {
   private static instance: NodeModel;
@@ -344,7 +345,14 @@ export class NodeModel {
     }
     return await this.axiosInstance
       .get<tokenByIdResponseSuccess>(`/blockchain/token/byId/${tokenId}`)
-      .then((res) => res.data)
+      .then((res) => {
+        if (res.status === 400 || res.status === 404) {
+          this.logger.debug(`Token with id ${tokenId} not found.`);
+          throw new TokenNotFoundError(`Token with id ${tokenId} not found`);
+        }
+
+        return res.data;
+      })
       .catch((error) => {
         if (axios.isAxiosError(error)) {
           this.logger.error(`Axios error.`, {

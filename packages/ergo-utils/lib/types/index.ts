@@ -2,6 +2,7 @@ export {
   DoubleSpendError,
   NotEnoughAssetsError,
   InvalidTokenPrecisionError,
+  TokenNotFoundError,
 } from './errors';
 export {
   errorResponse,

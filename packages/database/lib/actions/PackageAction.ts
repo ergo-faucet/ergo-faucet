@@ -399,7 +399,7 @@ class PackageAction {
     ).map((am) => am.id);
 
     // Check if all provided IDs exist
-    if (authMethods.length !== authMethods.length) {
+    if (authMethods.length !== existingAuthMethods.length) {
       const notFoundAuths = authMethods.filter(
         (a) => !existingAuthMethods.includes(a),
       );

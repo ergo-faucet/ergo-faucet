@@ -22,7 +22,13 @@ import {
 } from './types';
 import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
-import { isValidErgoAddress } from '@ergo-faucet/ergo-utils';
+import {
+  isValidErgoAddress,
+  NodeModel,
+  validateAmountPrecision,
+  TokenNotFoundError,
+  InvalidTokenPrecisionError,
+} from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
 
 class PackageController {
@@ -245,7 +251,7 @@ class PackageController {
     fastify: FastifySeverInstance,
   ): Promise<void> => {
     fastify.post<{ Body: AddPackageBodyType }>(
-      '/request',
+      '/add',
       {
         preHandler: [this.fastifyServer.authPreHandler, this.adminPreHandler],
         schema: {
@@ -279,18 +285,33 @@ class PackageController {
             packageId,
           });
         } catch (error) {
-          // TODO
-
-          if (error instanceof NotFoundError) {
-            this.logger.debug(error.message);
+          if (error instanceof TokenNotFoundError) {
+            this.logger.debug(`Token not found: ${error.message}`);
             return reply
-              .status(404)
-              .send({ error: error.message, code: 'NOT_FOUND' });
+              .status(400)
+              .send({ error: error.message, code: 'TOKEN_NOT_FOUND' });
+          } else if (error instanceof InvalidTokenPrecisionError) {
+            this.logger.debug(`Invalid token precision: ${error.message}`);
+            return reply
+              .status(400)
+              .send({ error: error.message, code: 'INVALID_PRECISION' });
+          } else if (error instanceof NotFoundError) {
+            this.logger.debug(
+              `Not found error (likely auth methods): ${error.message}`,
+            );
+            return reply
+              .status(400)
+              .send({ error: error.message, code: 'AUTH_NOT_FOUND' });
+          } else {
+            this.logger.error(`Unexpected error during adding package`, {
+              message: error instanceof Error ? error.message : 'unknown error',
+              stack: error instanceof Error ? error.stack : undefined,
+            });
+            return reply.status(500).send({
+              error: 'Internal server error occurred',
+              code: 'internal-error',
+            });
           }
-
-          this.logger.debug(
-            error instanceof Error ? error.message : 'Unknown error',
-          );
         }
       },
     );
@@ -310,8 +331,39 @@ class PackageController {
       usageDescription: string;
     }[]
   > => {
-    this.logger.debug(JSON.stringify(assets));
-    throw new Error('Method not implemented.');
+    const tokens = [];
+    for (let i = 0; i < assets.length; i++) {
+      const { tokenId, amount: value, usageDescription } = assets[i];
+
+      // Special case for native ERG token
+      if (tokenId === 'ERG') {
+        tokens.push({
+          tokenId,
+          amount: BigInt(value * 1e9),
+          decimals: 9,
+          usageDescription,
+        });
+        continue;
+      }
+
+      // Fetch token decimals
+      const tokenDecimals =
+        await NodeModel.getInstance().fetchDecimalsToken(tokenId);
+
+      // Validate the amount's precision against the token's decimals
+      validateAmountPrecision(value, tokenDecimals);
+
+      // convert user provided amount to nodeAPI requested amount and save it to the list
+      const amount = value * Math.pow(10, tokenDecimals);
+      tokens.push({
+        tokenId,
+        amount: BigInt(amount),
+        decimals: tokenDecimals,
+        usageDescription,
+      });
+    }
+
+    return tokens;
   };
 
   /**

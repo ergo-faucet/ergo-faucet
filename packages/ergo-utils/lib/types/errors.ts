@@ -22,3 +22,14 @@ export class InvalidTokenPrecisionError extends Error {
     this.name = 'InvalidTokenPrecision';
   }
 }
+
+export class TokenNotFoundError extends Error {
+  /**
+   * Constructs the error with details.
+   * @param details - The details about the failure.
+   */
+  constructor(details: string) {
+    super(`Token Not Found error : ${details}`);
+    this.name = 'TokenNotFoundError';
+  }
+}
