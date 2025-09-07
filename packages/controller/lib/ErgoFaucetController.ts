@@ -3,6 +3,7 @@ import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { PackageController } from './PackageController';
 import { PackageAction } from '@ergo-faucet/database';
 import { Network } from '@fleet-sdk/common';
+import { NodeModel } from '@ergo-faucet/ergo-utils';
 
 class ErgoFaucetController {
   private static instance: ErgoFaucetController;
@@ -20,16 +21,19 @@ class ErgoFaucetController {
     fastifyServer: FastifyAPIServer,
     private readonly packageAction: PackageAction,
     private readonly NETWORK_TYPE: Network,
+    private readonly nodeModel: NodeModel,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
     this.fastifyServer = fastifyServer;
-    this.packageController = new PackageController(
-      this.packageAction,
-      fastifyServer,
-      this.NETWORK_TYPE,
+    this.nodeModel = nodeModel;
+    this.packageController = new PackageController({
+      packageAction: this.packageAction,
+      fastifyServer: fastifyServer,
+      networkType: this.NETWORK_TYPE,
+      nodeModel: nodeModel,
       logger,
-    );
+    });
   }
 
   /**
@@ -56,6 +60,7 @@ class ErgoFaucetController {
     fastifyServer: FastifyAPIServer,
     packageAction: PackageAction,
     networkType: Network,
+    nodeModel: NodeModel,
     logger?: AbstractLogger,
   ) => {
     if (this.instance) {
@@ -67,6 +72,7 @@ class ErgoFaucetController {
       fastifyServer,
       packageAction,
       networkType,
+      nodeModel,
       logger,
     );
     await this.instance.registerRoutes(this.instance.CONTROLLER_PREFIX);

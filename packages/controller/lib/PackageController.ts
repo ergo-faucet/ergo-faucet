@@ -19,6 +19,8 @@ import {
   PackageDTO,
   AddPackageBodyType,
   RequestPackageResponse200,
+  AddPackageResponse200,
+  AddPackageBody,
 } from './types';
 import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
@@ -30,27 +32,27 @@ import {
   InvalidTokenPrecisionError,
 } from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
+import { PackageControllerConfig } from './types';
 
 class PackageController {
   private readonly logger: AbstractLogger;
   private readonly packageAction: PackageAction;
   private readonly PACKAGES_PREFIX = '/packages';
   private readonly fastifyServer: FastifyAPIServer;
+  private readonly nodeModel: NodeModel;
+  private readonly NETWORK_TYPE: Network;
 
   /**
    * Constructs a new PackageController.
    * @param packageAction - Instance of PackageAction for DB operations.
    * @param logger - Optional logger instance.
    */
-  public constructor(
-    packageAction: PackageAction,
-    fastifyServer: FastifyAPIServer,
-    private readonly NETWORK_TYPE: Network,
-    logger?: AbstractLogger,
-  ) {
-    this.logger = logger ? logger : new DummyLogger();
-    this.packageAction = packageAction;
-    this.fastifyServer = fastifyServer;
+  public constructor(config: PackageControllerConfig) {
+    this.logger = config.logger ? config.logger : new DummyLogger();
+    this.packageAction = config.packageAction;
+    this.fastifyServer = config.fastifyServer;
+    this.nodeModel = config.nodeModel;
+    this.NETWORK_TYPE = config.networkType;
   }
 
   /**
@@ -255,11 +257,11 @@ class PackageController {
       {
         preHandler: [this.fastifyServer.authPreHandler, this.adminPreHandler],
         schema: {
-          body: RequestPackageBody,
+          body: AddPackageBody,
           response: {
+            200: AddPackageResponse200,
             400: ErrorResponse,
             500: ErrorResponse,
-            404: ErrorResponse,
           },
         },
       },
@@ -285,6 +287,7 @@ class PackageController {
             packageId,
           });
         } catch (error) {
+          console.log(error);
           if (error instanceof TokenNotFoundError) {
             this.logger.debug(`Token not found: ${error.message}`);
             return reply
@@ -347,8 +350,7 @@ class PackageController {
       }
 
       // Fetch token decimals
-      const tokenDecimals =
-        await NodeModel.getInstance().fetchDecimalsToken(tokenId);
+      const tokenDecimals = await this.nodeModel.fetchDecimalsToken(tokenId);
 
       // Validate the amount's precision against the token's decimals
       validateAmountPrecision(value, tokenDecimals);
@@ -377,6 +379,14 @@ class PackageController {
   public registerRoutes = async (prefix: string): Promise<void> => {
     await this.fastifyServer.register(
       this.fetchPackagesRoute,
+      prefix + this.PACKAGES_PREFIX,
+    );
+    await this.fastifyServer.register(
+      this.addPackageRoute,
+      prefix + this.PACKAGES_PREFIX,
+    );
+    await this.fastifyServer.register(
+      this.requestPackageRoute,
       prefix + this.PACKAGES_PREFIX,
     );
     this.logger.info(
