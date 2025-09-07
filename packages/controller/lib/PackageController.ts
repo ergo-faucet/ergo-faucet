@@ -266,11 +266,17 @@ class PackageController {
       async (request, reply) => {
         const copyOfAssets = structuredClone(request.body.assets);
         try {
+          // Process assets
           const assets = await this.processAssets(copyOfAssets);
+
+          // Validate auth methods
+          this.packageAction.validateAuthMethods(
+            request.body.authMethods.map((am) => am.id),
+          );
 
           const packageData = { ...request.body, assets };
 
-          // add package to database
+          // Add package to database
           const packageId = await this.packageAction.addPackage(packageData);
           this.logger.debug(`Package with ID: ${packageId} successfully added`);
 
@@ -279,6 +285,14 @@ class PackageController {
           });
         } catch (error) {
           // TODO
+
+          if (error instanceof NotFoundError) {
+            this.logger.debug(error.message);
+            return reply
+              .status(404)
+              .send({ error: error.message, code: 'NOT_FOUND' });
+          }
+
           this.logger.debug(
             error instanceof Error ? error.message : 'Unknown error',
           );

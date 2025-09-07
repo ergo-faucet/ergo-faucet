@@ -277,7 +277,11 @@ class PackageAction {
 
   public addPackage = async (packageData: PackageToAdd): Promise<number> => {
     this.logger.debug(
-      `Adding new package with data: ${JSON.stringify(packageData)}`,
+      `Adding new package with data: ${JSON.stringify(
+        packageData,
+        (_, value) => (typeof value === 'bigint' ? value.toString() : value),
+        2,
+      )}`,
     );
 
     // Create a new Package entity
