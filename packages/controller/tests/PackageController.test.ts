@@ -724,8 +724,284 @@ describe('PackageController', () => {
       expect(result.statusCode).toEqual(200);
       expect(JSON.parse(result.body)).toEqual({ packageId: 1 });
     });
+
+    /**
+     * Test for successful package addition with multiple assets and auth methods
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages/add with multiple assets and auth methods
+     * @expected
+     * - returns 200 and successfully adds package with multiple items
+     */
+    it('should successfully add package with multiple assets and auth methods', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+      mockedPackageAction.validateAuthMethods.mockImplementation(() => {});
+      mockedPackageAction.addPackage.mockResolvedValue(3);
+
+      vi.spyOn(packageController, 'processAssets').mockResolvedValue([
+        {
+          tokenId: 'ERG',
+          amount: BigInt(1000000000),
+          decimals: 9,
+          usageDescription: 'Native ERG token',
+        },
+        {
+          tokenId: 'TOKEN1',
+          amount: BigInt(50000),
+          decimals: 2,
+          usageDescription: 'Custom token',
+        },
+      ]);
+
+      const payload = {
+        name: 'Multi Asset Package',
+        description: 'A package with multiple assets and auth methods',
+        type: 'normal',
+        status: 'show',
+        delay: 86400000, // 24 hours
+        numberEachUser: 3,
+        authMethods: [
+          { id: 1, order: 1 },
+          { id: 2, order: 2 },
+        ],
+        assets: [
+          { tokenId: 'ERG', amount: 1, usageDescription: 'Native ERG token' },
+          { tokenId: 'TOKEN1', amount: 500, usageDescription: 'Custom token' },
+        ],
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages/add',
+        payload,
+      });
+
+      expect(mockedPackageAction.validateAuthMethods).toHaveBeenCalledWith([
+        1, 2,
+      ]);
+      expect(result.statusCode).toEqual(200);
+      expect(JSON.parse(result.body)).toEqual({ packageId: 3 });
+    });
+
+    /**
+     * Test for malformed request body in POST /packages/add
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages/add with missing required fields
+     * @expected
+     * - returns 400 with validation error
+     */
+    it('should return 400 for malformed request body - missing required fields', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+
+      const payload = {
+        // Missing required fields: name, description, type, status, delay, numberEachUser, authMethods, assets
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages/add',
+        payload,
+      });
+
+      expect(result.statusCode).toEqual(400);
+      const response = JSON.parse(result.body);
+      expect(response.error).toBe('Bad Request');
+      expect(response.code).toBe('FST_ERR_VALIDATION');
+    });
+
+    /**
+     * Test for TokenNotFoundError in POST /packages/add
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages/add when token is not found
+     * @expected
+     * - returns 400 with TOKEN_NOT_FOUND error
+     */
+    it('should return 400 for token not found error', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+      mockedPackageAction.validateAuthMethods.mockImplementation(() => {});
+
+      vi.spyOn(packageController, 'processAssets').mockRejectedValue(
+        new TokenNotFoundError('Token with id INVALID_TOKEN not found'),
+      );
+
+      const payload = {
+        name: 'Test Package',
+        description: 'A test package',
+        type: 'normal',
+        status: 'show',
+        delay: 360000,
+        numberEachUser: 1,
+        authMethods: [{ id: 1 }],
+        assets: [
+          {
+            tokenId: 'INVALID_TOKEN',
+            amount: 100,
+            usageDescription: 'Test asset',
+          },
+        ],
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages/add',
+        payload,
+      });
+
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'Token Not Found error : Token with id INVALID_TOKEN not found',
+        code: 'TOKEN_NOT_FOUND',
+      });
+    });
+
+    /**
+     * Test for InvalidTokenPrecisionError in POST /packages/add
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages/add when token amount has invalid precision
+     * @expected
+     * - returns 400 with INVALID_PRECISION error
+     */
+    it('should return 400 for invalid token precision error', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+      mockedPackageAction.validateAuthMethods.mockImplementation(() => {});
+
+      vi.spyOn(packageController, 'processAssets').mockRejectedValue(
+        new InvalidTokenPrecisionError(
+          'Amount has too many decimal places. Token supports up to 2 decimal places, but received 3.',
+        ),
+      );
+
+      const payload = {
+        name: 'Test Package',
+        description: 'A test package',
+        type: 'normal',
+        status: 'show',
+        delay: 360000,
+        numberEachUser: 1,
+        authMethods: [{ id: 1 }],
+        assets: [
+          {
+            tokenId: 'TOKEN1',
+            amount: 100.123,
+            usageDescription: 'Test asset',
+          },
+        ],
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages/add',
+        payload,
+      });
+
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body)).toEqual({
+        error:
+          'Invalid Token Precision error : Amount has too many decimal places. Token supports up to 2 decimal places, but received 3.',
+        code: 'INVALID_PRECISION',
+      });
+    });
+
+    /**
+     * Test for auth methods not found in POST /packages/add
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages/add when auth methods are not found in database
+     * @expected
+     * - returns 400 with AUTH_NOT_FOUND error
+     */
+    it('should return 400 for auth methods not found', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+      mockedPackageAction.validateAuthMethods.mockImplementation(() => {
+        throw new NotFoundError('Some auth methods not found for IDs: [999]');
+      });
+
+      vi.spyOn(packageController, 'processAssets').mockResolvedValue([
+        {
+          tokenId: 'ERG',
+          amount: BigInt(1000000000),
+          decimals: 9,
+          usageDescription: 'Test asset',
+        },
+      ]);
+
+      const payload = {
+        name: 'Test Package',
+        description: 'A test package',
+        type: 'normal',
+        status: 'show',
+        delay: 360000,
+        numberEachUser: 1,
+        authMethods: [{ id: 999 }], // Non-existent auth method
+        assets: [{ tokenId: 'ERG', amount: 1, usageDescription: 'Test asset' }],
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages/add',
+        payload,
+      });
+
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'Some auth methods not found for IDs: [999]',
+        code: 'AUTH_NOT_FOUND',
+      });
+    });
+
+    /**
+     * Test for database error during package addition in POST /packages/add
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages/add when database error occurs during package addition
+     * @expected
+     * - returns 500 with internal server error
+     */
+    it('should return 500 for database error during package addition', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+      mockedPackageAction.validateAuthMethods.mockImplementation(() => {});
+      mockedPackageAction.addPackage.mockRejectedValue(
+        new Error('Database connection error'),
+      );
+
+      vi.spyOn(packageController, 'processAssets').mockResolvedValue([
+        {
+          tokenId: 'ERG',
+          amount: BigInt(1000000000),
+          decimals: 9,
+          usageDescription: 'Test asset',
+        },
+      ]);
+
+      const payload = {
+        name: 'Test Package',
+        description: 'A test package',
+        type: 'normal',
+        status: 'show',
+        delay: 360000,
+        numberEachUser: 1,
+        authMethods: [{ id: 1 }],
+        assets: [{ tokenId: 'ERG', amount: 1, usageDescription: 'Test asset' }],
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages/add',
+        payload,
+      });
+
+      expect(result.statusCode).toEqual(500);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'Internal server error occurred',
+        code: 'internal-error',
+      });
+    });
   });
-  describe('PackageController - processAssets', () => {
+
+  describe('processAssets', () => {
     let packageController: PackageController;
 
     beforeEach(() => {
