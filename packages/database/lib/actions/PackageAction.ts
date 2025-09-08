@@ -1,5 +1,6 @@
 import {
   DataSource,
+  EntityManager,
   Equal,
   FindOptionsOrder,
   In,
@@ -28,7 +29,6 @@ class PackageAction {
   private packageAuthMethodRepository: Repository<PackageAuthMethod>;
   private userAuthStatusRepository: Repository<UserAuthStatus>;
   private userRequestRepository: Repository<UserRequest>;
-  private assetRepository: Repository<Asset>;
   private userRepository: Repository<User>;
   private authMethodRepository: Repository<AuthMethod>;
 
@@ -49,7 +49,6 @@ class PackageAction {
     this.userRequestRepository = this.dataSource.getRepository(UserRequest);
 
     this.userRepository = this.dataSource.getRepository(User);
-    this.assetRepository = this.dataSource.getRepository(Asset);
     this.authMethodRepository = this.dataSource.getRepository(AuthMethod);
   }
 
@@ -292,27 +291,43 @@ class PackageAction {
         2,
       )}`,
     );
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const packageRepository =
+          transactionalEntityManager.getRepository(Package);
 
-    // Create a new Package entity
-    const newPackage = this.packageRepository.create({
-      name: packageData.name,
-      description: packageData.description,
-      type: packageData.type,
-      status: packageData.status,
-      openAt: packageData.openAt ? new Date(packageData.openAt) : undefined,
-      closeAt: packageData.closeAt ? new Date(packageData.closeAt) : undefined,
-      delay: packageData.delay,
-      numberEachUser: packageData.numberEachUser,
-    });
+        // Create a new Package entity
+        const newPackage = packageRepository.create({
+          name: packageData.name,
+          description: packageData.description,
+          type: packageData.type,
+          status: packageData.status,
+          openAt: packageData.openAt ? new Date(packageData.openAt) : undefined,
+          closeAt: packageData.closeAt
+            ? new Date(packageData.closeAt)
+            : undefined,
+          delay: packageData.delay,
+          numberEachUser: packageData.numberEachUser,
+        });
 
-    // Save the package to the database
-    const savedPackage = await this.packageRepository.save(newPackage);
-    this.logger.debug(`New package saved with ID ${savedPackage.id}`);
+        // Save the package to the database
+        const savedPackage = await packageRepository.save(newPackage);
+        this.logger.debug(`New package saved with ID ${savedPackage.id}`);
 
-    await this.addAssets(packageData.assets, savedPackage);
-    await this.addPackageAuthMethods(packageData.authMethods, savedPackage);
+        await this.addAssets(
+          packageData.assets,
+          savedPackage,
+          transactionalEntityManager,
+        );
+        await this.addPackageAuthMethods(
+          packageData.authMethods,
+          savedPackage,
+          transactionalEntityManager,
+        );
 
-    return savedPackage.id;
+        return savedPackage.id;
+      },
+    );
   };
 
   public addAssets = async (
@@ -323,9 +338,12 @@ class PackageAction {
       usageDescription: string;
     }[],
     pkg: Package,
+    entityManager: EntityManager,
   ) => {
+    const assetRepository = entityManager.getRepository(Asset);
+
     // Create Asset entities
-    const newAssets = this.assetRepository.create(
+    const newAssets = assetRepository.create(
       assets.map((asset) => ({
         tokenId: asset.tokenId,
         amount: asset.amount,
@@ -335,28 +353,33 @@ class PackageAction {
       })),
     );
     // Save given assets to the database
-    await this.assetRepository.save(newAssets);
+    await assetRepository.save(newAssets);
     this.logger.debug(`Assets for package ID ${pkg.id} saved successfully`);
   };
 
   public addPackageAuthMethods = async (
     authMethods: { id: number; order?: number }[],
     pkg: Package,
+    entityManager: EntityManager,
   ) => {
+    const authMethodRepository = entityManager.getRepository(AuthMethod);
+    const packageAuthMethodRepository =
+      entityManager.getRepository(PackageAuthMethod);
+
     // Create PackageAuthMethod entities
     const packageAuthMethods: PackageAuthMethod[] = [];
 
     for (let i = 0; i < authMethods.length; i++) {
-      const authMethod = await this.authMethodRepository.findOne({
+      const authMethod = await authMethodRepository.findOne({
         where: { id: authMethods[i].id },
       });
 
       if (!authMethod)
         throw new NotFoundError(
-          `Auth method with id ${authMethods[i]} not found`,
+          `Auth method with id ${authMethods[i].id} not found`,
         );
 
-      const pam = this.packageAuthMethodRepository.create({
+      const pam = packageAuthMethodRepository.create({
         authMethod,
         package: pkg,
         order: authMethods[i].order,
@@ -366,7 +389,7 @@ class PackageAction {
     }
 
     // Save PackageAuthMethod entities to the database
-    await this.packageAuthMethodRepository.save(packageAuthMethods);
+    await packageAuthMethodRepository.save(packageAuthMethods);
   };
 
   /**
