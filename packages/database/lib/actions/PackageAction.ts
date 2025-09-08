@@ -374,13 +374,8 @@ class PackageAction {
         where: { id: authMethods[i].id },
       });
 
-      if (!authMethod)
-        throw new NotFoundError(
-          `Auth method with id ${authMethods[i].id} not found`,
-        );
-
       const pam = packageAuthMethodRepository.create({
-        authMethod,
+        authMethod: authMethod!,
         package: pkg,
         order: authMethods[i].order,
       });
@@ -389,7 +384,7 @@ class PackageAction {
     }
 
     // Save PackageAuthMethod entities to the database
-    await packageAuthMethodRepository.save(packageAuthMethods);
+    await packageAuthMethodRepository.insert(packageAuthMethods);
   };
 
   /**
