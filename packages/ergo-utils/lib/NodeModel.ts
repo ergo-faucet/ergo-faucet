@@ -4,9 +4,9 @@ import {
   errorResponse,
   DoubleSpendError,
   tokenByIdResponseSuccess,
+  TokenNotFoundError,
 } from './types';
 import { Box } from '@fleet-sdk/common';
-import { TokenNotFoundError } from './types/errors';
 
 export class NodeModel {
   private static instance: NodeModel;

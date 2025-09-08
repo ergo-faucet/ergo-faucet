@@ -18,4 +18,9 @@ export {
   UserAuthStatus,
   UserRequest,
 } from './entities';
-export { NotFoundError, RequestLimitError } from './types';
+export {
+  NotFoundError,
+  RequestLimitError,
+  PackagePayload,
+  AssetPayload,
+} from './types';

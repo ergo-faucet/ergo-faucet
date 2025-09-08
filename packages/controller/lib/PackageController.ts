@@ -9,6 +9,7 @@ import {
   RequestLimitError,
   NotFoundError,
   PackageAction,
+  AssetPayload,
 } from '@ergo-faucet/database';
 import {
   ErrorResponse,
@@ -21,6 +22,8 @@ import {
   RequestPackageResponse200,
   AddPackageResponse200,
   AddPackageBody,
+  PackageControllerConfig,
+  UserProvidedAsset,
 } from './types';
 import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
@@ -32,7 +35,7 @@ import {
   InvalidTokenPrecisionError,
 } from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
-import { PackageControllerConfig } from './types';
+import { Static } from '@sinclair/typebox';
 
 class PackageController {
   private readonly logger: AbstractLogger;
@@ -43,9 +46,14 @@ class PackageController {
   private readonly NETWORK_TYPE: Network;
 
   /**
-   * Constructs a new PackageController.
-   * @param packageAction - Instance of PackageAction for DB operations.
-   * @param logger - Optional logger instance.
+   * Constructs a new PackageController instance.
+
+   * @param config - The configuration object for the controller.
+   *   - packageAction: Instance of PackageAction for DB operations.
+   *   - fastifyServer: FastifyAPIServer instance for route registration.
+   *   - nodeModel: NodeModel instance for token operations.
+   *   - networkType: Network type (e.g., Mainnet, Testnet).
+   *   - logger: Optional logger instance.
    */
   public constructor(config: PackageControllerConfig) {
     this.logger = config.logger ? config.logger : new DummyLogger();
@@ -249,6 +257,13 @@ class PackageController {
     );
   };
 
+  /**
+   * Registers the /packages/add POST route on the provided Fastify instance.
+   * Handles adding a new package, including asset processing and authentication method validation.
+   *
+   * @param fastify - The Fastify server instance to register the route on.
+   * @returns {Promise<void>}
+   */
   public addPackageRoute = async (
     fastify: FastifySeverInstance,
   ): Promise<void> => {
@@ -267,20 +282,19 @@ class PackageController {
       },
 
       async (request, reply) => {
-        const copyOfAssets = structuredClone(request.body.assets);
         try {
           // Process assets
-          const assets = await this.processAssets(copyOfAssets);
+          const assets = await this.processAssets(request.body.assets);
 
           // Validate auth methods
           this.packageAction.validateAuthMethods(
             request.body.authMethods.map((am) => am.id),
           );
 
-          const packageData = { ...request.body, assets };
+          const packagePayload = { ...request.body, assets };
 
           // Add package to database
-          const packageId = await this.packageAction.addPackage(packageData);
+          const packageId = await this.packageAction.addPackage(packagePayload);
           this.logger.debug(`Package with ID: ${packageId} successfully added`);
 
           return reply.status(200).send({
@@ -320,20 +334,17 @@ class PackageController {
     );
   };
 
+  /**
+   * Processes and normalizes asset data for a new package.
+   * Converts user-provided asset amounts to the correct precision based on token decimals.
+   * Handles both native ERG and custom tokens.
+   *
+   * @param assets - Array of asset objects with tokenId, amount, and usageDescription.
+   * @returns {Promise<AssetPayload[]>}
+   */
   processAssets = async (
-    assets: {
-      tokenId: string;
-      amount: number;
-      usageDescription: string;
-    }[],
-  ): Promise<
-    {
-      tokenId: string;
-      amount: bigint;
-      decimals: number;
-      usageDescription: string;
-    }[]
-  > => {
+    assets: Static<typeof UserProvidedAsset>[],
+  ): Promise<AssetPayload[]> => {
     const tokens = [];
     for (let i = 0; i < assets.length; i++) {
       const { tokenId, amount: value, usageDescription } = assets[i];
@@ -342,7 +353,7 @@ class PackageController {
       if (tokenId === 'ERG') {
         tokens.push({
           tokenId,
-          amount: BigInt(value * 1e9),
+          amount: BigInt(Number(value) * 1e9),
           decimals: 9,
           usageDescription,
         });
@@ -353,10 +364,10 @@ class PackageController {
       const tokenDecimals = await this.nodeModel.fetchDecimalsToken(tokenId);
 
       // Validate the amount's precision against the token's decimals
-      validateAmountPrecision(value, tokenDecimals);
+      validateAmountPrecision(Number(value), tokenDecimals);
 
       // convert user provided amount to nodeAPI requested amount and save it to the list
-      const amount = value * Math.pow(10, tokenDecimals);
+      const amount = Number(value) * Math.pow(10, tokenDecimals);
       tokens.push({
         tokenId,
         amount: BigInt(amount),

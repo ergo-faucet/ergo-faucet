@@ -6,6 +6,7 @@ export {
   RequestPackageResponse200,
   AddPackageResponse200,
   ErrorResponse,
+  UserProvidedAsset,
 } from './schemas';
 export type { PackageDTO, AssetDTO, AuthMethodDTO } from './DTOs';
 export { RequestPackageBodyType, AddPackageBodyType } from './routeBodyTypes';

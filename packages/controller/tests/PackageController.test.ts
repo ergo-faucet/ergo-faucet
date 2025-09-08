@@ -18,14 +18,19 @@ import {
   mockNodeModel,
 } from './mockUtils';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-
-import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
+import {
+  RequestLimitError,
+  NotFoundError,
+  AssetPayload,
+} from '@ergo-faucet/database';
 import * as ergo_utils from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
 import {
   InvalidTokenPrecisionError,
   TokenNotFoundError,
 } from '@ergo-faucet/ergo-utils';
+import { Static } from '@sinclair/typebox';
+import { UserProvidedAsset } from '../lib/types';
 
 describe('PackageController', () => {
   beforeEach(() => {
@@ -656,19 +661,8 @@ describe('PackageController', () => {
 
       vi.spyOn(packageController, 'processAssets').mockImplementation(
         async (
-          assets: {
-            tokenId: string;
-            amount: number;
-            usageDescription: string;
-          }[],
-        ): Promise<
-          {
-            tokenId: string;
-            amount: bigint;
-            decimals: number;
-            usageDescription: string;
-          }[]
-        > => [
+          assets: Static<typeof UserProvidedAsset>[],
+        ): Promise<AssetPayload[]> => [
           {
             tokenId: assets[0].tokenId,
             amount: 10000n,
@@ -1024,7 +1018,7 @@ describe('PackageController', () => {
      */
     it('should successfully process ERG token', async () => {
       const assets = [
-        { tokenId: 'ERG', amount: 1.5, usageDescription: 'Test ERG' },
+        { tokenId: 'ERG', amount: '1.5', usageDescription: 'Test ERG' },
       ];
 
       const result = await packageController.processAssets(assets);
@@ -1050,7 +1044,7 @@ describe('PackageController', () => {
     it('should successfully process non-ERG token', async () => {
       mockNodeModel.fetchDecimalsToken.mockResolvedValue(2);
       const assets = [
-        { tokenId: 'TOKEN1', amount: 100.25, usageDescription: 'Test token' },
+        { tokenId: 'TOKEN1', amount: '100.25', usageDescription: 'Test token' },
       ];
 
       const result = await packageController.processAssets(assets);
@@ -1082,7 +1076,7 @@ describe('PackageController', () => {
       const assets = [
         {
           tokenId: 'INVALID_TOKEN',
-          amount: 100,
+          amount: '100',
           usageDescription: 'Test token',
         },
       ];
@@ -1103,7 +1097,11 @@ describe('PackageController', () => {
     it('should throw InvalidTokenPrecisionError for invalid precision', async () => {
       mockNodeModel.fetchDecimalsToken.mockResolvedValue(2);
       const assets = [
-        { tokenId: 'TOKEN1', amount: 100.123, usageDescription: 'Test token' },
+        {
+          tokenId: 'TOKEN1',
+          amount: '100.123',
+          usageDescription: 'Test token',
+        },
       ];
 
       await expect(packageController.processAssets(assets)).rejects.toThrow(

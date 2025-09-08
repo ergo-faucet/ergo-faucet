@@ -1,10 +1,7 @@
-export interface PackageToAdd {
-  assets: {
-    tokenId: string;
-    amount: bigint;
-    decimals: number;
-    usageDescription: string;
-  }[];
+import { Asset } from '../entities';
+
+export interface PackagePayload {
+  assets: AssetPayload[];
   openAt?: string | undefined;
   closeAt?: string | undefined;
   name: string;
@@ -15,3 +12,5 @@ export interface PackageToAdd {
   numberEachUser: number;
   authMethods: { id: number; order?: number }[];
 }
+
+export type AssetPayload = Omit<Asset, 'id' | 'package'>;

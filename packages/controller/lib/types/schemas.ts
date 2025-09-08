@@ -26,6 +26,8 @@ const AssetSchema = Type.Object({
   usageDescription: Type.String(),
 });
 
+export const UserProvidedAsset = Type.Omit(AssetSchema, ['decimals']);
+
 const AuthMethodSchema = Type.Object({
   id: Type.Number({ minimum: 0 }),
   name: Type.String({ minLength: 1 }),
@@ -66,13 +68,7 @@ export const AddPackageBody = Type.Object({
   closeAt: Type.Optional(Type.String({ format: 'date-time' })),
   delay: Type.Number(),
   numberEachUser: Type.Number({ minimum: 1 }),
-  assets: Type.Array(
-    Type.Object({
-      tokenId: Type.String(),
-      amount: Type.Number(),
-      usageDescription: Type.String(),
-    }),
-  ),
+  assets: Type.Array(UserProvidedAsset),
   authMethods: Type.Array(
     Type.Object({
       id: Type.Number({ minimum: 0 }),

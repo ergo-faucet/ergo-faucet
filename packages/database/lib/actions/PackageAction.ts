@@ -18,7 +18,12 @@ import {
   AuthMethod,
 } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { NotFoundError, PackageToAdd, RequestLimitError } from '../types';
+import {
+  AssetPayload,
+  NotFoundError,
+  PackagePayload,
+  RequestLimitError,
+} from '../types';
 
 class PackageAction {
   private static instance: PackageAction;
@@ -283,10 +288,18 @@ class PackageAction {
     return userRequest.id;
   };
 
-  public addPackage = async (packageData: PackageToAdd): Promise<number> => {
+  /**
+   * Adds a new package to the database, including its assets and authentication methods.
+   *
+   * @param packagePayload - The data for the new package, including name, description, type, status, open/close dates, delay, numberEachUser, assets, and authMethods.
+   * @returns {Promise<number>} The ID of the newly created package.
+   */
+  public addPackage = async (
+    packagePayload: PackagePayload,
+  ): Promise<number> => {
     this.logger.debug(
       `Adding new package with data: ${JSON.stringify(
-        packageData,
+        packagePayload,
         (_, value) => (typeof value === 'bigint' ? value.toString() : value),
         2,
       )}`,
@@ -298,16 +311,18 @@ class PackageAction {
 
         // Create a new Package entity
         const newPackage = packageRepository.create({
-          name: packageData.name,
-          description: packageData.description,
-          type: packageData.type,
-          status: packageData.status,
-          openAt: packageData.openAt ? new Date(packageData.openAt) : undefined,
-          closeAt: packageData.closeAt
-            ? new Date(packageData.closeAt)
+          name: packagePayload.name,
+          description: packagePayload.description,
+          type: packagePayload.type,
+          status: packagePayload.status,
+          openAt: packagePayload.openAt
+            ? new Date(packagePayload.openAt)
             : undefined,
-          delay: packageData.delay,
-          numberEachUser: packageData.numberEachUser,
+          closeAt: packagePayload.closeAt
+            ? new Date(packagePayload.closeAt)
+            : undefined,
+          delay: packagePayload.delay,
+          numberEachUser: packagePayload.numberEachUser,
         });
 
         // Save the package to the database
@@ -315,12 +330,12 @@ class PackageAction {
         this.logger.debug(`New package saved with ID ${savedPackage.id}`);
 
         await this.addAssets(
-          packageData.assets,
+          packagePayload.assets,
           savedPackage,
           transactionalEntityManager,
         );
         await this.addPackageAuthMethods(
-          packageData.authMethods,
+          packagePayload.authMethods,
           savedPackage,
           transactionalEntityManager,
         );
@@ -330,13 +345,20 @@ class PackageAction {
     );
   };
 
+  /**
+   * Adds asset records to the database for a given package within a transaction.
+   *
+   * - Creates Asset entities for each asset in the provided array.
+   * - Associates each asset with the specified package.
+   * - Saves all assets using the provided EntityManager.
+   *
+   * @param assets - Array of asset objects to add (tokenId, amount, decimals, usageDescription).
+   * @param pkg - The Package entity to associate assets with.
+   * @param entityManager - The EntityManager for transactional operations.
+   * @returns {Promise<void>}
+   */
   public addAssets = async (
-    assets: {
-      tokenId: string;
-      amount: bigint;
-      decimals: number;
-      usageDescription: string;
-    }[],
+    assets: AssetPayload[],
     pkg: Package,
     entityManager: EntityManager,
   ) => {
@@ -357,6 +379,19 @@ class PackageAction {
     this.logger.debug(`Assets for package ID ${pkg.id} saved successfully`);
   };
 
+  /**
+   * Adds authentication methods to a package within a transaction.
+   *
+   * - Sorts and deduplicates the provided authMethods array.
+   * - Fetches AuthMethod entities by ID and creates PackageAuthMethod entities.
+   * - Associates each auth method with the specified package and order.
+   * - Saves all PackageAuthMethod entities using the provided EntityManager.
+   *
+   * @param authMethods - Array of auth method objects ({ id, order }) to add.
+   * @param pkg - The Package entity to associate auth methods with.
+   * @param entityManager - The EntityManager for transactional operations.
+   * @returns {Promise<void>}
+   */
   public addPackageAuthMethods = async (
     authMethods: { id: number; order?: number }[],
     pkg: Package,
@@ -366,16 +401,24 @@ class PackageAction {
     const packageAuthMethodRepository =
       entityManager.getRepository(PackageAuthMethod);
 
+    // Sort and remove duplicates based on id, keeping the first occurrence
+    authMethods = authMethods
+      .sort((a, b) => a.id - b.id)
+      .filter(
+        (item, index, arr) => index === 0 || item.id !== arr[index - 1].id,
+      );
+
+    const auths = await authMethodRepository.find({
+      where: { id: In(authMethods.map((am) => am!.id)) },
+      order: { id: 'ASC' },
+    });
+
     // Create PackageAuthMethod entities
     const packageAuthMethods: PackageAuthMethod[] = [];
 
     for (let i = 0; i < authMethods.length; i++) {
-      const authMethod = await authMethodRepository.findOne({
-        where: { id: authMethods[i].id },
-      });
-
       const pam = packageAuthMethodRepository.create({
-        authMethod: authMethod!,
+        authMethod: auths[i],
         package: pkg,
         order: authMethods[i].order,
       });
@@ -408,6 +451,16 @@ class PackageAction {
     return true;
   };
 
+  /**
+   * Validates that all provided authentication method IDs exist in the database.
+   *
+   * - Fetches AuthMethod entities by the given IDs.
+   * - Throws NotFoundError if any provided ID does not exist.
+   *
+   * @param authMethods - Array of authentication method IDs to validate.
+   * @throws {NotFoundError} If any of the provided IDs are not found.
+   * @returns {Promise<void>}
+   */
   validateAuthMethods = async (authMethods: number[]) => {
     // Find AuthMethods by IDs
     const existingAuthMethods = (

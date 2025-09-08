@@ -6,8 +6,7 @@ import {
 } from '@ergo-faucet/database';
 import fastify, { FastifyInstance } from 'fastify';
 import { vi } from 'vitest';
-import { PackageDTO } from '../lib/types/DTOs';
-
+import { PackageDTO } from '../lib/types';
 import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
 
 /**
