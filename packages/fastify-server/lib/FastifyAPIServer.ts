@@ -11,6 +11,7 @@ import {
   RecaptchaClientError,
   RecaptchaServerError,
 } from '@ergo-faucet/google-recaptcha';
+import { userRequestPayload } from '@ergo-faucet/common-types';
 
 /**
  * Fastify-based API server implementation.
@@ -249,6 +250,33 @@ export class FastifyAPIServer {
       }
     }
   };
+
+  /**
+   * Pre-handler for admin-only routes.
+   * Verifies that the user is an admin and has valid admin privileges.
+   * Responds with 403 if the user is not authorized, or 500 on internal error.
+   *
+   * @param req - Fastify request object containing user payload.
+   * @param res - Fastify reply object for sending responses.
+   * @returns {Promise<void>}
+   */
+  public adminPreHandler = async <
+    T extends FastifyRequest,
+    U extends FastifyReply,
+  >(
+    req: T,
+    res: U,
+  ) => {
+    // Extract user payload from request
+    const user = req.user as userRequestPayload;
+
+    // Check if user has admin flag
+    if (!user.isAdmin) {
+      this.logger.debug(`User ${user.userId} is not marked as admin.`);
+      return res.status(403).send({ error: 'Forbidden' });
+    }
+  };
+
   /**
    * Closes the already running server
    * @returns Promise that resolves when the server is closed

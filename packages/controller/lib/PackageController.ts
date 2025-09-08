@@ -1,8 +1,6 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   FastifyAPIServer,
-  FastifyReply,
-  FastifyRequest,
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
 import {
@@ -110,53 +108,6 @@ class PackageController {
         }
       },
     );
-  };
-
-  /**
-   * Pre-handler for admin-only routes.
-   * Verifies that the user is an admin and has valid admin privileges.
-   * Responds with 403 if the user is not authorized, or 500 on internal error.
-   *
-   * @param req - Fastify request object containing user payload.
-   * @param res - Fastify reply object for sending responses.
-   * @returns {Promise<void>}
-   */
-  public adminPreHandler = async <
-    T extends FastifyRequest,
-    U extends FastifyReply,
-  >(
-    req: T,
-    res: U,
-  ) => {
-    try {
-      // Extract user payload from request
-      const user = req.user as userRequestPayload;
-
-      // Check if user has admin flag
-      if (!user.isAdmin) {
-        this.logger.debug(`User ${user.userId} is not marked as admin.`);
-        return res.status(403).send({ error: 'Forbidden' });
-      }
-
-      // Validate admin privileges in database
-      const isValid = await this.packageAction.validateAdminRequest(
-        user.userId,
-      );
-      if (!isValid) {
-        this.logger.debug(`User ${user.userId} failed admin validation.`);
-
-        return res.status(403).send({ error: 'Forbidden' });
-      }
-    } catch (err) {
-      this.logger.error('Admin pre-handler error', {
-        message: err instanceof Error ? err.message : 'Unknown error',
-        stack: err instanceof Error ? err.stack : undefined,
-      });
-      return res.status(500).send({
-        error: 'Internal server error during admin validation',
-        code: 'admin-validation-error',
-      });
-    }
   };
 
   /**
@@ -270,7 +221,10 @@ class PackageController {
     fastify.post<{ Body: AddPackageBodyType }>(
       '/add',
       {
-        preHandler: [this.fastifyServer.authPreHandler, this.adminPreHandler],
+        preHandler: [
+          this.fastifyServer.authPreHandler,
+          this.fastifyServer.adminPreHandler,
+        ],
         schema: {
           body: AddPackageBody,
           response: {
@@ -283,6 +237,18 @@ class PackageController {
 
       async (request, reply) => {
         try {
+          const user = request.user as userRequestPayload;
+
+          // Validate admin privileges in database
+          const isValid = await this.packageAction.validateAdminRequest(
+            user.userId,
+          );
+          if (!isValid) {
+            this.logger.debug(`User ${user.userId} failed admin validation.`);
+
+            return reply.status(403).send({ error: 'Forbidden' });
+          }
+
           // Process assets
           const assets = await this.processAssets(request.body.assets);
 
@@ -301,7 +267,6 @@ class PackageController {
             packageId,
           });
         } catch (error) {
-          console.log(error);
           if (error instanceof TokenNotFoundError) {
             this.logger.debug(`Token not found: ${error.message}`);
             return reply
