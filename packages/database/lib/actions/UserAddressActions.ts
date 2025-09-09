@@ -81,10 +81,21 @@ class UserAddressAction {
    */
   findOrCreateUserWithAddress = async (address: string): Promise<User> => {
     this.logger.debug(`Finding or creating user for address: ${address}`);
+    let user: User | undefined;
+    const now = Date.now();
 
     const users = await this.getUsersByAddresses([address]);
-    const user = users.length > 0 ? users[0].user : undefined;
-    const now = Date.now();
+    if (users.length > 1) {
+      this.logger.debug(`Multiple users found for address: ${address}`);
+      throw new Error('Unbehavior: multiple users found for a single address');
+    } else if (users.length === 1) {
+      this.logger.debug(`User found for address: ${address}`);
+      user = users[0].user;
+    } else {
+      this.logger.debug(
+        `No user found for address: ${address}, creating new user.`,
+      );
+    }
 
     if (user) {
       user.lastLogin = now;

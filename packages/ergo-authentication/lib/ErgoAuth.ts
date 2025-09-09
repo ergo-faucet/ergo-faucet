@@ -253,6 +253,7 @@ export class ErgoAuth {
 
       async (request, reply) => {
         const { changedAddress, addresses } = request.body;
+        let finallyAddress: string;
 
         const users =
           await this.userAddressAction.getUsersByAddresses(addresses);
@@ -262,10 +263,8 @@ export class ErgoAuth {
             error: 'Multiple users found for the provided addresses',
             code: 'multiple-users-found',
           });
-        }
-
-        const finallyAddress =
-          users.length > 0 ? users[0].value : changedAddress;
+        } else if (users.length === 1) finallyAddress = users[0].value;
+        else finallyAddress = changedAddress;
 
         const challenge = await this.createChallenge(finallyAddress);
         return reply.status(200).send({ challenge, address: finallyAddress });
@@ -291,6 +290,7 @@ export class ErgoAuth {
             200: AuthenticationResponse200,
             400: AuthenticationResponseError,
             401: AuthenticationResponseError,
+            500: AuthenticationResponseError,
           },
         },
         preHandler: [
@@ -319,29 +319,42 @@ export class ErgoAuth {
           });
         }
 
-        const user =
-          await this.userAddressAction.findOrCreateUserWithAddress(address);
+        try {
+          const user =
+            await this.userAddressAction.findOrCreateUserWithAddress(address);
 
-        const payload: userRequestPayload = {
-          userId: user.id,
-          address: address,
-          name: user.name,
-        };
+          const payload: userRequestPayload = {
+            userId: user.id,
+            address: address,
+            name: user.name,
+          };
 
-        const refreshToken = await reply.jwtSign(payload, {
-          expiresIn: this.refreshTokenExpirySeconds,
-        });
-        const accessToken = await reply.jwtSign(payload, {
-          expiresIn: this.accessTokenExpirySeconds,
-        });
+          const refreshToken = await reply.jwtSign(payload, {
+            expiresIn: this.refreshTokenExpirySeconds,
+          });
+          const accessToken = await reply.jwtSign(payload, {
+            expiresIn: this.accessTokenExpirySeconds,
+          });
 
-        this.fastifyServer.setAuthCookie(reply, refreshToken);
+          this.fastifyServer.setAuthCookie(reply, refreshToken);
 
-        return reply.send({
-          success: true,
-          payload: payload,
-          accessToken,
-        });
+          return reply.send({
+            success: true,
+            payload: payload,
+            accessToken,
+          });
+        } catch (err) {
+          if (err instanceof Error) {
+            this.logger.debug(`Authentication failed:`, {
+              message: err.message,
+              stack: err.stack,
+            });
+            return reply.status(500).send({
+              error: 'Internal server error during authentication',
+              code: 'internal-server-error',
+            });
+          }
+        }
       },
     );
   };
