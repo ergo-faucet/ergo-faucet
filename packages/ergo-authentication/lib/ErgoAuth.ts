@@ -257,6 +257,13 @@ export class ErgoAuth {
         const users =
           await this.userAddressAction.getUsersByAddresses(addresses);
 
+        if (users.length > 1) {
+          return reply.status(400).send({
+            error: 'Multiple users found for the provided addresses',
+            code: 'multiple-users-found',
+          });
+        }
+
         const finallyAddress =
           users.length > 0 ? users[0].value : changedAddress;
 
