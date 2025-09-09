@@ -1,6 +1,6 @@
 import { ErgoFaucetController } from '@ergo-faucet/controller';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-import { PackageAction } from '@ergo-faucet/database';
+import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 import { controllerConfig } from '@configs';
 
@@ -10,6 +10,7 @@ export const setupController = async () => {
   const fastify = FastifyAPIServer.getInstance();
 
   const packageAction = PackageAction.getInstance();
+  const requestHistoryAction = RequestHistoryAction.getInstance();
   const controllerLogger =
     CallbackLoggerFactory.getInstance().getLogger('Controller');
 
@@ -17,6 +18,7 @@ export const setupController = async () => {
     fastify,
     packageAction,
     controllerConfig.networkType,
+    requestHistoryAction,
     controllerLogger,
   );
   logger.info('Controller initialized successfully');

@@ -3,10 +3,12 @@ import {
   Package,
   Asset,
   PackageAuthMethod,
+  UserRequest,
+  RequestHistoryAction,
 } from '@ergo-faucet/database';
 import fastify, { FastifyInstance } from 'fastify';
 import { vi } from 'vitest';
-import { PackageDTO } from '../lib/types';
+import { PackageDTO, RequestDTO } from '../lib/types';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
 /**
@@ -150,6 +152,37 @@ export const mockPackageDTO: PackageDTO[] = [
         name: 'Email',
       },
     ],
+  },
+];
+
+/**
+ * A mocked RequestHistoryAction instance with a spyable getRequestHistoty method.
+ */
+export const mockedRequestHistoryAction: RequestHistoryAction & {
+  getRequestHistoty: ReturnType<typeof vi.fn>;
+} = {
+  getRequestHistoty: vi.fn(),
+  // eslint-disable-next-line
+} as any;
+
+export const mockRequest: UserRequest = {
+  id: 1,
+  package: mockPackage,
+  status: 'submitted',
+  timestamp: new Date('2025-09-09T12:00:00Z'),
+  destinationAddress: '9hT2oAddress',
+  txId: 'tx_abc',
+  // eslint-disable-next-line
+} as any;
+
+export const mockRequestDTO: RequestDTO[] = [
+  {
+    packageId: 101,
+    packageName: 'Starter Pack',
+    status: 'submitted',
+    timestamp: '2025-09-09T12:00:00.000Z',
+    destinationAddress: '9hT2oAddress',
+    txId: 'tx_abc',
   },
 ];
 

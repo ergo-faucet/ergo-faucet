@@ -24,3 +24,12 @@ export interface PackageDTO {
   assets: AssetDTO[];
   authMethods: AuthMethodDTO[];
 }
+
+export interface RequestDTO {
+  packageId: number;
+  packageName: string;
+  status: 'paid' | 'failed' | 'pending' | 'submitted';
+  timestamp: string;
+  destinationAddress: string;
+  txId?: string;
+}

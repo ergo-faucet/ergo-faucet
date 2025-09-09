@@ -1,5 +1,10 @@
-import { Asset, PackageAuthMethod, Package } from '@ergo-faucet/database';
-import { AssetDTO, AuthMethodDTO, PackageDTO } from '../types';
+import {
+  Asset,
+  PackageAuthMethod,
+  Package,
+  UserRequest,
+} from '@ergo-faucet/database';
+import { AssetDTO, AuthMethodDTO, PackageDTO, RequestDTO } from '../types';
 
 export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
   return packages.map((p: Package): PackageDTO => {
@@ -32,4 +37,17 @@ export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
       authMethods: authMethodDTOs,
     };
   });
+};
+
+export const toRequestDTO = (requests: UserRequest[]): RequestDTO[] => {
+  return requests.map(
+    (r: UserRequest): RequestDTO => ({
+      packageId: r.package.id,
+      packageName: r.package.name,
+      status: r.status,
+      timestamp: r.timestamp.toISOString(),
+      destinationAddress: r.destinationAddress,
+      txId: r.txId || undefined,
+    }),
+  );
 };

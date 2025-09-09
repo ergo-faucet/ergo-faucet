@@ -1,1 +1,1 @@
-export { toPackageDTO } from './mapper';
+export { toPackageDTO, toRequestDTO } from './mapper';

@@ -60,3 +60,37 @@ export const RequestPackageBody = Type.Object({
 export const RequestPackageResponse200 = Type.Object({
   requestId: Type.Number({ minimum: 1 }),
 });
+
+export const RequsetHistoryRouteQuery = Type.Object({
+  offset: Type.Number({ minimum: 0, default: 0 }),
+  limit: Type.Number({ minimum: 0, maximum: 100, default: 25 }),
+  sort: Type.Union(
+    [
+      Type.Literal('destinationAddress'),
+      Type.Literal('timestamp'),
+      Type.Literal('status'),
+    ],
+    {
+      default: 'timestamp',
+    },
+  ),
+  order: Type.Union([Type.Literal('desc'), Type.Literal('asc')], {
+    default: 'desc',
+  }),
+});
+
+const RequestHistorySchema = Type.Object({
+  packageId: Type.Number({ minimum: 0 }),
+  packageName: Type.String(),
+  status: Type.Union([
+    Type.Literal('paid'),
+    Type.Literal('failed'),
+    Type.Literal('pending'),
+    Type.Literal('submitted'),
+  ]),
+  timestamp: Type.String({ format: 'date-time' }),
+  destinationAddress: Type.String(),
+  txId: Type.Optional(Type.String()),
+});
+
+export const GetRequestHistoryResponse200 = Type.Array(RequestHistorySchema);
