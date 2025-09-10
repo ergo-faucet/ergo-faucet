@@ -321,7 +321,7 @@ class PackageAction {
           closeAt: packagePayload.closeAt
             ? new Date(packagePayload.closeAt)
             : undefined,
-          delay: packagePayload.delay,
+          delay: BigInt(packagePayload.delay),
           numberEachUser: packagePayload.numberEachUser,
         });
 
@@ -368,6 +368,7 @@ class PackageAction {
     const newAssets = assetRepository.create(
       assets.map((asset) => ({
         tokenId: asset.tokenId,
+        assetName: asset.assetName,
         amount: asset.amount,
         decimals: asset.decimals,
         usageDescription: asset.usageDescription,

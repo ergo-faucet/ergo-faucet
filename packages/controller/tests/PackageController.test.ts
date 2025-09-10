@@ -375,7 +375,12 @@ describe('PackageController', () => {
       mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
       mockedPackageAction.validateAuthMethods.mockImplementation(() => {});
       mockedPackageAction.addPackage.mockResolvedValue(1);
-      mockNodeModel.fetchDecimalsToken.mockResolvedValue(2);
+      //     mockNodeModel.getTokenById.mockResolvedValue({id: string,
+      // boxId: string,
+      // emissionAmount: number;
+      // name: string,
+      // description: string,
+      // decimals: 2});
 
       vi.spyOn(packageController, 'processAssets').mockImplementation(
         async (
@@ -383,9 +388,12 @@ describe('PackageController', () => {
         ): Promise<AssetPayload[]> => [
           {
             tokenId: assets[0].tokenId,
-            amount: 10000n,
+            amount: '10000',
+            assetName: assets[0].tokenId,
             decimals: 2,
-            usageDescription: assets[0].usageDescription,
+            usageDescription: assets[0].usageDescription
+              ? assets[0].usageDescription
+              : 'no description',
           },
         ],
       );
@@ -395,11 +403,11 @@ describe('PackageController', () => {
         description: 'A test package',
         type: 'normal',
         status: 'show',
-        delay: 360000,
+        delay: '360000',
         numberEachUser: 1,
         authMethods: [{ id: 1 }],
         assets: [
-          { tokenId: 'TOKEN1', amount: 100, usageDescription: 'Test asset' },
+          { tokenId: 'TOKEN1', amount: '100', usageDescription: 'Test asset' },
         ],
       };
 
@@ -421,13 +429,14 @@ describe('PackageController', () => {
         description: 'A test package',
         type: 'normal',
         status: 'show',
-        delay: 360000,
+        delay: '360000',
         numberEachUser: 1,
         authMethods: [{ id: 1 }],
         assets: [
           {
             tokenId: 'TOKEN1',
-            amount: 10000n,
+            assetName: 'TOKEN1',
+            amount: '10000',
             decimals: 2,
             usageDescription: 'Test asset',
           },
@@ -453,13 +462,15 @@ describe('PackageController', () => {
       vi.spyOn(packageController, 'processAssets').mockResolvedValue([
         {
           tokenId: 'ERG',
-          amount: BigInt(1000000000),
+          amount: '1000000000',
+          assetName: 'ERG',
           decimals: 9,
           usageDescription: 'Native ERG token',
         },
         {
           tokenId: 'TOKEN1',
-          amount: BigInt(50000),
+          amount: '50000',
+          assetName: 'TOKEN1',
           decimals: 2,
           usageDescription: 'Custom token',
         },
@@ -470,15 +481,19 @@ describe('PackageController', () => {
         description: 'A package with multiple assets and auth methods',
         type: 'normal',
         status: 'show',
-        delay: 86400000, // 24 hours
+        delay: '86400000', // 24 hours
         numberEachUser: 3,
         authMethods: [
           { id: 1, order: 1 },
           { id: 2, order: 2 },
         ],
         assets: [
-          { tokenId: 'ERG', amount: 1, usageDescription: 'Native ERG token' },
-          { tokenId: 'TOKEN1', amount: 500, usageDescription: 'Custom token' },
+          { tokenId: 'ERG', amount: '1', usageDescription: 'Native ERG token' },
+          {
+            tokenId: 'TOKEN1',
+            amount: '500',
+            usageDescription: 'Custom token',
+          },
         ],
       };
 
@@ -674,7 +689,8 @@ describe('PackageController', () => {
       vi.spyOn(packageController, 'processAssets').mockResolvedValue([
         {
           tokenId: 'ERG',
-          amount: BigInt(1000000000),
+          amount: '1000000000',
+          assetName: 'ERG',
           decimals: 9,
           usageDescription: 'Test asset',
         },
@@ -722,7 +738,8 @@ describe('PackageController', () => {
       vi.spyOn(packageController, 'processAssets').mockResolvedValue([
         {
           tokenId: 'ERG',
-          amount: BigInt(1000000000),
+          assetName: 'ERG',
+          amount: '1000000000',
           decimals: 9,
           usageDescription: 'Test asset',
         },
@@ -784,7 +801,8 @@ describe('PackageController', () => {
       expect(result).toEqual([
         {
           tokenId: 'ERG',
-          amount: BigInt(1500000000),
+          assetName: 'ERG',
+          amount: '1500000000',
           decimals: 9,
           usageDescription: 'Test ERG',
         },
@@ -800,19 +818,27 @@ describe('PackageController', () => {
      * - Correctly converts amount based on token decimals
      */
     it('should successfully process non-ERG token', async () => {
-      mockNodeModel.fetchDecimalsToken.mockResolvedValue(2);
+      mockNodeModel.getTokenById.mockResolvedValue({
+        id: 'TOKEN1',
+        boxId: 'mock-box-id',
+        emissionAmount: 1234,
+        name: 'TOKEN1',
+        description: 'no description',
+        decimals: 2,
+      });
       const assets = [
         { tokenId: 'TOKEN1', amount: '100.25', usageDescription: 'Test token' },
       ];
 
       const result = await packageController.processAssets(assets);
 
-      expect(mockNodeModel.fetchDecimalsToken).toHaveBeenCalledWith('TOKEN1');
+      expect(mockNodeModel.getTokenById).toHaveBeenCalledWith('TOKEN1');
 
       expect(result).toEqual([
         {
           tokenId: 'TOKEN1',
-          amount: BigInt(10025),
+          assetName: 'TOKEN1',
+          amount: '10025',
           decimals: 2,
           usageDescription: 'Test token',
         },
@@ -828,7 +854,7 @@ describe('PackageController', () => {
      * - Throws TokenNotFoundError
      */
     it('should throw TokenNotFoundError for invalid token', async () => {
-      mockNodeModel.fetchDecimalsToken.mockRejectedValue(
+      mockNodeModel.getTokenById.mockRejectedValue(
         new TokenNotFoundError('Token not found'),
       );
       const assets = [
@@ -853,7 +879,14 @@ describe('PackageController', () => {
      * - Throws InvalidTokenPrecisionError
      */
     it('should throw InvalidTokenPrecisionError for invalid precision', async () => {
-      mockNodeModel.fetchDecimalsToken.mockResolvedValue(2);
+      mockNodeModel.getTokenById.mockResolvedValue({
+        id: 'TOKEN1',
+        boxId: 'mock-box-id',
+        emissionAmount: 1234,
+        name: 'TOKEN1',
+        description: 'mock-description',
+        decimals: 2,
+      });
       const assets = [
         {
           tokenId: 'TOKEN1',

@@ -286,7 +286,7 @@ class PackageController {
               .send({ error: error.message, code: 'AUTH_NOT_FOUND' });
           } else {
             this.logger.error(`Unexpected error during adding package`, {
-              message: error instanceof Error ? error.message : 'unknown error',
+              message: error instanceof Error ? error.message : error,
               stack: error instanceof Error ? error.stack : undefined,
             });
             return reply.status(500).send({
@@ -310,7 +310,7 @@ class PackageController {
   processAssets = async (
     assets: Static<typeof UserProvidedAsset>[],
   ): Promise<AssetPayload[]> => {
-    const tokens = [];
+    const tokens: AssetPayload[] = [];
     for (let i = 0; i < assets.length; i++) {
       const { tokenId, amount: value, usageDescription } = assets[i];
 
@@ -318,26 +318,31 @@ class PackageController {
       if (tokenId === 'ERG') {
         tokens.push({
           tokenId,
-          amount: BigInt(Number(value) * 1e9),
+          assetName: 'ERG',
+          amount: (Number(value) * 1e9).toString(),
           decimals: 9,
-          usageDescription,
+          usageDescription: usageDescription
+            ? usageDescription
+            : 'no description',
         });
         continue;
       }
 
       // Fetch token decimals
-      const tokenDecimals = await this.nodeModel.fetchDecimalsToken(tokenId);
+      const { decimals, description, name } =
+        await this.nodeModel.getTokenById(tokenId);
 
       // Validate the amount's precision against the token's decimals
-      validateAmountPrecision(Number(value), tokenDecimals);
+      validateAmountPrecision(Number(value), decimals);
 
       // convert user provided amount to nodeAPI requested amount and save it to the list
-      const amount = Number(value) * Math.pow(10, tokenDecimals);
+      const amount = Number(value) * Math.pow(10, decimals);
       tokens.push({
         tokenId,
-        amount: BigInt(amount),
-        decimals: tokenDecimals,
-        usageDescription,
+        assetName: name,
+        amount: amount.toString(),
+        decimals: decimals,
+        usageDescription: usageDescription ? usageDescription : description,
       });
     }
 

@@ -21,12 +21,16 @@ export const PackagesRouteQuery = Type.Object({
 
 const AssetSchema = Type.Object({
   tokenId: Type.String(),
+  assetName: Type.String(),
   amount: Type.String(),
   decimals: Type.Number({ minimum: 0 }),
-  usageDescription: Type.String(),
+  usageDescription: Type.Optional(Type.String()),
 });
 
-export const UserProvidedAsset = Type.Omit(AssetSchema, ['decimals']);
+export const UserProvidedAsset = Type.Omit(AssetSchema, [
+  'decimals',
+  'assetName',
+]);
 
 const AuthMethodSchema = Type.Object({
   id: Type.Number({ minimum: 0 }),
@@ -40,8 +44,8 @@ const PackageSchema = Type.Object({
   type: Type.Union([Type.Literal('normal'), Type.Literal('random')]),
   openAt: Type.Optional(Type.String({ format: 'date-time' })),
   closeAt: Type.Optional(Type.String({ format: 'date-time' })),
-  delay: Type.Number(),
-  numberEachUser: Type.Number({ minimum: 1 }),
+  delay: Type.String(),
+  numberEachUser: Type.Number({ minimum: 0 }),
   assets: Type.Array(AssetSchema),
   authMethods: Type.Array(AuthMethodSchema),
 });
@@ -66,7 +70,7 @@ export const AddPackageBody = Type.Object({
   status: Type.Union([Type.Literal('show'), Type.Literal('hide')]),
   openAt: Type.Optional(Type.String({ format: 'date-time' })),
   closeAt: Type.Optional(Type.String({ format: 'date-time' })),
-  delay: Type.Number(),
+  delay: Type.String(),
   numberEachUser: Type.Number({ minimum: 1 }),
   assets: Type.Array(UserProvidedAsset),
   authMethods: Type.Array(

@@ -8,7 +8,7 @@ export interface PackagePayload {
   description: string;
   type: 'normal' | 'random';
   status: 'show' | 'hide';
-  delay: number;
+  delay: string;
   numberEachUser: number;
   authMethods: { id: number; order?: number }[];
 }

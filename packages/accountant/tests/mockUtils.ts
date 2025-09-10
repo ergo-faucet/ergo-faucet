@@ -58,7 +58,7 @@ export const mockUserRequest: UserRequest = {
     id: 1,
     name: 'Test Package',
     type: 'normal',
-    assets: [{ tokenId: 'token1', amount: 100n }],
+    assets: [{ tokenId: 'token1', amount: '100' }],
   } as Package,
   timestamp: new Date(),
   destinationAddress: '3WxFE2x4KVDYeQyJhKvK912AHHME6wNLBT8p6w7M1KqMp71jCAWc',

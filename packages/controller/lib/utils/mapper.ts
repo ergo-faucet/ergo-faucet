@@ -6,6 +6,7 @@ export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
     const assetDTOs: AssetDTO[] = p.assets.map(
       (a: Asset): AssetDTO => ({
         tokenId: a.tokenId,
+        assetName: a.assetName,
         amount: a.amount.toString(),
         decimals: a.decimals,
         usageDescription: a.usageDescription,
@@ -23,9 +24,9 @@ export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
       id: p.id,
       name: p.name,
       type: p.type,
-      delay: p.delay,
-      openAt: p.openAt?.toString(),
-      closeAt: p.closeAt?.toString(),
+      delay: p.delay.toString(),
+      openAt: p.openAt?.toISOString(),
+      closeAt: p.closeAt?.toISOString(),
       description: p.description,
       numberEachUser: p.numberEachUser,
       assets: assetDTOs,
