@@ -10,7 +10,7 @@ import {
   OutputBuilder,
   TransactionBuilder,
 } from '@fleet-sdk/core';
-import { SignedTransaction } from '@fleet-sdk/common';
+import { SignedTransaction, TokenTargetAmount } from '@fleet-sdk/common';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
@@ -109,7 +109,7 @@ describe('Accountant', () => {
       const request = mockUserRequest;
       request.package.assets = [
         {
-          amount: 100n,
+          amount: '100',
           tokenId:
             '03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04',
         } as Asset,
@@ -144,6 +144,12 @@ describe('Accountant', () => {
       mockWallet.signTransaction.mockReturnValue(signedTx);
       mockNodeModel.submitTransactionBytes.mockResolvedValue('tx123');
 
+      const targetTokens: TokenTargetAmount<bigint>[] =
+        request.package.assets.map((asset) => ({
+          tokenId: asset.tokenId,
+          amount: BigInt(asset.amount),
+        }));
+
       await accountant.handlePendingRequest(request);
 
       expect(mockWallet.selectBoxes).toHaveBeenCalledWith(
@@ -152,7 +158,7 @@ describe('Accountant', () => {
             mockedConfig.minNanoErg +
             mockedConfig.minNanoErg,
         ),
-        request.package.assets,
+        targetTokens,
       );
       const serializedTx = hex.encode(serializeTransaction(signedTx).toBytes());
       expect(mockNodeModel.getCurrentBlockchainHeight).toHaveBeenCalled();
