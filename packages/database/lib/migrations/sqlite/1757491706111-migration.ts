@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1757487773092 implements MigrationInterface {
-  name = 'Migration1757487773092';
+export class Migration1757491706111 implements MigrationInterface {
+  name = 'Migration1757491706111';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -89,7 +89,7 @@ export class Migration1757487773092 implements MigrationInterface {
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "tokenId" varchar NOT NULL,
                 "asset_name" varchar NOT NULL,
-                "amount" bigint NOT NULL,
+                "amount" varchar NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer
             )
@@ -245,7 +245,7 @@ export class Migration1757487773092 implements MigrationInterface {
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "tokenId" varchar NOT NULL,
                 "asset_name" varchar NOT NULL,
-                "amount" bigint NOT NULL,
+                "amount" varchar NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer,
                 CONSTRAINT "FK_dc2ee4d919892ecaad131a176e5" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
@@ -293,7 +293,7 @@ export class Migration1757487773092 implements MigrationInterface {
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "tokenId" varchar NOT NULL,
                 "asset_name" varchar NOT NULL,
-                "amount" bigint NOT NULL,
+                "amount" varchar NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer
             )

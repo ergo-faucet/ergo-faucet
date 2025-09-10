@@ -63,7 +63,7 @@ const mockAsset1: Asset = {
   package: mockPackage,
   tokenId: 'token-abc-123',
   assetName: 'token-abc-123',
-  amount: BigInt(1000),
+  amount: '1000',
   usageDescription: 'Initial reward',
 };
 
@@ -72,7 +72,7 @@ const mockAsset2: Asset = {
   package: mockPackage,
   tokenId: 'token-def-456',
   assetName: 'token-def-456',
-  amount: BigInt(500),
+  amount: '500',
   usageDescription: 'Bonus item',
 };
 
