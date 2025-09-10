@@ -1,3 +1,3 @@
 export { DatabaseConfig } from './dataSourceTypes';
 
-export { NotFoundError, RequestLimitError } from './errors';
+export { NotFoundError, RequestLimitError, UnexpectedError } from './errors';

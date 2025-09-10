@@ -35,7 +35,7 @@ export class Package {
   closeAt?: Date;
 
   @Column({ type: 'bigint', transformer: new BigIntValueTransformer() })
-  delay!: number;
+  delay!: bigint;
 
   @Column({ name: 'number_each_user', type: 'int' })
   numberEachUser!: number;

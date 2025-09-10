@@ -285,7 +285,7 @@ class Accountant {
         const targetTokens: TokenTargetAmount<bigint>[] =
           request.package.assets.map((asset) => ({
             tokenId: asset.tokenId,
-            amount: asset.amount,
+            amount: BigInt(asset.amount),
           }));
 
         // Select input boxes
@@ -293,7 +293,7 @@ class Accountant {
           `Selecting input boxes for request ID: ${request.id}`,
         );
         const inputs: Box<bigint>[] = await this.wallet.selectBoxes(
-          this.minFee + this.minNanoErg + outputBoxAmount,
+          this.minFee + this.minNanoErg + BigInt(outputBoxAmount),
           targetTokens,
         );
 
