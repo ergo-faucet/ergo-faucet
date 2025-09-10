@@ -4,5 +4,5 @@ import config from 'config';
  * Auth job configuration
  */
 export const authJobConfig = {
-  authJobInterval: config.get<number>('authJob.jobInterval'),
+  authJobInterval: config.get<number>('jobs.authJobInterval'),
 };

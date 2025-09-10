@@ -81,8 +81,8 @@ googleAuth:
   expiresTime: 7200
   sessionTTL: 3600
 
-authJob:
-  jobInterval: 300
+jobs:
+  authJobInterval: 300
 
 ergo:
   network: 'mainnet'

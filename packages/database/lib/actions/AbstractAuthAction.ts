@@ -38,7 +38,7 @@ abstract class AbstractAuthAction {
    * - If missing, creates it with an empty config.
    * @returns Promise<void>
    */
-  public ensureAuthMethod = async (): Promise<void> => {
+  protected ensureAuthMethod = async (): Promise<void> => {
     let method = await this.authMethodRepository.findOne({
       where: { name: this.getAuthMethodName() },
     });

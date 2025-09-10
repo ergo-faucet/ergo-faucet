@@ -29,6 +29,7 @@ class GoogleAction extends AbstractAuthAction {
     if (this.instance)
       throw new Error('GoogleAction instance has already been initialized.');
     this.instance = new GoogleAction(dataSource, logger);
+    this.instance.ensureAuthMethod();
   };
 
   /**

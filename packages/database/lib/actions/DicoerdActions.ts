@@ -29,6 +29,7 @@ class DiscordAction extends AbstractAuthAction {
     if (this.instance)
       throw new Error('DiscordAction instance has already been initialized.');
     this.instance = new DiscordAction(dataSource, logger);
+    this.instance.ensureAuthMethod();
   };
 
   /**

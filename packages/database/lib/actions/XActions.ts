@@ -29,6 +29,7 @@ class XAction extends AbstractAuthAction {
     if (this.instance)
       throw new Error('XAction instance has already been initialized.');
     this.instance = new XAction(dataSource, logger);
+    this.instance.ensureAuthMethod();
   };
 
   /**
