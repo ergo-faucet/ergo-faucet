@@ -232,6 +232,7 @@ export class ErgoAuth {
           response: {
             200: ChallengeResponse200,
             400: ChallengeErrorResponse,
+            500: ChallengeErrorResponse,
           },
         },
         preHandler: async (req, res) => {
@@ -252,22 +253,33 @@ export class ErgoAuth {
       },
 
       async (request, reply) => {
-        const { changedAddress, addresses } = request.body;
-        let finallyAddress: string;
+        try {
+          const { changedAddress, addresses } = request.body;
+          let finallyAddress: string;
 
-        const users =
-          await this.userAddressAction.getUsersByAddresses(addresses);
+          const users =
+            await this.userAddressAction.getUsersByAddresses(addresses);
 
-        if (users.length > 1) {
-          return reply.status(400).send({
-            error: 'Multiple users found for the provided addresses',
-            code: 'multiple-users-found',
+          if (users.length > 1) {
+            return reply.status(400).send({
+              error: 'Multiple users found for the provided addresses',
+              code: 'multiple-users-found',
+            });
+          } else if (users.length === 1) finallyAddress = users[0].value;
+          else finallyAddress = changedAddress;
+
+          const challenge = await this.createChallenge(finallyAddress);
+          return reply.status(200).send({ challenge, address: finallyAddress });
+        } catch (err) {
+          this.logger.debug(`Create challenge failed:`, {
+            error: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
           });
-        } else if (users.length === 1) finallyAddress = users[0].value;
-        else finallyAddress = changedAddress;
-
-        const challenge = await this.createChallenge(finallyAddress);
-        return reply.status(200).send({ challenge, address: finallyAddress });
+          return reply.status(500).send({
+            error: 'Internal server error during creating challenge',
+            code: 'internal-server-error',
+          });
+        }
       },
     );
   };
@@ -344,16 +356,14 @@ export class ErgoAuth {
             accessToken,
           });
         } catch (err) {
-          if (err instanceof Error) {
-            this.logger.debug(`Authentication failed:`, {
-              message: err.message,
-              stack: err.stack,
-            });
-            return reply.status(500).send({
-              error: 'Internal server error during authentication',
-              code: 'internal-server-error',
-            });
-          }
+          this.logger.debug(`Authentication failed:`, {
+            error: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          return reply.status(500).send({
+            error: 'Internal server error during authentication',
+            code: 'internal-server-error',
+          });
         }
       },
     );
