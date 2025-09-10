@@ -20,7 +20,7 @@ export interface PackageDTO {
   type: PackageType;
   openAt?: string;
   closeAt?: string;
-  delay: number;
+  delay: string;
   numberEachUser: number;
   assets: AssetDTO[];
   authMethods: AuthMethodDTO[];

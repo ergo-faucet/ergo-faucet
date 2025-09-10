@@ -39,7 +39,7 @@ const PackageSchema = Type.Object({
   type: Type.Union([Type.Literal('normal'), Type.Literal('random')]),
   openAt: Type.Optional(Type.String({ format: 'date-time' })),
   closeAt: Type.Optional(Type.String({ format: 'date-time' })),
-  delay: Type.Number(),
+  delay: Type.String(),
   numberEachUser: Type.Number({ minimum: 0 }),
   assets: Type.Array(AssetSchema),
   authMethods: Type.Array(AuthMethodSchema),

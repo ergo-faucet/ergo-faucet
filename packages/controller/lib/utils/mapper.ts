@@ -24,7 +24,7 @@ export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
       id: p.id,
       name: p.name,
       type: p.type,
-      delay: p.delay,
+      delay: p.delay.toString(),
       openAt: p.openAt?.toString(),
       closeAt: p.closeAt?.toString(),
       description: p.description,
