@@ -3,6 +3,7 @@ export type PackageType = 'normal' | 'random';
 export interface AssetDTO {
   id: number;
   tokenId: string;
+  assetName: string;
   amount: string;
   usageDescription: string;
 }

@@ -22,6 +22,7 @@ export const PackagesRouteQuery = Type.Object({
 const AssetSchema = Type.Object({
   id: Type.Number(),
   tokenId: Type.String(),
+  assetName: Type.String(),
   amount: Type.String(),
   usageDescription: Type.String(),
 });

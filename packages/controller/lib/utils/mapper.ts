@@ -7,6 +7,7 @@ export const toPackageDTO = (packages: Package[]): PackageDTO[] => {
       (a: Asset): AssetDTO => ({
         id: a.id,
         tokenId: a.tokenId,
+        assetName: a.assetName,
         amount: a.amount.toString(),
         usageDescription: a.usageDescription,
       }),

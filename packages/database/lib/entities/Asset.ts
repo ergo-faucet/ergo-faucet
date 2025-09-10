@@ -23,6 +23,9 @@ export class Asset {
   @Index()
   tokenId!: string;
 
+  @Column({ type: 'varchar', name: 'asset_name' })
+  assetName!: string;
+
   @Column({ type: 'bigint', transformer: new BigIntValueTransformer() })
   amount!: bigint;
 

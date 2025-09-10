@@ -62,6 +62,7 @@ const mockAsset1: Asset = {
   id: 1,
   package: mockPackage,
   tokenId: 'token-abc-123',
+  assetName: 'token-abc-123',
   amount: BigInt(1000),
   usageDescription: 'Initial reward',
 };
@@ -70,6 +71,7 @@ const mockAsset2: Asset = {
   id: 2,
   package: mockPackage,
   tokenId: 'token-def-456',
+  assetName: 'token-def-456',
   amount: BigInt(500),
   usageDescription: 'Bonus item',
 };
@@ -130,12 +132,14 @@ export const mockPackageDTO: PackageDTO[] = [
       {
         id: 1,
         tokenId: 'token-abc-123',
+        assetName: 'token-abc-123',
         amount: '1000',
         usageDescription: 'Initial reward',
       },
       {
         id: 2,
         tokenId: 'token-def-456',
+        assetName: 'token-def-456',
         amount: '500',
         usageDescription: 'Bonus item',
       },
