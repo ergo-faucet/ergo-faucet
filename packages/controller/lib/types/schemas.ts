@@ -63,6 +63,10 @@ export const RequestPackageBody = Type.Object({
   captchaToken: Type.String({ minLength: 1 }),
 });
 
+export const RequestPackageResponse200 = Type.Object({
+  requestId: Type.Number({ minimum: 1 }),
+});
+
 export const AddPackageBody = Type.Object({
   name: Type.String(),
   description: Type.String(),
@@ -85,6 +89,23 @@ export const AddPackageResponse200 = Type.Object({
   packageId: Type.Number({ minimum: 0 }),
 });
 
-export const RequestPackageResponse200 = Type.Object({
-  requestId: Type.Number({ minimum: 1 }),
+export const UpdatePackageParams = Type.Object({
+  packageId: Type.Number({ minimum: 0 }),
+});
+
+export const AddAssetsToPackageBody = Type.Array(UserProvidedAsset);
+
+export const AddAssetsToPackageResponse200 = Type.Object({
+  assetIds: Type.Array(Type.Number({ minimum: 0 })),
+});
+
+export const AddAuthMethodsToPackageBody = Type.Array(
+  Type.Object({
+    id: Type.Number({ minimum: 0 }),
+    order: Type.Optional(Type.Number({ minimum: 0 })),
+  }),
+);
+
+export const AddAuthMethodsToPackageResponse200 = Type.Object({
+  authIds: Type.Array(Type.Number({ minimum: 0 })),
 });

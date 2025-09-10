@@ -22,6 +22,13 @@ import {
   AddPackageBody,
   PackageControllerConfig,
   UserProvidedAsset,
+  AddAssetsToPackageBodyType,
+  AddAuthMethodsToPackageBodyType,
+  AddAssetsToPackageBody,
+  AddAssetsToPackageResponse200,
+  AddAuthMethodsToPackageResponse200,
+  UpdatePackageParams,
+  AddAuthMethodsToPackageBody,
 } from './types';
 import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
@@ -97,10 +104,11 @@ class PackageController {
           const packageDTOs: PackageDTO[] = toPackageDTO(packages);
 
           return reply.status(200).send(packageDTOs);
-        } catch (err) {
-          this.logger.error(
-            `Error fetching packages: ${err instanceof Error ? err.message : err}`,
-          );
+        } catch (error) {
+          this.logger.error(`Error fetching packages:`, {
+            error: error instanceof Error ? error.message : error,
+            stack: error instanceof Error ? error.stack : undefined,
+          });
           reply.status(500).send({
             error: 'Internal server error occured',
             code: 'internal-error',
@@ -209,7 +217,7 @@ class PackageController {
   };
 
   /**
-   * Registers the /packages/add POST route on the provided Fastify instance.
+   * Registers the /packages POST route on the provided Fastify instance.
    * Handles adding a new package, including asset processing and authentication method validation.
    *
    * @param fastify - The Fastify server instance to register the route on.
@@ -219,7 +227,7 @@ class PackageController {
     fastify: FastifySeverInstance,
   ): Promise<void> => {
     fastify.post<{ Body: AddPackageBodyType }>(
-      '/add',
+      '',
       {
         preHandler: [
           this.fastifyServer.authPreHandler,
@@ -289,6 +297,195 @@ class PackageController {
               message: error instanceof Error ? error.message : error,
               stack: error instanceof Error ? error.stack : undefined,
             });
+            return reply.status(500).send({
+              error: 'Internal server error occurred',
+              code: 'internal-error',
+            });
+          }
+        }
+      },
+    );
+  };
+
+  /**
+   * Registers the /packages/:packageId/assets POST route on the provided Fastify instance.
+   * Handles adding new assets to an existing package, including admin validation and asset processing.
+   * Responds with 200 and the added asset IDs on success, 404 if the package is not found,
+   * 400 for token or precision errors, or 500 for internal errors.
+   *
+   * @param fastify - The Fastify server instance to register the route on.
+   * @returns {Promise<void>}
+   */
+  public addAssetsToPackageRoute = async (
+    fastify: FastifySeverInstance,
+  ): Promise<void> => {
+    fastify.post<{
+      Body: AddAssetsToPackageBodyType;
+    }>(
+      '/:packageId/assets',
+      {
+        preHandler: [
+          this.fastifyServer.authPreHandler,
+          this.fastifyServer.adminPreHandler,
+        ],
+        schema: {
+          body: AddAssetsToPackageBody,
+          params: UpdatePackageParams,
+          response: {
+            200: AddAssetsToPackageResponse200,
+            404: ErrorResponse,
+            400: ErrorResponse,
+            500: ErrorResponse,
+          },
+        },
+      },
+      async (request, reply) => {
+        const { packageId } = request.params as Static<
+          typeof UpdatePackageParams
+        >;
+        const user = request.user as userRequestPayload;
+
+        try {
+          // Validate admin privileges in database
+          const isValid = await this.packageAction.validateAdminRequest(
+            user.userId,
+          );
+          if (!isValid) {
+            this.logger.debug(`User ${user.userId} failed admin validation.`);
+
+            return reply.status(403).send({ error: 'Forbidden' });
+          }
+
+          // Validate package existence
+          const pkg = await this.packageAction.getPackageById(packageId);
+
+          // Process assets
+          const assets = await this.processAssets(request.body);
+
+          // Add assets to package
+          const addedAssets = await this.packageAction.addAssets(assets, pkg);
+
+          this.logger.debug(
+            `Assets successfully added to package with ID: ${pkg.id}`,
+          );
+
+          return reply.status(200).send({ addedAssets });
+        } catch (error) {
+          if (error instanceof NotFoundError) {
+            this.logger.debug(`Package not found: ${error.message}`);
+
+            return reply
+              .status(404)
+              .send({ error: error.message, code: 'PACKAGE_NOT_FOUND' });
+          } else if (error instanceof TokenNotFoundError) {
+            this.logger.debug(`Token not found: ${error.message}`);
+
+            return reply
+              .status(400)
+              .send({ error: error.message, code: 'TOKEN_NOT_FOUND' });
+          } else if (error instanceof InvalidTokenPrecisionError) {
+            this.logger.debug(`Invalid token precision: ${error.message}`);
+
+            return reply
+              .status(400)
+              .send({ error: error.message, code: 'INVALID_PRECISION' });
+          } else {
+            this.logger.error(`Unexpected error during adding package`, {
+              message: error instanceof Error ? error.message : error,
+              stack: error instanceof Error ? error.stack : undefined,
+            });
+
+            return reply.status(500).send({
+              error: 'Internal server error occurred',
+              code: 'internal-error',
+            });
+          }
+        }
+      },
+    );
+  };
+
+  /**
+   * Registers the /packages/:packageId/assets POST route for adding authentication methods to a package.
+   * Handles admin validation, package existence, and authentication method validation.
+   * Responds with 200 on success, 404 if the package is not found, 400 for invalid auth methods,
+   * or 500 for internal errors.
+   *
+   * @param fastify - The Fastify server instance to register the route on.
+   * @returns {Promise<void>}
+   */
+  public addAuthMethodsToPackageRoute = async (
+    fastify: FastifySeverInstance,
+  ): Promise<void> => {
+    fastify.post<{ Body: AddAuthMethodsToPackageBodyType }>(
+      '/:packageId/assets',
+      {
+        preHandler: [
+          this.fastifyServer.authPreHandler,
+          this.fastifyServer.adminPreHandler,
+        ],
+        schema: {
+          body: AddAuthMethodsToPackageBody,
+          params: UpdatePackageParams,
+          response: {
+            200: AddAuthMethodsToPackageResponse200,
+            404: ErrorResponse,
+            400: ErrorResponse,
+            500: ErrorResponse,
+          },
+        },
+      },
+      async (request, reply) => {
+        const { packageId } = request.params as Static<
+          typeof UpdatePackageParams
+        >;
+        const user = request.user as userRequestPayload;
+        const authMethods = request.body;
+        try {
+          // Validate admin privileges in database
+          const isValid = await this.packageAction.validateAdminRequest(
+            user.userId,
+          );
+          if (!isValid) {
+            this.logger.debug(`User ${user.userId} failed admin validation.`);
+
+            return reply.status(403).send({ error: 'Forbidden' });
+          }
+
+          // Validate package existence
+          const pkg = await this.packageAction.getPackageById(packageId);
+
+          // Validate auth methods
+          this.packageAction.validateAuthMethods(
+            authMethods.map((am) => am.id),
+          );
+
+          // Save to database
+          await this.packageAction.addPackageAuthMethods(authMethods, pkg);
+        } catch (error) {
+          if (
+            error instanceof NotFoundError &&
+            error.message.includes('package')
+          ) {
+            this.logger.debug(`Package not found: ${error.message}`);
+
+            return reply
+              .status(404)
+              .send({ error: error.message, code: 'PACKAGE_NOT_FOUND' });
+          } else if (
+            error instanceof NotFoundError &&
+            error.message.includes('auth')
+          ) {
+            this.logger.debug(`Auth not found: ${error.message}`);
+            return reply
+              .status(400)
+              .send({ error: error.message, code: 'AUTH_NOT_FOUND' });
+          } else {
+            this.logger.error(`Unexpected error during adding package`, {
+              message: error instanceof Error ? error.message : error,
+              stack: error instanceof Error ? error.stack : undefined,
+            });
+
             return reply.status(500).send({
               error: 'Internal server error occurred',
               code: 'internal-error',

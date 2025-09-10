@@ -315,7 +315,7 @@ describe('PackageController', () => {
     });
   });
 
-  describe('POST /packages/add', () => {
+  describe('POST /packages', () => {
     let fastifyInstance: FastifyAPIServer;
     let packageController: PackageController;
     // eslint-disable-next-line
@@ -364,10 +364,10 @@ describe('PackageController', () => {
     });
 
     /**
-     * Test for successful POST /packages/add
+     * Test for successful POST /packages
      * @target PackageController.addPackageRoute
      * @scenario
-     * - POST /packages/add with valid admin user and package data
+     * - POST /packages with valid admin user and package data
      * @expected
      * - returns 200 and the package ID
      */
@@ -413,7 +413,7 @@ describe('PackageController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
-        url: '/packages/add',
+        url: '/packages',
         payload,
       });
 
@@ -450,7 +450,7 @@ describe('PackageController', () => {
      * Test for successful package addition with multiple assets and auth methods
      * @target PackageController.addPackageRoute
      * @scenario
-     * - POST /packages/add with multiple assets and auth methods
+     * - POST /packages with multiple assets and auth methods
      * @expected
      * - returns 200 and successfully adds package with multiple items
      */
@@ -499,7 +499,7 @@ describe('PackageController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
-        url: '/packages/add',
+        url: '/packages',
         payload,
       });
 
@@ -511,10 +511,10 @@ describe('PackageController', () => {
     });
 
     /**
-     * Test for forbidden POST /packages/add
+     * Test for forbidden POST /packages
      * @target PackageController.addPackageRoute
      * @scenario
-     * - POST /packages/add with valid admin user and package data
+     * - POST /packages  with valid admin user and package data
      * @expected
      * - returns 403
      */
@@ -536,7 +536,7 @@ describe('PackageController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
-        url: '/packages/add',
+        url: '/packages',
         payload,
       });
 
@@ -551,10 +551,10 @@ describe('PackageController', () => {
     });
 
     /**
-     * Test for malformed request body in POST /packages/add
+     * Test for malformed request body in POST /packages
      * @target PackageController.addPackageRoute
      * @scenario
-     * - POST /packages/add with missing required fields
+     * - POST /packages with missing required fields
      * @expected
      * - returns 400 with validation error
      */
@@ -567,7 +567,7 @@ describe('PackageController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
-        url: '/packages/add',
+        url: '/packages',
         payload,
       });
 
@@ -578,10 +578,10 @@ describe('PackageController', () => {
     });
 
     /**
-     * Test for TokenNotFoundError in POST /packages/add
+     * Test for TokenNotFoundError in POST /packages
      * @target PackageController.addPackageRoute
      * @scenario
-     * - POST /packages/add when token is not found
+     * - POST /packages when token is not found
      * @expected
      * - returns 400 with TOKEN_NOT_FOUND error
      */
@@ -612,7 +612,7 @@ describe('PackageController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
-        url: '/packages/add',
+        url: '/packages',
         payload,
       });
 
@@ -624,10 +624,10 @@ describe('PackageController', () => {
     });
 
     /**
-     * Test for InvalidTokenPrecisionError in POST /packages/add
+     * Test for InvalidTokenPrecisionError in POST /packages
      * @target PackageController.addPackageRoute
      * @scenario
-     * - POST /packages/add when token amount has invalid precision
+     * - POST /packages when token amount has invalid precision
      * @expected
      * - returns 400 with INVALID_PRECISION error
      */
@@ -660,7 +660,7 @@ describe('PackageController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
-        url: '/packages/add',
+        url: '/packages',
         payload,
       });
 
@@ -673,10 +673,10 @@ describe('PackageController', () => {
     });
 
     /**
-     * Test for auth methods not found in POST /packages/add
+     * Test for auth methods not found in POST /packages
      * @target PackageController.addPackageRoute
      * @scenario
-     * - POST /packages/add when auth methods are not found in database
+     * - POST /packages when auth methods are not found in database
      * @expected
      * - returns 400 with AUTH_NOT_FOUND error
      */
@@ -709,7 +709,7 @@ describe('PackageController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
-        url: '/packages/add',
+        url: '/packages',
         payload,
       });
 
@@ -721,10 +721,10 @@ describe('PackageController', () => {
     });
 
     /**
-     * Test for database error during package addition in POST /packages/add
+     * Test for database error during package addition in POST /packages
      * @target PackageController.addPackageRoute
      * @scenario
-     * - POST /packages/add when database error occurs during package addition
+     * - POST /packages when database error occurs during package addition
      * @expected
      * - returns 500 with internal server error
      */
@@ -758,7 +758,7 @@ describe('PackageController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
-        url: '/packages/add',
+        url: '/packages',
         payload,
       });
 

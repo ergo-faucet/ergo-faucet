@@ -1,6 +1,5 @@
 import {
   DataSource,
-  EntityManager,
   Equal,
   FindOptionsOrder,
   In,
@@ -117,6 +116,22 @@ class PackageAction {
       relations: ['assets', 'authMethods', 'authMethods.authMethod'],
     });
     return packages;
+  };
+
+  getPackageById = async (packageId: number): Promise<Package> => {
+    this.logger.debug(`Fetching package by id from database`);
+
+    const pkg = await this.packageRepository.findOne({
+      where: { id: packageId },
+    });
+
+    if (!pkg) {
+      this.logger.debug(`There is no package with id ${packageId}`);
+      throw new NotFoundError(`There is no package with id ${packageId}`);
+    }
+
+    this.logger.debug(`Package with id ${packageId} fetched successfully`);
+    return pkg;
   };
 
   /**
@@ -329,17 +344,6 @@ class PackageAction {
         const savedPackage = await packageRepository.save(newPackage);
         this.logger.debug(`New package saved with ID ${savedPackage.id}`);
 
-        await this.addAssets(
-          packagePayload.assets,
-          savedPackage,
-          transactionalEntityManager,
-        );
-        await this.addPackageAuthMethods(
-          packagePayload.authMethods,
-          savedPackage,
-          transactionalEntityManager,
-        );
-
         return savedPackage.id;
       },
     );
@@ -350,34 +354,42 @@ class PackageAction {
    *
    * - Creates Asset entities for each asset in the provided array.
    * - Associates each asset with the specified package.
-   * - Saves all assets using the provided EntityManager.
+   * - Saves all assets atomic.
    *
    * @param assets - Array of asset objects to add (tokenId, amount, decimals, usageDescription).
    * @param pkg - The Package entity to associate assets with.
-   * @param entityManager - The EntityManager for transactional operations.
    * @returns {Promise<void>}
    */
   public addAssets = async (
     assets: AssetPayload[],
     pkg: Package,
-    entityManager: EntityManager,
-  ) => {
-    const assetRepository = entityManager.getRepository(Asset);
-
-    // Create Asset entities
-    const newAssets = assetRepository.create(
-      assets.map((asset) => ({
-        tokenId: asset.tokenId,
-        assetName: asset.assetName,
-        amount: asset.amount,
-        decimals: asset.decimals,
-        usageDescription: asset.usageDescription,
-        package: pkg, // Associate with the saved package
-      })),
+  ): Promise<number[]> => {
+    this.logger.debug(
+      `Adding assets to package ID ${pkg.id}: ${JSON.stringify(assets)}`,
     );
-    // Save given assets to the database
-    await assetRepository.save(newAssets);
-    this.logger.debug(`Assets for package ID ${pkg.id} saved successfully`);
+
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const assetRepository = transactionalEntityManager.getRepository(Asset);
+        // Create Asset entities
+        const newAssets = assetRepository.create(
+          assets.map((asset) => ({
+            tokenId: asset.tokenId,
+            assetName: asset.assetName,
+            amount: asset.amount,
+            decimals: asset.decimals,
+            usageDescription: asset.usageDescription,
+            package: pkg, // Associate with the saved package
+          })),
+        );
+
+        // Save given assets to the database
+        const addedAssets = await assetRepository.insert(newAssets);
+        this.logger.debug(`Assets for package ID ${pkg.id} added successfully`);
+
+        return addedAssets.identifiers.map((a) => a.id as number);
+      },
+    );
   };
 
   /**
@@ -386,49 +398,64 @@ class PackageAction {
    * - Sorts and deduplicates the provided authMethods array.
    * - Fetches AuthMethod entities by ID and creates PackageAuthMethod entities.
    * - Associates each auth method with the specified package and order.
-   * - Saves all PackageAuthMethod entities using the provided EntityManager.
+   * - Saves all PackageAuthMethod entities atomic.
    *
    * @param authMethods - Array of auth method objects ({ id, order }) to add.
    * @param pkg - The Package entity to associate auth methods with.
-   * @param entityManager - The EntityManager for transactional operations.
    * @returns {Promise<void>}
    */
   public addPackageAuthMethods = async (
     authMethods: { id: number; order?: number }[],
     pkg: Package,
-    entityManager: EntityManager,
-  ) => {
-    const authMethodRepository = entityManager.getRepository(AuthMethod);
-    const packageAuthMethodRepository =
-      entityManager.getRepository(PackageAuthMethod);
+  ): Promise<number[]> => {
+    this.logger.debug(
+      `Adding auth methods to package ID ${pkg.id}: ${JSON.stringify(
+        authMethods,
+      )}`,
+    );
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const authMethodRepository =
+          transactionalEntityManager.getRepository(AuthMethod);
+        const packageAuthMethodRepository =
+          transactionalEntityManager.getRepository(PackageAuthMethod);
 
-    // Sort and remove duplicates based on id, keeping the first occurrence
-    authMethods = authMethods
-      .sort((a, b) => a.id - b.id)
-      .filter(
-        (item, index, arr) => index === 0 || item.id !== arr[index - 1].id,
-      );
+        // Sort and remove duplicates based on id, keeping the first occurrence
+        authMethods = authMethods
+          .sort((a, b) => a.id - b.id)
+          .filter(
+            (item, index, arr) => index === 0 || item.id !== arr[index - 1].id,
+          );
 
-    const auths = await authMethodRepository.find({
-      where: { id: In(authMethods.map((am) => am!.id)) },
-      order: { id: 'ASC' },
-    });
+        const auths = await authMethodRepository.find({
+          where: { id: In(authMethods.map((am) => am!.id)) },
+          order: { id: 'ASC' },
+        });
 
-    // Create PackageAuthMethod entities
-    const packageAuthMethods: PackageAuthMethod[] = [];
+        // Create PackageAuthMethod entities
+        const packageAuthMethods: PackageAuthMethod[] = [];
 
-    for (let i = 0; i < authMethods.length; i++) {
-      const pam = packageAuthMethodRepository.create({
-        authMethod: auths[i],
-        package: pkg,
-        order: authMethods[i].order,
-      });
+        for (let i = 0; i < authMethods.length; i++) {
+          const pam = packageAuthMethodRepository.create({
+            authMethod: auths[i],
+            package: pkg,
+            order: authMethods[i].order,
+          });
 
-      packageAuthMethods.push(pam);
-    }
+          packageAuthMethods.push(pam);
+        }
 
-    // Save PackageAuthMethod entities to the database
-    await packageAuthMethodRepository.insert(packageAuthMethods);
+        // Save PackageAuthMethod entities to the database
+        const addedAuths =
+          await packageAuthMethodRepository.insert(packageAuthMethods);
+
+        this.logger.debug(
+          `PackageAuthMethod for package ID ${pkg.id} added successfully`,
+        );
+
+        return addedAuths.identifiers.map((a) => a.id as number);
+      },
+    );
   };
 
   /**
