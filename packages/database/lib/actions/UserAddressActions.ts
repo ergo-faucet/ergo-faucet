@@ -1,6 +1,7 @@
 import { DataSource, In, Repository } from '@rosen-bridge/extended-typeorm';
 import { User, UserAddress } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { UnexpectedError } from '../types';
 
 class UserAddressAction {
   private static instance: UserAddressAction;
@@ -87,7 +88,9 @@ class UserAddressAction {
     const users = await this.getUsersByAddresses([address]);
     if (users.length > 1) {
       this.logger.debug(`Multiple users found for address: ${address}`);
-      throw new Error('Unbehavior: multiple users found for a single address');
+      throw new UnexpectedError(
+        `Unbehavior: Multiple users found for address ${address}`,
+      );
     } else if (users.length === 1) {
       this.logger.debug(`User found for address: ${address}`);
       user = users[0].user;
