@@ -1,6 +1,7 @@
-import { DataSource, Repository } from '@rosen-bridge/extended-typeorm';
+import { DataSource, In, Repository } from '@rosen-bridge/extended-typeorm';
 import { User, UserAddress } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { UnexpectedError } from '../types';
 
 class UserAddressAction {
   private static instance: UserAddressAction;
@@ -54,48 +55,23 @@ class UserAddressAction {
   };
 
   /**
-   * Creates and stores a new UserAddress entity linked to a specific user.
-   * @param user - User entity or user ID to associate the address with
-   * @param address - Ergo blockchain address to store
-   * @returns The created UserAddress entity
+   * Finds and returns User entities associated with the given addresses.
+   * @param addresses - List of Ergo addresses
+   * @returns Array of User entities (empty if none found)
    */
-  createUserAddress = async (
-    user: User,
-    address: string,
-  ): Promise<UserAddress> => {
-    const userAddress = this.UserAddressReposotory.create({
-      user: user,
-      value: address,
-    });
+  getUsersByAddresses = async (addresses: string[]): Promise<UserAddress[]> => {
+    this.logger.debug(
+      `Looking for users by addresses: ${addresses.join(', ')}`,
+    );
 
-    const saved = await this.UserAddressReposotory.save(userAddress);
-    this.logger.debug(`New address [${address}] linked to user ID ${user.id}`);
-
-    return saved;
-  };
-
-  /**
-   * Finds and returns the User entity associated with the given address.
-   * @param address - Ergo address to search for
-   * @returns The User entity or undefind if not found
-   */
-  getUserByAddress = async (address: string): Promise<User | undefined> => {
-    this.logger.debug(`Looking for user by address: ${address}`);
-
-    const userAddress = await this.UserAddressReposotory.findOne({
-      where: { value: address },
+    const userAddresses = await this.UserAddressReposotory.find({
+      where: { value: In(addresses) },
       relations: ['user'],
     });
 
-    if (userAddress?.user) {
-      this.logger.debug(
-        `User ID ${userAddress.user.id} found for address: ${address}`,
-      );
-    } else {
-      this.logger.debug(`No user found for address: ${address}`);
-    }
+    this.logger.debug(`Found ${userAddresses.length} user-address matches`);
 
-    return userAddress?.user;
+    return userAddresses;
   };
 
   /**
@@ -106,9 +82,23 @@ class UserAddressAction {
    */
   findOrCreateUserWithAddress = async (address: string): Promise<User> => {
     this.logger.debug(`Finding or creating user for address: ${address}`);
-
-    const user = await this.getUserByAddress(address);
+    let user: User | undefined;
     const now = Date.now();
+
+    const users = await this.getUsersByAddresses([address]);
+    if (users.length > 1) {
+      this.logger.debug(`Multiple users found for address: ${address}`);
+      throw new UnexpectedError(
+        `Unbehavior: Multiple users found for address ${address}`,
+      );
+    } else if (users.length === 1) {
+      this.logger.debug(`User found for address: ${address}`);
+      user = users[0].user;
+    } else {
+      this.logger.debug(
+        `No user found for address: ${address}, creating new user.`,
+      );
+    }
 
     if (user) {
       user.lastLogin = now;
