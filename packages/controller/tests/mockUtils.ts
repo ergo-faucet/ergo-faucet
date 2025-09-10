@@ -124,8 +124,8 @@ export const mockPackageDTO: PackageDTO[] = [
     name: 'Starter Pack',
     type: 'normal',
     delay: '3600',
-    //openAt: new Date('2025-07-01').toString(),
-    closeAt: new Date('2025-12-31').toString(),
+    //openAt: new Date('2025-07-01').toISOString(),
+    closeAt: new Date('2025-12-31').toISOString(),
     description: 'A package for new users',
     numberEachUser: 1,
     assets: [
