@@ -9,3 +9,5 @@ export { serverConfig, cookieConfig } from './fastify';
 export { googleAuthConfig } from './googleAuth';
 export { authJobConfig } from './authJob';
 export { controllerConfig } from './controller';
+export { accountantConfig } from './accountant';
+export { ergoUtilsConfig } from './ergoUtils';

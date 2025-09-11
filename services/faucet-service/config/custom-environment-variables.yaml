@@ -31,3 +31,6 @@ googleAuth:
 
 ergo:
   nodeURL: NODE_URL
+
+wallet:
+  mnemonic: WALLET_MNEMONIC
