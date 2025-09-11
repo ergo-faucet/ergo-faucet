@@ -55,6 +55,8 @@ export const GetPackagesResponse200 = Type.Array(PackageSchema);
 export const ErrorResponse = Type.Object({
   error: Type.String(),
   code: Type.String(),
+  message: Type.Optional(Type.String()),
+  statusCode: Type.Optional(Type.Number({ minimum: 100, maximum: 599 })),
 });
 
 export const RequestPackageBody = Type.Object({
@@ -76,13 +78,6 @@ export const AddPackageBody = Type.Object({
   closeAt: Type.Optional(Type.String({ format: 'date-time' })),
   delay: Type.String(),
   numberEachUser: Type.Number({ minimum: 1 }),
-  assets: Type.Array(UserProvidedAsset),
-  authMethods: Type.Array(
-    Type.Object({
-      id: Type.Number({ minimum: 0 }),
-      order: Type.Optional(Type.Number({ minimum: 0 })),
-    }),
-  ),
 });
 
 export const AddPackageResponse200 = Type.Object({
@@ -96,7 +91,7 @@ export const UpdatePackageParams = Type.Object({
 export const AddAssetsToPackageBody = Type.Array(UserProvidedAsset);
 
 export const AddAssetsToPackageResponse200 = Type.Object({
-  assetIds: Type.Array(Type.Number({ minimum: 0 })),
+  addedAssets: Type.Array(Type.Number({ minimum: 0 })),
 });
 
 export const AddAuthMethodsToPackageBody = Type.Array(
@@ -107,5 +102,5 @@ export const AddAuthMethodsToPackageBody = Type.Array(
 );
 
 export const AddAuthMethodsToPackageResponse200 = Type.Object({
-  authIds: Type.Array(Type.Number({ minimum: 0 })),
+  addedAuthIds: Type.Array(Type.Number({ minimum: 0 })),
 });

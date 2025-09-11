@@ -1,7 +1,6 @@
 import { Asset } from '../entities';
 
 export interface PackagePayload {
-  assets: AssetPayload[];
   openAt?: string | undefined;
   closeAt?: string | undefined;
   name: string;
@@ -10,7 +9,6 @@ export interface PackagePayload {
   status: 'show' | 'hide';
   delay: string;
   numberEachUser: number;
-  authMethods: { id: number; order?: number }[];
 }
 
 export type AssetPayload = Omit<Asset, 'id' | 'package'>;

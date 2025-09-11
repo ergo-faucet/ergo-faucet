@@ -28,6 +28,9 @@ export const mockedPackageAction: PackageAction & {
   validateAdminRequest: ReturnType<typeof vi.fn>;
   validateAuthMethods: ReturnType<typeof vi.fn>;
   addPackage: ReturnType<typeof vi.fn>;
+  getPackageById: ReturnType<typeof vi.fn>;
+  addPackageAuthMethods: ReturnType<typeof vi.fn>;
+  addAssets: ReturnType<typeof vi.fn>;
 } = {
   getPackages: vi.fn(),
   isPackageAvailableForUser: vi.fn(),
@@ -37,6 +40,9 @@ export const mockedPackageAction: PackageAction & {
   validateAdminRequest: vi.fn(),
   validateAuthMethods: vi.fn(),
   addPackage: vi.fn(),
+  getPackageById: vi.fn(),
+  addPackageAuthMethods: vi.fn(),
+  addAssets: vi.fn(),
   // eslint-disable-next-line
 } as any;
 

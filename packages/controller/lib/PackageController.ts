@@ -257,51 +257,22 @@ class PackageController {
             return reply.status(403).send({ error: 'Forbidden' });
           }
 
-          // Process assets
-          const assets = await this.processAssets(request.body.assets);
-
-          // Validate auth methods
-          this.packageAction.validateAuthMethods(
-            request.body.authMethods.map((am) => am.id),
-          );
-
-          const packagePayload = { ...request.body, assets };
-
           // Add package to database
-          const packageId = await this.packageAction.addPackage(packagePayload);
+          const packageId = await this.packageAction.addPackage(request.body);
           this.logger.debug(`Package with ID: ${packageId} successfully added`);
 
           return reply.status(200).send({
             packageId,
           });
         } catch (error) {
-          if (error instanceof TokenNotFoundError) {
-            this.logger.debug(`Token not found: ${error.message}`);
-            return reply
-              .status(400)
-              .send({ error: error.message, code: 'TOKEN_NOT_FOUND' });
-          } else if (error instanceof InvalidTokenPrecisionError) {
-            this.logger.debug(`Invalid token precision: ${error.message}`);
-            return reply
-              .status(400)
-              .send({ error: error.message, code: 'INVALID_PRECISION' });
-          } else if (error instanceof NotFoundError) {
-            this.logger.debug(
-              `Not found error (likely auth methods): ${error.message}`,
-            );
-            return reply
-              .status(400)
-              .send({ error: error.message, code: 'AUTH_NOT_FOUND' });
-          } else {
-            this.logger.error(`Unexpected error during adding package`, {
-              message: error instanceof Error ? error.message : error,
-              stack: error instanceof Error ? error.stack : undefined,
-            });
-            return reply.status(500).send({
-              error: 'Internal server error occurred',
-              code: 'internal-error',
-            });
-          }
+          this.logger.error(`Unexpected error during adding package`, {
+            message: error instanceof Error ? error.message : error,
+            stack: error instanceof Error ? error.stack : undefined,
+          });
+          return reply.status(500).send({
+            error: 'Internal server error occurred',
+            code: 'internal-error',
+          });
         }
       },
     );
@@ -368,8 +339,7 @@ class PackageController {
           this.logger.debug(
             `Assets successfully added to package with ID: ${pkg.id}`,
           );
-
-          return reply.status(200).send({ addedAssets });
+          return reply.status(200).send({ addedAssets: addedAssets });
         } catch (error) {
           if (error instanceof NotFoundError) {
             this.logger.debug(`Package not found: ${error.message}`);
@@ -418,11 +388,11 @@ class PackageController {
     fastify: FastifySeverInstance,
   ): Promise<void> => {
     fastify.post<{ Body: AddAuthMethodsToPackageBodyType }>(
-      '/:packageId/assets',
+      '/:packageId/auths',
       {
         preHandler: [
           this.fastifyServer.authPreHandler,
-          this.fastifyServer.adminPreHandler,
+          //  this.fastifyServer.adminPreHandler,
         ],
         schema: {
           body: AddAuthMethodsToPackageBody,
@@ -461,11 +431,20 @@ class PackageController {
           );
 
           // Save to database
-          await this.packageAction.addPackageAuthMethods(authMethods, pkg);
+          const addedAuthIds = await this.packageAction.addPackageAuthMethods(
+            authMethods,
+            pkg,
+          );
+
+          this.logger.debug(
+            `Assets successfully added to package with ID: ${pkg.id}`,
+          );
+          return reply.status(200).send({ addedAuthIds });
         } catch (error) {
           if (
             error instanceof NotFoundError &&
-            error.message.includes('package')
+            (error.message.includes('package') ||
+              error.message.includes('Package'))
           ) {
             this.logger.debug(`Package not found: ${error.message}`);
 
@@ -567,6 +546,16 @@ class PackageController {
       this.requestPackageRoute,
       prefix + this.PACKAGES_PREFIX,
     );
+    await this.fastifyServer.register(
+      this.addAssetsToPackageRoute,
+      prefix + this.PACKAGES_PREFIX,
+    );
+
+    await this.fastifyServer.register(
+      this.addAuthMethodsToPackageRoute,
+      prefix + this.PACKAGES_PREFIX,
+    );
+
     this.logger.info(
       `PackageController routes registered under prefix "${prefix + this.PACKAGES_PREFIX}"`,
     );
