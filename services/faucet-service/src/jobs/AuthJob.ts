@@ -10,7 +10,10 @@ const jobExpireDiscordAuths = async (): Promise<void> => {
     .expireAllExpiredAuths()
     .then()
     .catch((err) => {
-      logger.error('Error in expiring Discord Auths', err);
+      logger.error(`Error in expiring Discord Auths`, {
+        error: err instanceof Error ? err.message : err,
+        stack: err instanceof Error ? err.stack : undefined,
+      });
     });
   logger.info('Expired Discord Auths job done');
 };
@@ -21,7 +24,10 @@ const jobExpireGoogleAuths = async (): Promise<void> => {
     .expireAllExpiredAuths()
     .then()
     .catch((err) => {
-      logger.error('Error in expiring Google Auths', err);
+      logger.error(`Error in expiring Google Auths`, {
+        error: err instanceof Error ? err.message : err,
+        stack: err instanceof Error ? err.stack : undefined,
+      });
     });
   logger.info('Expired Google Auths job done');
 };
@@ -32,7 +38,10 @@ const jobExpireXAuths = async (): Promise<void> => {
     .expireAllExpiredAuths()
     .then()
     .catch((err) => {
-      logger.error('Error in expiring X Auths', err);
+      logger.error(`Error in expiring X Auths`, {
+        error: err instanceof Error ? err.message : err,
+        stack: err instanceof Error ? err.stack : undefined,
+      });
     });
   logger.info('Expired X Auths job done');
 };

@@ -12,6 +12,7 @@ abstract class AbstractAuthAction {
   protected userAuthStatusRepository: Repository<UserAuthStatus>;
   protected authMethodRepository: Repository<AuthMethod>;
   protected authMethod!: AuthMethod;
+  abstract readonly authMethodName: string;
 
   /**
    * Constructor for AbstractAuthAction class
@@ -27,12 +28,6 @@ abstract class AbstractAuthAction {
   }
 
   /**
-   * Each subclass must return its auth provider name
-   * e.g., "discord", "google", "x-platform"
-   */
-  protected abstract getAuthMethodName(): string;
-
-  /**
    * Ensures the AuthMethod is seeded in the database.
    * - Checks if an AuthMethod exists.
    * - If missing, creates it with an empty config.
@@ -40,12 +35,12 @@ abstract class AbstractAuthAction {
    */
   protected ensureAuthMethod = async (): Promise<void> => {
     let method = await this.authMethodRepository.findOne({
-      where: { name: this.getAuthMethodName() },
+      where: { name: this.authMethodName },
     });
 
     if (!method) {
       method = this.authMethodRepository.create({
-        name: this.getAuthMethodName(),
+        name: this.authMethodName,
         config: JSON.stringify({}),
       });
       this.authMethod = await this.authMethodRepository.save(method);
@@ -53,7 +48,7 @@ abstract class AbstractAuthAction {
       this.authMethod = method;
     }
 
-    this.logger.debug(`Seeded AuthMethod: ${this.getAuthMethodName()}`);
+    this.logger.debug(`Seeded AuthMethod: ${this.authMethodName}`);
   };
 
   /**
@@ -102,7 +97,7 @@ abstract class AbstractAuthAction {
 
     await this.userAuthStatusRepository.save(authStatus);
     this.logger.debug(
-      `Saved/Updated ${this.getAuthMethodName()} UserAuthStatus for user ID ${user.id}`,
+      `Saved/Updated ${this.authMethodName} UserAuthStatus for user ID ${user.id}`,
     );
   };
 
@@ -119,7 +114,7 @@ abstract class AbstractAuthAction {
     await this.userAuthStatusRepository.save(userAuthStatus);
 
     this.logger.debug(
-      `Expired ${this.getAuthMethodName()} auth for user ID ${userAuthStatus.user.id}`,
+      `Expired ${this.authMethodName} auth for user ID ${userAuthStatus.user.id}`,
     );
   };
 
@@ -144,7 +139,7 @@ abstract class AbstractAuthAction {
     }
 
     this.logger.debug(
-      `Processed ${expiredRecords.length} expired ${this.getAuthMethodName()} auth records`,
+      `Processed ${expiredRecords.length} expired ${this.authMethodName} auth records`,
     );
   };
 }

@@ -4,6 +4,7 @@ import { AbstractAuthAction } from './AbstractAuthAction';
 
 class DiscordAction extends AbstractAuthAction {
   private static instance: DiscordAction;
+  readonly authMethodName = 'discord';
 
   /**
    * Private constructor to enforce singleton usage.
@@ -22,14 +23,14 @@ class DiscordAction extends AbstractAuthAction {
    * @param logger - Optional logger instance
    * @throws Error if already initialized
    */
-  public static initialize = (
+  public static initialize = async (
     dataSource: DataSource,
     logger?: AbstractLogger,
-  ): void => {
+  ): Promise<void> => {
     if (this.instance)
       throw new Error('DiscordAction instance has already been initialized.');
     this.instance = new DiscordAction(dataSource, logger);
-    this.instance.ensureAuthMethod();
+    await this.instance.ensureAuthMethod();
   };
 
   /**
@@ -41,14 +42,6 @@ class DiscordAction extends AbstractAuthAction {
     if (!this.instance)
       throw new Error('DiscordAction instance has not been initialized.');
     return this.instance;
-  };
-
-  /**
-   * Returns the name of the authentication method
-   * @returns Authentication method name as a string
-   */
-  protected getAuthMethodName = (): string => {
-    return 'discord';
   };
 
   /**

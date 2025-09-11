@@ -9,9 +9,7 @@ import { DataSource } from '@rosen-bridge/extended-typeorm';
  * Test implementation of AbstractAuthAction for testing purposes
  */
 class TestAuthAction extends AbstractAuthAction {
-  protected getAuthMethodName(): string {
-    return 'test-auth';
-  }
+  readonly authMethodName = 'test-auth';
 
   constructor(dataSource: DataSource, logger?: DummyLogger) {
     super(dataSource, logger);

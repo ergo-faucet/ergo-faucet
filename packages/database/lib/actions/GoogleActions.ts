@@ -4,6 +4,7 @@ import { AbstractAuthAction } from './AbstractAuthAction';
 
 class GoogleAction extends AbstractAuthAction {
   private static instance: GoogleAction;
+  readonly authMethodName = 'google';
 
   /**
    * Private constructor to enforce singleton usage.
@@ -22,14 +23,14 @@ class GoogleAction extends AbstractAuthAction {
    * @param logger - Optional logger instance
    * @throws Error if already initialized
    */
-  public static initialize = (
+  public static initialize = async (
     dataSource: DataSource,
     logger?: AbstractLogger,
-  ): void => {
+  ): Promise<void> => {
     if (this.instance)
       throw new Error('GoogleAction instance has already been initialized.');
     this.instance = new GoogleAction(dataSource, logger);
-    this.instance.ensureAuthMethod();
+    await this.instance.ensureAuthMethod();
   };
 
   /**
@@ -42,15 +43,6 @@ class GoogleAction extends AbstractAuthAction {
       throw new Error('GoogleAction instance has not been initialized.');
     return this.instance;
   };
-
-  /**
-   * Returns the name of the authentication method
-   * @returns Authentication method name as a string
-   */
-  protected getAuthMethodName = (): string => {
-    return 'google';
-  };
-
   /**
    * Links a Google account to an already existing User.
    *

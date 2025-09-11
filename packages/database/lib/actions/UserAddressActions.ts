@@ -8,7 +8,7 @@ class UserAddressAction {
 
   private logger: AbstractLogger;
   private dataSource: DataSource;
-  private UserAddressReposotory: Repository<UserAddress>;
+  private UserAddressRepository: Repository<UserAddress>;
   private UserRepository: Repository<User>;
 
   /**
@@ -19,7 +19,7 @@ class UserAddressAction {
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
     this.logger = logger ?? new DummyLogger();
     this.dataSource = dataSource;
-    this.UserAddressReposotory = dataSource.getRepository(UserAddress);
+    this.UserAddressRepository = dataSource.getRepository(UserAddress);
     this.UserRepository = dataSource.getRepository(User);
   }
 
@@ -64,7 +64,7 @@ class UserAddressAction {
       `Looking for users by addresses: ${addresses.join(', ')}`,
     );
 
-    const userAddresses = await this.UserAddressReposotory.find({
+    const userAddresses = await this.UserAddressRepository.find({
       where: { value: In(addresses) },
       relations: ['user'],
     });

@@ -11,7 +11,7 @@ import {
   setupController,
   startServerService,
 } from './handler';
-import { scheduleExpiringJob } from './jobs/AuthJob';
+import { scheduleExpiringJob } from './jobs';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
