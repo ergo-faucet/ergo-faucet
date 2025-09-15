@@ -25,6 +25,7 @@ import { UserAddressAction } from '@ergo-faucet/database';
 import { hex } from '@fleet-sdk/crypto';
 import { ErgoAddress, ErgoMessage, Network } from '@fleet-sdk/core';
 import { Prover } from '@fleet-sdk/wallet';
+import { isValidErgoAddress } from '@ergo-faucet/ergo-utils';
 
 export class ErgoAuth {
   private static instance: ErgoAuth;
@@ -82,26 +83,6 @@ export class ErgoAuth {
       throw new Error('ErgoAuth instance has not been initialized.');
     }
     return this.instance;
-  };
-
-  /**
-   * Validates if the provided Ergo address is valid for the configured network.
-   * @param address - The Ergo address to validate.
-   * @returns `true` if valid, otherwise `false`.
-   */
-  public isValidErgoAddress = (address: string): boolean => {
-    try {
-      const network = ErgoAddress.fromBase58(address).network;
-      return this.NETWORK_TYPE === network;
-    } catch (err) {
-      if (err instanceof Error) {
-        this.logger.debug(`Invalid Ergo address Network: ${address}`, {
-          message: err.message,
-          stack: err.stack,
-        });
-      }
-      return false;
-    }
   };
 
   /**
@@ -251,11 +232,18 @@ export class ErgoAuth {
           response: {
             200: ChallengeResponse200,
             400: ChallengeErrorResponse,
+            500: ChallengeErrorResponse,
           },
         },
         preHandler: async (req, res) => {
-          const { address } = req.body;
-          if (!this.isValidErgoAddress(address)) {
+          const { changedAddress, addresses } = req.body;
+
+          if (!addresses.includes(changedAddress)) {
+            return res.status(400).send({
+              error: 'changedAddress must be inside addresses list',
+              code: 'invalid-changedAddress',
+            });
+          } else if (!isValidErgoAddress(changedAddress, this.NETWORK_TYPE)) {
             return res.status(400).send({
               error: 'Invalid Ergo address',
               code: 'invalid-address-network',
@@ -265,9 +253,33 @@ export class ErgoAuth {
       },
 
       async (request, reply) => {
-        const { address } = request.body;
-        const challenge = await this.createChallenge(address);
-        return reply.status(200).send({ challenge, address });
+        try {
+          const { changedAddress, addresses } = request.body;
+          let finallyAddress: string;
+
+          const users =
+            await this.userAddressAction.getUsersByAddresses(addresses);
+
+          if (users.length > 1) {
+            return reply.status(400).send({
+              error: 'Multiple users found for the provided addresses',
+              code: 'multiple-users-found',
+            });
+          } else if (users.length === 1) finallyAddress = users[0].value;
+          else finallyAddress = changedAddress;
+
+          const challenge = await this.createChallenge(finallyAddress);
+          return reply.status(200).send({ challenge, address: finallyAddress });
+        } catch (err) {
+          this.logger.debug(`Create challenge failed:`, {
+            error: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          return reply.status(500).send({
+            error: 'Internal server error during creating challenge',
+            code: 'internal-server-error',
+          });
+        }
       },
     );
   };
@@ -290,13 +302,14 @@ export class ErgoAuth {
             200: AuthenticationResponse200,
             400: AuthenticationResponseError,
             401: AuthenticationResponseError,
+            500: AuthenticationResponseError,
           },
         },
         preHandler: [
           this.fastifyServer.captchaPreHandler,
           async (req, res) => {
             const { address } = req.body;
-            if (!this.isValidErgoAddress(address)) {
+            if (!isValidErgoAddress(address, this.NETWORK_TYPE)) {
               return res.status(400).send({
                 error: 'Invalid Ergo address',
                 code: 'invalid-address-network',
@@ -318,29 +331,40 @@ export class ErgoAuth {
           });
         }
 
-        const user =
-          await this.userAddressAction.findOrCreateUserWithAddress(address);
+        try {
+          const user =
+            await this.userAddressAction.findOrCreateUserWithAddress(address);
 
-        const payload: userRequestPayload = {
-          userId: user.id,
-          address: address,
-          name: user.name,
-        };
+          const payload: userRequestPayload = {
+            userId: user.id,
+            address: address,
+            name: user.name,
+          };
 
-        const refreshToken = await reply.jwtSign(payload, {
-          expiresIn: this.refreshTokenExpirySeconds,
-        });
-        const accessToken = await reply.jwtSign(payload, {
-          expiresIn: this.accessTokenExpirySeconds,
-        });
+          const refreshToken = await reply.jwtSign(payload, {
+            expiresIn: this.refreshTokenExpirySeconds,
+          });
+          const accessToken = await reply.jwtSign(payload, {
+            expiresIn: this.accessTokenExpirySeconds,
+          });
 
-        this.fastifyServer.setAuthCookie(reply, refreshToken);
+          this.fastifyServer.setAuthCookie(reply, refreshToken);
 
-        return reply.send({
-          success: true,
-          payload: payload,
-          accessToken,
-        });
+          return reply.send({
+            success: true,
+            payload: payload,
+            accessToken,
+          });
+        } catch (err) {
+          this.logger.debug(`Authentication failed:`, {
+            error: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          return reply.status(500).send({
+            error: 'Internal server error during authentication',
+            code: 'internal-server-error',
+          });
+        }
       },
     );
   };

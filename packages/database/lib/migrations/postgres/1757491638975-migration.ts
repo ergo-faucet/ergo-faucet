@@ -1,7 +1,10 @@
-import { MigrationInterface, QueryRunner } from 'typeorm';
+import {
+  MigrationInterface,
+  QueryRunner,
+} from '@rosen-bridge/extended-typeorm';
 
-export class Migration1755070405395 implements MigrationInterface {
-  name = 'Migration1755070405395';
+export class Migration1757491638975 implements MigrationInterface {
+  name = 'Migration1757491638975';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -19,6 +22,10 @@ export class Migration1755070405395 implements MigrationInterface {
                 "timestamp" date NOT NULL,
                 "destinationAddress" character varying NOT NULL,
                 "status" text NOT NULL,
+                "txId" text,
+                "signed_tx" text,
+                "creationHeight" integer,
+                "numberOfTries" integer NOT NULL DEFAULT '0',
                 "userId" integer,
                 "packageId" integer,
                 CONSTRAINT "PK_1a06e346f47b05bcfc45ef748f9" PRIMARY KEY ("id")
@@ -88,7 +95,8 @@ export class Migration1755070405395 implements MigrationInterface {
             CREATE TABLE "asset_entity" (
                 "id" SERIAL NOT NULL,
                 "tokenId" character varying NOT NULL,
-                "amount" bigint NOT NULL,
+                "asset_name" character varying NOT NULL,
+                "amount" character varying NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer,
                 CONSTRAINT "PK_038b7b28b83db2205747ef9912e" PRIMARY KEY ("id")

@@ -6,6 +6,7 @@ export {
   DiscordAction,
   XAction,
   GoogleAction,
+  AccountantAction,
 } from './actions';
 export {
   Asset,
@@ -17,3 +18,4 @@ export {
   UserAuthStatus,
   UserRequest,
 } from './entities';
+export { NotFoundError, RequestLimitError } from './types';

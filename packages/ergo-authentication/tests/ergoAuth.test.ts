@@ -171,38 +171,6 @@ describe('ErgoAuth', () => {
   });
 
   /**
-   * Test for rejecting a TESTNET address on MAINNET
-   * @target ErgoAuth.isvalidErgoAddress
-   * @scenario
-   * - pass a valid TESTNET address (prefix 0x10) while running on MAINNET
-   * @expected
-   * - should return false
-   */
-  it('should reject TESTNET address when running on MAINNET', () => {
-    // This is a valid TESTNET prefix address (network byte 0x10)
-    const testnetAddress =
-      '3WxrAftnTJSGP91VEhRQWYviUG26XQNoPKciqqcBD86VPVS5Zn13';
-    const isValid = ergoAuth.isValidErgoAddress(testnetAddress);
-
-    expect(isValid).toBe(false);
-  });
-
-  /**
-   * Test for accepting a valid MAINNET address
-   * @target ErgoAuth.isvalidErgoAddress
-   * @scenario
-   * - pass a valid MAINNET address (prefix 0x00)
-   * @expected
-   * - should return true
-   */
-  it('should accept valid MAINNET address', () => {
-    const mainnetAddr = '9fq3mgbL6UgzV33dC4R2n8L3CFSrBUytME8JKD8xDKgj8BDTLX7';
-    const isValid = ergoAuth.isValidErgoAddress(mainnetAddr);
-
-    expect(isValid).toBe(true);
-  });
-
-  /**
    * Test for registering routes on the Fastify server
    * @target ErgoAuth.registerRoutes
    * @scenario

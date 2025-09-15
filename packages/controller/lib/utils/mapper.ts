@@ -1,8 +1,8 @@
 import {
   Asset,
   PackageAuthMethod,
-  UserAuthStatus,
   Package,
+  UserAuthStatus,
 } from '@ergo-faucet/database';
 import { AssetDTO, AuthMethodDTO, PackageDTO } from '../types';
 
@@ -16,6 +16,7 @@ export const toPackageDTO = (
       (a: Asset): AssetDTO => ({
         id: a.id,
         tokenId: a.tokenId,
+        assetName: a.assetName,
         amount: a.amount.toString(),
         usageDescription: a.usageDescription,
       }),
@@ -41,9 +42,9 @@ export const toPackageDTO = (
       id: p.id,
       name: p.name,
       type: p.type,
-      delay: p.delay,
-      openAt: p.openAt?.toString(),
-      closeAt: p.closeAt?.toString(),
+      delay: p.delay.toString(),
+      openAt: p.openAt?.toISOString(),
+      closeAt: p.closeAt?.toISOString(),
       description: p.description,
       numberEachUser: p.numberEachUser,
       assets: assetDTOs,

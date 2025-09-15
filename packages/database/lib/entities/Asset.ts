@@ -2,7 +2,6 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  BigIntValueTransformer,
   Index,
   ManyToOne,
   JoinColumn,
@@ -23,8 +22,11 @@ export class Asset {
   @Index()
   tokenId!: string;
 
-  @Column({ type: 'bigint', transformer: new BigIntValueTransformer() })
-  amount!: bigint;
+  @Column({ type: 'varchar', name: 'asset_name' })
+  assetName!: string;
+
+  @Column({ type: 'varchar' })
+  amount!: string;
 
   @Column({ type: 'text' })
   usageDescription!: string;

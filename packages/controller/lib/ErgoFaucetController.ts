@@ -2,6 +2,7 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { PackageController } from './PackageController';
 import { PackageAction } from '@ergo-faucet/database';
+import { Network } from '@fleet-sdk/common';
 
 class ErgoFaucetController {
   private static instance: ErgoFaucetController;
@@ -18,13 +19,15 @@ class ErgoFaucetController {
   private constructor(
     fastifyServer: FastifyAPIServer,
     private readonly packageAction: PackageAction,
+    private readonly NETWORK_TYPE: Network,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
     this.fastifyServer = fastifyServer;
     this.packageController = new PackageController(
       this.packageAction,
-      this.fastifyServer,
+      fastifyServer,
+      this.NETWORK_TYPE,
       logger,
     );
   }
@@ -52,6 +55,7 @@ class ErgoFaucetController {
   public static initialize = async (
     fastifyServer: FastifyAPIServer,
     packageAction: PackageAction,
+    networkType: Network,
     logger?: AbstractLogger,
   ) => {
     if (this.instance) {
@@ -62,6 +66,7 @@ class ErgoFaucetController {
     this.instance = new ErgoFaucetController(
       fastifyServer,
       packageAction,
+      networkType,
       logger,
     );
     await this.instance.registerRoutes(this.instance.CONTROLLER_PREFIX);
@@ -75,7 +80,7 @@ class ErgoFaucetController {
    * @returns {Promise<void>}
    */
   public registerRoutes = async (prefix: string): Promise<void> => {
-    await this.packageController.registerRoutes(this.fastifyServer, prefix);
+    await this.packageController.registerRoutes(prefix);
     this.logger.info(
       `ErgoFaucetController routes registered under prefix "${prefix}"`,
     );

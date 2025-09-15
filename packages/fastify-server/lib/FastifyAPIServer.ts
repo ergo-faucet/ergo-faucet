@@ -105,6 +105,9 @@ export class FastifyAPIServer {
       fastifySwaggerUi,
       this.instance.swaggerUi,
     );
+    this.instance.fastify.get('/', async (_, reply) => {
+      return reply.redirect(this.instance.swaggerUi.routePrefix || '');
+    });
 
     this.instance.logger.info(`FastifyAPIServer initialized successfully.`);
   };

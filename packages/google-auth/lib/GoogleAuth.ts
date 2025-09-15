@@ -38,7 +38,6 @@ export class GoogleAuth {
   private readonly GOOGLE_API_URL =
     'https://www.googleapis.com/oauth2/v2/userinfo';
   private readonly GRANT_TYPE = 'authorization_code';
-  private readonly REFRESH_GRANT_TYPE = 'refresh_token';
 
   /**
    * Private constructor to enforce singleton pattern.
@@ -73,7 +72,6 @@ export class GoogleAuth {
       throw new Error('GoogleAuth has already been initialized.');
     }
     this.instance = new GoogleAuth(config, logger);
-    await this.instance.googleAction.ensureGoogleAuthMethod();
     await this.instance.registerRoutes(this.instance.GOOGLE_AUTH_PREFIX);
     this.instance.logger.info(`GoogleAuth initialized successfully.`);
   };

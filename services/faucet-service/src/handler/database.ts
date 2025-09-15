@@ -6,7 +6,7 @@ import {
   UserAddressAction,
   XAction,
 } from '@ergo-faucet/database';
-import { dbConfig } from '../configs';
+import { dbConfig } from '@configs';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
@@ -16,11 +16,11 @@ export const setupDatabase = async () => {
   await DataSourceHandler.initialize(dbConfig, dbLogger);
   try {
     const dataSource = DataSourceHandler.getInstance().getDataSource();
-    DiscordAction.initialize(dataSource, dbLogger);
+    await DiscordAction.initialize(dataSource, dbLogger);
     PackageAction.initialize(dataSource, dbLogger);
     UserAddressAction.initialize(dataSource, dbLogger);
-    XAction.initialize(dataSource, dbLogger);
-    GoogleAction.initialize(dataSource, dbLogger);
+    await XAction.initialize(dataSource, dbLogger);
+    await GoogleAction.initialize(dataSource, dbLogger);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(

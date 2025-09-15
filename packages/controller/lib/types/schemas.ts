@@ -22,6 +22,7 @@ export const PackagesRouteQuery = Type.Object({
 export const AssetSchema = Type.Object({
   id: Type.Number(),
   tokenId: Type.String(),
+  assetName: Type.String(),
   amount: Type.String(),
   usageDescription: Type.String(),
 });
@@ -34,6 +35,7 @@ export const AuthMethodSchema = Type.Object({
       Type.Literal('pending'),
       Type.Literal('passed'),
       Type.Literal('failed'),
+      Type.Literal('expired'),
     ]),
   ),
 });
@@ -45,7 +47,7 @@ export const PackageSchema = Type.Object({
   type: Type.Union([Type.Literal('normal'), Type.Literal('random')]),
   openAt: Type.Optional(Type.String({ format: 'date-time' })),
   closeAt: Type.Optional(Type.String({ format: 'date-time' })),
-  delay: Type.Number(),
+  delay: Type.String(),
   numberEachUser: Type.Number({ minimum: 0 }),
   assets: Type.Array(AssetSchema),
   authMethods: Type.Array(AuthMethodSchema),
@@ -53,7 +55,17 @@ export const PackageSchema = Type.Object({
 
 export const GetPackagesResponse200 = Type.Array(PackageSchema);
 
-export const GetPackageErrorResponse = Type.Object({
+export const ErrorResponse = Type.Object({
   error: Type.String(),
   code: Type.String(),
+});
+
+export const RequestPackageBody = Type.Object({
+  packageId: Type.Number({ minimum: 0 }),
+  destAddress: Type.String({ minLength: 1 }),
+  captchaToken: Type.String({ minLength: 1 }),
+});
+
+export const RequestPackageResponse200 = Type.Object({
+  requestId: Type.Number({ minimum: 1 }),
 });

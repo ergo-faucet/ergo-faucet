@@ -1,5 +1,5 @@
 import { XAuth } from '@ergo-faucet/x-auth';
-import { xAuthConfig, redisConfig } from '../configs';
+import { xAuthConfig, redisConfig } from '@configs';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { XAction } from '@ergo-faucet/database';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';

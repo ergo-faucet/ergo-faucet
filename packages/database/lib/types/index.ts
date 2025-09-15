@@ -1,3 +1,3 @@
-import { DatabaseConfig } from './dataSourceTypes';
+export { DatabaseConfig } from './dataSourceTypes';
 
-export { DatabaseConfig };
+export { NotFoundError, RequestLimitError, UnexpectedError } from './errors';

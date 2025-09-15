@@ -26,6 +26,13 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
+      - name: Depcheck per changed directory using lint-staged
+        run: |
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            git fetch --all
+            echo "Running on pull request - comparing against base branch: ${{ github.base_ref }}"
+            npx lint-staged --diff="origin/${{ github.base_ref }}...HEAD"
+          fi
       - name: Lint Check
         run: npm run lint
 

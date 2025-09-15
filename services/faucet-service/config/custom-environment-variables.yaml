@@ -16,15 +16,18 @@ redis:
 
 discord:
   clientID: DISCORD_CLIENT_ID
-  clientSercret: DISCORD_CLIENT_SECRET
+  clientSecret: DISCORD_CLIENT_SECRET
   redirectURL: DISCORD_REDIRECT_URL
 
 x-platform:
   clientID: X_CLIENT_ID
-  clientSercret: X_CLIENT_SECRET
+  clientSecret: X_CLIENT_SECRET
   redirectURL: X_REDIRECT_URL
 
 googleAuth:
   clientID: GOOGLE_CLIENT_ID
-  clientSercret: GOOGLE_CLIENT_SECRET
+  clientSecret: GOOGLE_CLIENT_SECRET
   redirectURL: GOOGLE_REDIRECT_URL
+
+ergo:
+  nodeURL: NODE_URL

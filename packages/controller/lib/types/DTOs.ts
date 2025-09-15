@@ -3,6 +3,7 @@ export type PackageType = 'normal' | 'random';
 export interface AssetDTO {
   id: number;
   tokenId: string;
+  assetName: string;
   amount: string;
   usageDescription: string;
 }
@@ -10,7 +11,7 @@ export interface AssetDTO {
 export interface AuthMethodDTO {
   id: number;
   name: string;
-  status?: 'passed' | 'failed' | 'pending';
+  status?: 'passed' | 'failed' | 'pending' | 'expired';
 }
 
 export interface PackageDTO {
@@ -20,7 +21,7 @@ export interface PackageDTO {
   type: PackageType;
   openAt?: string;
   closeAt?: string;
-  delay: number;
+  delay: string;
   numberEachUser: number;
   assets: AssetDTO[];
   authMethods: AuthMethodDTO[];

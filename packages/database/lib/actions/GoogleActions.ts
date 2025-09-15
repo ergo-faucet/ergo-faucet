@@ -1,14 +1,10 @@
-import { DataSource, Not, Repository } from '@rosen-bridge/extended-typeorm';
-import { User, UserAuthStatus, AuthMethod } from '../entities';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { DataSource, Not } from '@rosen-bridge/extended-typeorm';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
+import { AbstractAuthAction } from './AbstractAuthAction';
 
-class GoogleAction {
+class GoogleAction extends AbstractAuthAction {
   private static instance: GoogleAction;
-  private logger: AbstractLogger;
-  private userRepository: Repository<User>;
-  private userAuthStatusRepository: Repository<UserAuthStatus>;
-  private authMethodRepository: Repository<AuthMethod>;
-  private googleAuthMethod!: AuthMethod;
+  readonly authMethodName = 'google';
 
   /**
    * Private constructor to enforce singleton usage.
@@ -17,10 +13,7 @@ class GoogleAction {
    * @param logger - Optional logger instance (defaults to DummyLogger)
    */
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
-    this.logger = logger ?? new DummyLogger();
-    this.userRepository = dataSource.getRepository(User);
-    this.userAuthStatusRepository = dataSource.getRepository(UserAuthStatus);
-    this.authMethodRepository = dataSource.getRepository(AuthMethod);
+    super(dataSource, logger);
   }
 
   /**
@@ -30,13 +23,14 @@ class GoogleAction {
    * @param logger - Optional logger instance
    * @throws Error if already initialized
    */
-  public static initialize = (
+  public static initialize = async (
     dataSource: DataSource,
     logger?: AbstractLogger,
-  ): void => {
+  ): Promise<void> => {
     if (this.instance)
       throw new Error('GoogleAction instance has already been initialized.');
     this.instance = new GoogleAction(dataSource, logger);
+    await this.instance.ensureAuthMethod();
   };
 
   /**
@@ -49,32 +43,6 @@ class GoogleAction {
       throw new Error('GoogleAction instance has not been initialized.');
     return this.instance;
   };
-
-  /**
-   * Ensures the `google` AuthMethod is seeded in the database.
-   *
-   * - Checks if an AuthMethod with name `google` exists.
-   * - If missing, creates it with an empty config.
-   *
-   * @returns Promise<void>
-   */
-  public async ensureGoogleAuthMethod(): Promise<void> {
-    let googleMethod = await this.authMethodRepository.findOne({
-      where: { name: 'google' },
-    });
-    if (!googleMethod) {
-      googleMethod = this.authMethodRepository.create({
-        name: 'google',
-        config: JSON.stringify({}),
-      });
-      this.googleAuthMethod =
-        await this.authMethodRepository.save(googleMethod);
-    } else {
-      this.googleAuthMethod = googleMethod;
-    }
-    this.logger.debug('Seeded AuthMethod: google');
-  }
-
   /**
    * Links a Google account to an already existing User.
    *
@@ -130,62 +98,11 @@ class GoogleAction {
 
     const expiresAt = new Date(Date.now() + expiresTime * 1000);
 
-    await this.saveOrUpdateGoogleAuthStatus(
+    await this.saveOrUpdateAuthStatus(
       savedUser,
       expiresAt,
       access_token,
       refresh_token,
-    );
-  };
-
-  /**
-   * Creates or updates the `UserAuthStatus` record for a user's Google authentication.
-   *
-   * @param user - User entity already saved in DB
-   * @param expiresAt - Token expiration date
-   * @param accessToken - Google OAuth2 access token
-   * @param refreshToken - Google OAuth2 refresh token
-   * @returns Promise<void>
-   */
-  private saveOrUpdateGoogleAuthStatus = async (
-    user: User,
-    expiresAt: Date,
-    accessToken: string,
-    refreshToken: string,
-  ): Promise<void> => {
-    let authStatus = await this.userAuthStatusRepository.findOne({
-      where: {
-        user: { id: user.id },
-        authMethod: { id: this.googleAuthMethod.id },
-      },
-      relations: ['authMethod', 'user'],
-    });
-
-    if (!authStatus) {
-      authStatus = this.userAuthStatusRepository.create({
-        user,
-        authMethod: this.googleAuthMethod,
-        verifiedAt: new Date(),
-        status: 'passed',
-        expiresAt,
-        metadata: {
-          token: accessToken,
-          refresh_token: refreshToken,
-        },
-      });
-    } else {
-      authStatus.verifiedAt = new Date();
-      authStatus.status = 'passed';
-      authStatus.expiresAt = expiresAt;
-      authStatus.metadata = {
-        token: accessToken,
-        refresh_token: refreshToken,
-      };
-    }
-
-    await this.userAuthStatusRepository.save(authStatus);
-    this.logger.debug(
-      `Saved/Updated Google UserAuthStatus for user ID ${user.id}`,
     );
   };
 }

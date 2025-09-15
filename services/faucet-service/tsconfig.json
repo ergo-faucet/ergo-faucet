@@ -2,9 +2,12 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "./dist",
-    "baseUrl": "."
+    "baseUrl": ".",
+    "paths": {
+      "@configs": ["src/configs"]
+    }
   },
-  "include": ["src"],
+  "include": ["src", "package.json"],
   "references": [
     { "path": "../../packages/google-recaptcha" },
     { "path": "../../packages/fastify-server" },
