@@ -11,6 +11,7 @@ import {
   setupController,
   startServerService,
 } from './handler';
+import { scheduleExpiringJob } from './jobs';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
@@ -27,6 +28,7 @@ const main = async () => {
     await setupGoogleAuth();
     logger.info('All packages was initialized successfuly');
     await startServerService();
+    await scheduleExpiringJob();
   } catch (err) {
     logger.debug('Error in initialize the packages', err);
   }

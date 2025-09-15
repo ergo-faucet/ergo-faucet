@@ -37,7 +37,7 @@ export class UserAuthStatus {
   verifiedAt!: Date;
 
   @Column({ type: 'text' })
-  status!: 'passed' | 'failed' | 'pending';
+  status!: 'passed' | 'failed' | 'pending' | 'expired';
 
   @Column({ type: 'date', nullable: true })
   expiresAt?: Date;

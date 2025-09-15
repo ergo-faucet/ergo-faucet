@@ -64,7 +64,8 @@ const mockAsset1: Asset = {
   id: 1,
   package: mockPackage,
   tokenId: 'token-abc-123',
-  amount: BigInt(1000),
+  assetName: 'token-abc-123',
+  amount: '1000',
   usageDescription: 'Initial reward',
 };
 
@@ -72,7 +73,8 @@ const mockAsset2: Asset = {
   id: 2,
   package: mockPackage,
   tokenId: 'token-def-456',
-  amount: BigInt(500),
+  assetName: 'token-def-456',
+  amount: '500',
   usageDescription: 'Bonus item',
 };
 
@@ -110,7 +112,7 @@ mockPackage = {
   status: 'show',
   //openAt: new Date('2025-07-01'),
   closeAt: new Date('2025-12-31'),
-  delay: 3600,
+  delay: 3600n,
   numberEachUser: 1,
   assets: [mockAsset1, mockAsset2],
   authMethods: [mockAuthMethod1, mockAuthMethod2],
@@ -123,21 +125,23 @@ export const mockPackageDTO: PackageDTO[] = [
     id: 101,
     name: 'Starter Pack',
     type: 'normal',
-    delay: 3600,
-    //openAt: new Date('2025-07-01').toString(),
-    closeAt: new Date('2025-12-31').toString(),
+    delay: '3600',
+    //openAt: new Date('2025-07-01').toISOString(),
+    closeAt: new Date('2025-12-31').toISOString(),
     description: 'A package for new users',
     numberEachUser: 1,
     assets: [
       {
         id: 1,
         tokenId: 'token-abc-123',
+        assetName: 'token-abc-123',
         amount: '1000',
         usageDescription: 'Initial reward',
       },
       {
         id: 2,
         tokenId: 'token-def-456',
+        assetName: 'token-def-456',
         amount: '500',
         usageDescription: 'Bonus item',
       },

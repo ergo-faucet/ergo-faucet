@@ -22,6 +22,7 @@ export const PackagesRouteQuery = Type.Object({
 const AssetSchema = Type.Object({
   id: Type.Number(),
   tokenId: Type.String(),
+  assetName: Type.String(),
   amount: Type.String(),
   usageDescription: Type.String(),
 });
@@ -38,7 +39,7 @@ const PackageSchema = Type.Object({
   type: Type.Union([Type.Literal('normal'), Type.Literal('random')]),
   openAt: Type.Optional(Type.String({ format: 'date-time' })),
   closeAt: Type.Optional(Type.String({ format: 'date-time' })),
-  delay: Type.Number(),
+  delay: Type.String(),
   numberEachUser: Type.Number({ minimum: 0 }),
   assets: Type.Array(AssetSchema),
   authMethods: Type.Array(AuthMethodSchema),

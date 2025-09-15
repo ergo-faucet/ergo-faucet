@@ -11,3 +11,10 @@ export class RequestLimitError extends Error {
     this.name = 'Request Limit Error';
   }
 }
+
+export class UnexpectedError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'unexpected Error';
+  }
+}
