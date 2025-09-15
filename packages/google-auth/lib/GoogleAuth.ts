@@ -10,7 +10,7 @@ import { GoogleAction } from '@ergo-faucet/database';
 import {
   CallBackRouteQuery,
   CallBackRouteQueryType,
-  CallBackRouteResponse200,
+  CallBackRouteResponse302,
   GoogleToken,
   ErrorResponse,
   GoogleUserData,
@@ -30,6 +30,7 @@ export class GoogleAuth {
   private readonly expiresTime: number;
   private readonly redis: Redis;
   private readonly sessionTTL: number;
+  private readonly frontBaseURL: string;
   private readonly SESSION_PREFIX = 'googleAuth:session:';
   private readonly GOOGLE_AUTH_PREFIX = '/auth/google';
   private readonly GOOGLE_OAUTH_URL =
@@ -56,6 +57,7 @@ export class GoogleAuth {
     this.expiresTime = config.expiresTime;
     this.redis = new Redis(config.redis);
     this.sessionTTL = config.sessionTTL;
+    this.frontBaseURL = config.frontBaseURL;
   }
 
   /**
@@ -96,12 +98,12 @@ export class GoogleAuth {
    */
   private async setSessionData(
     key: string,
-    value: SessionData,
+    value: string,
     ttl: number,
   ): Promise<void> {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
     try {
-      await this.redis.set(fullKey, JSON.stringify(value));
+      await this.redis.set(fullKey, value);
       if (ttl) {
         await this.redis.expire(fullKey, ttl);
       }
@@ -116,14 +118,14 @@ export class GoogleAuth {
    * @param key - Session key
    * @returns Session data or null if not found
    */
-  private async getSessionData(key: string): Promise<SessionData | null> {
+  private async getSessionData(key: string): Promise<string | null> {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
     try {
       const raw = await this.redis.get(fullKey);
       if (!raw) {
         return null;
       }
-      return JSON.parse(raw) as SessionData;
+      return raw;
     } catch (error) {
       this.logger.error(`Failed to get session data for key: ${key}`, error);
       throw error;
@@ -162,13 +164,23 @@ export class GoogleAuth {
 
   /**
    * Builds the Google OAuth2 login URL with PKCE.
+   * @param frontState - State parameter from the frontend
+   * @param userId - ID of the user initiating the login
    * @returns Fully qualified Google login URL with all query params
    */
-  private buildLoginURL = async (): Promise<string> => {
+  private buildLoginURL = async (
+    frontState: string,
+    userId: number,
+  ): Promise<string> => {
     const { codeVerifier, codeChallenge } = this.generatePKCECodes();
     const state = crypto.randomBytes(16).toString('hex');
+    const value = { frontState, codeVerifier, userId };
 
-    await this.setSessionData(state, { codeVerifier }, this.sessionTTL);
+    const encodedValue = Buffer.from(JSON.stringify(value), 'utf-8').toString(
+      'base64url',
+    );
+
+    await this.setSessionData(state, encodedValue, this.sessionTTL);
 
     return `${this.GOOGLE_OAUTH_URL}?response_type=code&client_id=${this.clientId}&redirect_uri=${encodeURIComponent(
       this.redirectURL,
@@ -243,11 +255,18 @@ export class GoogleAuth {
    * @param fastify - Fastify instance
    */
   private loginRoute = async (fastify: FastifySeverInstance) => {
-    fastify.get(
+    fastify.get<{ Querystring: { state?: string } }>(
       '/login',
       {
         preHandler: this.fastifyServer.authPreHandler,
         schema: {
+          querystring: {
+            type: 'object',
+            properties: {
+              state: { type: 'string' },
+            },
+            required: ['state'],
+          },
           response: {
             302: { description: 'Redirect to Google OAuth2 login' },
             401: ErrorResponse,
@@ -259,8 +278,15 @@ export class GoogleAuth {
           ],
         },
       },
-      async (_, reply) => {
-        const loginURL = await this.buildLoginURL();
+      async (request, reply) => {
+        const stateFromFront = request.query.state;
+        const user = request.user as userRequestPayload;
+        if (!stateFromFront) {
+          return reply
+            .status(400)
+            .send({ error: 'Missing state from front', code: 'MISSING_STATE' });
+        }
+        const loginURL = await this.buildLoginURL(stateFromFront, user.userId);
         return reply.status(302).redirect(loginURL);
       },
     );
@@ -270,7 +296,6 @@ export class GoogleAuth {
    * Registers the `/callback` route:
    *
    * **GET `/google/callback`**
-   * - Requires JWT auth
    * - Expects `code` and `state` query params
    * - Exchanges code for tokens, fetches Google user, links account to the user
    *
@@ -280,30 +305,29 @@ export class GoogleAuth {
     fastify.get<{ Querystring: CallBackRouteQueryType }>(
       '/callback',
       {
-        preHandler: this.fastifyServer.authPreHandler,
         schema: {
           querystring: CallBackRouteQuery,
           response: {
-            200: CallBackRouteResponse200,
+            302: {
+              ...CallBackRouteResponse302,
+              description: 'Redirect to original state URL',
+            },
             400: ErrorResponse,
             401: ErrorResponse,
             500: ErrorResponse,
           },
-          security: [
-            {
-              bearerAuth: [],
-            },
-          ],
         },
       },
       async (request, reply) => {
         const { code, state } = request.query;
-        const user = request.user as userRequestPayload;
 
-        if (!code || !state || !user.userId) {
+        if (!code || !state) {
           return reply
             .status(400)
-            .send({ error: 'Missing code, state, or userId' });
+            .send({
+              error: 'Missing code or state',
+              code: 'MISSING_CODE_OR_STATE',
+            });
         }
 
         const session = await this.getSessionData(state);
@@ -311,13 +335,15 @@ export class GoogleAuth {
           return reply.status(400).send({ error: 'Invalid or expired state' });
         }
 
-        const { codeVerifier } = session;
+        const decoded = JSON.parse(
+          Buffer.from(session, 'base64url').toString('utf-8'),
+        ) as SessionData;
         await this.deleteSessionData(state);
 
         try {
           const tokenData: GoogleToken = await this.exchangeCodeForToken(
             code,
-            codeVerifier,
+            decoded.codeVerifier,
           );
           const accessToken = tokenData.accessToken;
           const refreshToken = tokenData.refreshToken;
@@ -326,7 +352,7 @@ export class GoogleAuth {
             await this.fetchGoogleUser(accessToken);
 
           await this.googleAction.linkGoogleAccount(
-            Number(user.userId),
+            Number(decoded.userId),
             googleUser.userId,
             googleUser.name,
             googleUser.email,
@@ -335,20 +361,25 @@ export class GoogleAuth {
             refreshToken,
           );
 
-          return reply.status(200).send({
-            success: true,
-            message: `The user with id ${user.userId} logged in successfully with Google`,
-          });
-        } catch (err) {
-          if (err instanceof Error) {
-            this.logger.error(`Google callback failed`, {
-              message: err.message,
-              stack: err.stack,
+          return reply
+            .status(302)
+            .redirect(this.frontBaseURL + decoded.frontState)
+            .send({
+              success: true,
+              authMethod: 'google',
+              message: `The user with id ${decoded.userId} logged in successfully with Google`,
             });
-          }
+        } catch (err) {
+          this.logger.error(`Google callback failed`, {
+            message: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
           return reply
             .status(500)
-            .send({ error: 'Google authentication failed' });
+            .send({
+              error: 'Google authentication failed',
+              code: 'GOOGLE_AUTH_FAILED',
+            });
         }
       },
     );

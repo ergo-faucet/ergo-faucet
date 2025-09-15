@@ -31,3 +31,6 @@ googleAuth:
 
 ergo:
   nodeURL: NODE_URL
+
+URLs:
+  frontCallbackURL: FRONT_CALLBACK_URL

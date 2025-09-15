@@ -10,7 +10,7 @@ import crypto from 'crypto';
 import {
   CallBackRouteQuery,
   CallBackRouteQueryType,
-  CallBackRouteResponse200,
+  CallBackRouteResponse302,
   XToken,
   ErrorResponse,
   XUserData,
@@ -30,6 +30,7 @@ export class XAuth {
   private readonly expiresTime: number;
   private readonly redis: Redis;
   private readonly sessionTTL: number;
+  private readonly frontBaseURL: string;
   private readonly SESSION_PREFIX = 'xauth:session:';
   private readonly X_AUTH_PREFIX = '/auth/x-platform';
   private readonly X_OAUTH_URL = 'https://x.com/i/oauth2/authorize';
@@ -54,6 +55,7 @@ export class XAuth {
     this.expiresTime = config.expiresTime;
     this.redis = new Redis(config.redis);
     this.sessionTTL = config.sessionTTL;
+    this.frontBaseURL = config.frontBaseURL;
   }
 
   /**
@@ -91,17 +93,17 @@ export class XAuth {
   /**
    * Sets session data in Redis with TTL.
    * @param key - Session key
-   * @param value - Session data
+   * @param value - string data
    * @param ttl - Time to live in seconds
    */
   private async setSessionData(
     key: string,
-    value: SessionData,
+    value: string,
     ttl: number,
   ): Promise<void> {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
     try {
-      await this.redis.set(fullKey, JSON.stringify(value));
+      await this.redis.set(fullKey, value);
       if (ttl) {
         await this.redis.expire(fullKey, ttl);
       }
@@ -116,14 +118,14 @@ export class XAuth {
    * @param key - Session key
    * @returns Session data or null if not found
    */
-  private async getSessionData(key: string): Promise<SessionData | null> {
+  private async getSessionData(key: string): Promise<string | null> {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
     try {
       const raw = await this.redis.get(fullKey);
       if (!raw) {
         return null;
       }
-      return JSON.parse(raw) as SessionData;
+      return raw;
     } catch (error) {
       this.logger.error(`Failed to get session data for key: ${key}`, error);
       throw error;
@@ -162,13 +164,23 @@ export class XAuth {
 
   /**
    * Builds the X-platform OAuth2 login URL with PKCE.
+   * @param frontState - State parameter from the front-end to be included in the redirect
    * @returns Fully qualified X-platform login URL with all query params
    */
-  private buildLoginURL = async (): Promise<string> => {
+  private buildLoginURL = async (
+    frontState: string,
+    userId: number,
+  ): Promise<string> => {
     const { codeVerifier, codeChallenge } = this.generatePKCECodes();
-    const state = crypto.randomBytes(16).toString('hex');
 
-    await this.setSessionData(state, { codeVerifier }, this.sessionTTL);
+    const state = crypto.randomBytes(16).toString('hex');
+    const value = { frontState, codeVerifier, userId };
+
+    const encodedValue = Buffer.from(JSON.stringify(value), 'utf-8').toString(
+      'base64url',
+    );
+
+    await this.setSessionData(state, encodedValue, this.sessionTTL);
 
     return `${this.X_OAUTH_URL}?response_type=code&client_id=${this.clientID}&redirect_uri=${encodeURIComponent(
       this.redirectURL,
@@ -245,11 +257,18 @@ export class XAuth {
    * @param fastify - Fastify instance
    */
   private loginRoute = async (fastify: FastifySeverInstance) => {
-    fastify.get(
+    fastify.get<{ Querystring: { state?: string } }>(
       '/login',
       {
         preHandler: this.fastifyServer.authPreHandler,
         schema: {
+          querystring: {
+            type: 'object',
+            properties: {
+              state: { type: 'string' },
+            },
+            required: ['state'],
+          },
           response: {
             302: { description: 'Redirect to X OAuth2 login' },
             401: ErrorResponse,
@@ -261,8 +280,13 @@ export class XAuth {
           ],
         },
       },
-      async (_, reply) => {
-        const loginURL = await this.buildLoginURL();
+      async (request, reply) => {
+        const frontState = request.query.state;
+        const user = request.user as userRequestPayload;
+        if (!frontState) {
+          return reply.status(400).send({ error: 'Missing state from front' });
+        }
+        const loginURL = await this.buildLoginURL(frontState, user.userId);
         return reply.status(302).redirect(loginURL);
       },
     );
@@ -282,30 +306,20 @@ export class XAuth {
     fastify.get<{ Querystring: CallBackRouteQueryType }>(
       '/callback',
       {
-        preHandler: this.fastifyServer.authPreHandler,
         schema: {
           querystring: CallBackRouteQuery,
           response: {
-            200: CallBackRouteResponse200,
+            302: CallBackRouteResponse302,
             400: ErrorResponse,
             401: ErrorResponse,
             500: ErrorResponse,
           },
-          security: [
-            {
-              bearerAuth: [],
-            },
-          ],
         },
       },
       async (request, reply) => {
         const { code, state } = request.query;
-        const user = request.user as userRequestPayload;
-
-        if (!code || !state || !user.userId) {
-          return reply
-            .status(400)
-            .send({ error: 'Missing code, state, or userId' });
+        if (!code || !state) {
+          return reply.status(400).send({ error: 'Missing code or state' });
         }
 
         const session = await this.getSessionData(state);
@@ -313,13 +327,16 @@ export class XAuth {
           return reply.status(400).send({ error: 'Invalid or expired state' });
         }
 
-        const { codeVerifier } = session;
         await this.deleteSessionData(state);
+
+        const decoded = JSON.parse(
+          Buffer.from(session, 'base64url').toString('utf-8'),
+        ) as SessionData;
 
         try {
           const tokenData: XToken = await this.exchangeCodeForToken(
             code,
-            codeVerifier,
+            decoded.codeVerifier,
           );
           const accessToken = tokenData.accessToken;
           const refreshToken = tokenData.refreshToken;
@@ -327,7 +344,7 @@ export class XAuth {
           const xUser: XUserData = await this.fetchXUser(accessToken);
 
           await this.xAction.linkXAccount(
-            Number(user.userId),
+            Number(decoded.userId),
             xUser.userId,
             xUser.username,
             xUser.name,
@@ -337,17 +354,19 @@ export class XAuth {
             refreshToken,
           );
 
-          return reply.status(200).send({
-            success: true,
-            message: `The user with id ${user.userId} logged in successfully with X-platform`,
-          });
-        } catch (err) {
-          if (err instanceof Error) {
-            this.logger.error(`X-platform callback failed`, {
-              message: err.message,
-              stack: err.stack,
+          return reply
+            .status(302)
+            .redirect(this.frontBaseURL + decoded.frontState)
+            .send({
+              success: true,
+              AuthMethod: 'x-platform',
+              message: `The user with id ${decoded.userId} logged in successfully with X-platform`,
             });
-          }
+        } catch (err) {
+          this.logger.error(`X-platform callback failed`, {
+            message: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
           return reply
             .status(500)
             .send({ error: 'X-platform authentication failed' });

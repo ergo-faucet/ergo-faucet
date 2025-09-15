@@ -17,6 +17,8 @@ export interface XUserData {
 
 export interface SessionData {
   codeVerifier: string;
+  userId: number;
+  frontState: string;
 }
 
 export interface XAuthConfig {
@@ -29,4 +31,5 @@ export interface XAuthConfig {
   expiresTime: number;
   redis: RedisOptions;
   sessionTTL: number;
+  frontBaseURL: string;
 }

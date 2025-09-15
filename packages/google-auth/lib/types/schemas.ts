@@ -1,7 +1,8 @@
 import { Static, Type } from '@sinclair/typebox';
 
-export const CallBackRouteResponse200 = Type.Object({
+export const CallBackRouteResponse302 = Type.Object({
   success: Type.Boolean(),
+  authMethod: Type.Literal('google'),
   message: Type.String(),
 });
 

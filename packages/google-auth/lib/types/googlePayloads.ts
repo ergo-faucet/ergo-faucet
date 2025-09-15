@@ -16,11 +16,14 @@ export interface GoogleUserData {
 
 export interface SessionData {
   codeVerifier: string;
+  userId: number;
+  frontState: string;
 }
 
 export interface GoogleAuthConfig {
   fastifyServer: FastifyAPIServer;
   googleAction: GoogleAction;
+  frontBaseURL: string;
   clientID: string;
   clientSecret: string;
   redirectURL: string;

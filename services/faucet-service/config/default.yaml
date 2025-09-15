@@ -86,3 +86,6 @@ ergo:
   nodeURL: ''
   minNanoErg: 10000000
   minFee: 1000000
+
+URLs:
+  frontCallbackURL: ''
