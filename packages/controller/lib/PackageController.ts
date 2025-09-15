@@ -89,7 +89,7 @@ class PackageController {
             order,
           );
 
-          let userStatuses: UserAuthStatus[] | undefined;
+          let userStatuses: UserAuthStatus[] | [] = [];
           if (user?.userId) {
             userStatuses = await this.packageAction.getUserAuthStatuses(
               user.userId,

@@ -8,10 +8,9 @@ import { AssetDTO, AuthMethodDTO, PackageDTO } from '../types';
 
 export const toPackageDTO = (
   packages: Package[],
-  userStatuses?: UserAuthStatus[],
+  userStatuses: UserAuthStatus[],
 ): PackageDTO[] => {
   return packages.map((p: Package): PackageDTO => {
-    // Map assets
     const assetDTOs: AssetDTO[] = p.assets.map(
       (a: Asset): AssetDTO => ({
         id: a.id,
@@ -22,14 +21,12 @@ export const toPackageDTO = (
       }),
     );
 
-    // Map auth methods
     const authMethodDTOs: AuthMethodDTO[] = p.authMethods.map(
       (pam: PackageAuthMethod): AuthMethodDTO => {
-        // Find matching user status
-        const status = userStatuses?.find(
-          (s) =>
-            s.package?.id === p.id && s.authMethod.id === pam.authMethod.id,
-        );
+        const status = userStatuses.find((s) => {
+          const packageMatches = s.package ? s.package.id === p.id : p == null;
+          return packageMatches && s.authMethod.id === pam.authMethod.id;
+        });
         return {
           id: pam.authMethod.id,
           name: pam.authMethod.name,
