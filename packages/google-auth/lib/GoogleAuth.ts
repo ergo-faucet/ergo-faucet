@@ -10,7 +10,6 @@ import { GoogleAction } from '@ergo-faucet/database';
 import {
   CallBackRouteQuery,
   CallBackRouteQueryType,
-  CallBackRouteResponse302,
   GoogleToken,
   ErrorResponse,
   GoogleUserData,
@@ -308,13 +307,7 @@ export class GoogleAuth {
         schema: {
           querystring: CallBackRouteQuery,
           response: {
-            302: {
-              ...CallBackRouteResponse302,
-              description: 'Redirect to original state URL',
-            },
-            400: ErrorResponse,
-            401: ErrorResponse,
-            500: ErrorResponse,
+            302: { description: 'Redirect to front-end with result' },
           },
         },
       },
@@ -323,19 +316,22 @@ export class GoogleAuth {
 
         if (!code || !state) {
           return reply
-            .status(400)
-            .send({
-              error: 'Missing code or state',
-              code: 'MISSING_CODE_OR_STATE',
-            });
+            .status(302)
+            .redirect(
+              this.frontBaseURL + `?authMethod=google&authMethodStatus=false`,
+            );
         }
 
         const session = await this.getSessionData(state);
         if (!session) {
-          return reply.status(400).send({ error: 'Invalid or expired state' });
+          return reply
+            .status(302)
+            .redirect(
+              this.frontBaseURL + `?authMethod=google&authMethodStatus=false`,
+            );
         }
 
-        const decoded = JSON.parse(
+        const decodedSession = JSON.parse(
           Buffer.from(session, 'base64url').toString('utf-8'),
         ) as SessionData;
         await this.deleteSessionData(state);
@@ -343,7 +339,7 @@ export class GoogleAuth {
         try {
           const tokenData: GoogleToken = await this.exchangeCodeForToken(
             code,
-            decoded.codeVerifier,
+            decodedSession.codeVerifier,
           );
           const accessToken = tokenData.accessToken;
           const refreshToken = tokenData.refreshToken;
@@ -352,7 +348,7 @@ export class GoogleAuth {
             await this.fetchGoogleUser(accessToken);
 
           await this.googleAction.linkGoogleAccount(
-            Number(decoded.userId),
+            Number(decodedSession.userId),
             googleUser.userId,
             googleUser.name,
             googleUser.email,
@@ -363,23 +359,23 @@ export class GoogleAuth {
 
           return reply
             .status(302)
-            .redirect(this.frontBaseURL + decoded.frontState)
-            .send({
-              success: true,
-              authMethod: 'google',
-              message: `The user with id ${decoded.userId} logged in successfully with Google`,
-            });
+            .redirect(
+              this.frontBaseURL +
+                decodedSession.frontState +
+                `?authMethod=google&authMethodStatus=success&message=The user with id ${decodedSession.userId} logged in successfully with Google`,
+            );
         } catch (err) {
           this.logger.error(`Google callback failed`, {
             message: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
           return reply
-            .status(500)
-            .send({
-              error: 'Google authentication failed',
-              code: 'GOOGLE_AUTH_FAILED',
-            });
+            .status(302)
+            .redirect(
+              this.frontBaseURL +
+                decodedSession.frontState +
+                `?authMethod=google&authMethodStatus=false&message=The user with id ${decodedSession.userId} failed to log in with Google`,
+            );
         }
       },
     );

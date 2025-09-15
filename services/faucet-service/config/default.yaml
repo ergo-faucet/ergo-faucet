@@ -64,6 +64,7 @@ discord:
   redirectURL: ''
   scope: 'identify email'
   expiresTime: 7200
+  sessionTTL: 3600
 
 x-platform:
   clientID: ''

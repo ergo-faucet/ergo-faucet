@@ -1,13 +1,8 @@
 import { Static, Type } from '@sinclair/typebox';
 
-export const CallBackRouteResponse302 = Type.Object({
-  success: Type.Boolean(),
-  authMethod: Type.Literal('discord'),
-  message: Type.String(),
-});
-
 export const ErrorResponse = Type.Object({
   error: Type.String(),
+  code: Type.String(),
 });
 
 export const CallBackRouteQuery = Type.Object({

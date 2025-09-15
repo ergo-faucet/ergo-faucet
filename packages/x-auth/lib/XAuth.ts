@@ -10,7 +10,6 @@ import crypto from 'crypto';
 import {
   CallBackRouteQuery,
   CallBackRouteQueryType,
-  CallBackRouteResponse302,
   XToken,
   ErrorResponse,
   XUserData,
@@ -309,34 +308,38 @@ export class XAuth {
         schema: {
           querystring: CallBackRouteQuery,
           response: {
-            302: CallBackRouteResponse302,
-            400: ErrorResponse,
-            401: ErrorResponse,
-            500: ErrorResponse,
+            302: { description: 'Redirect to front-end with result' },
           },
         },
       },
       async (request, reply) => {
         const { code, state } = request.query;
         if (!code || !state) {
-          return reply.status(400).send({ error: 'Missing code or state' });
+          return reply
+            .status(302)
+            .redirect(
+              this.frontBaseURL +
+                `?authMethod=x-platform&authMethodStatus=false`,
+            );
         }
-
         const session = await this.getSessionData(state);
         if (!session) {
-          return reply.status(400).send({ error: 'Invalid or expired state' });
+          return reply
+            .status(302)
+            .redirect(
+              this.frontBaseURL +
+                `?authMethod=x-platform&authMethodStatus=false`,
+            );
         }
-
         await this.deleteSessionData(state);
-
-        const decoded = JSON.parse(
+        const decodedSession = JSON.parse(
           Buffer.from(session, 'base64url').toString('utf-8'),
         ) as SessionData;
 
         try {
           const tokenData: XToken = await this.exchangeCodeForToken(
             code,
-            decoded.codeVerifier,
+            decodedSession.codeVerifier,
           );
           const accessToken = tokenData.accessToken;
           const refreshToken = tokenData.refreshToken;
@@ -344,7 +347,7 @@ export class XAuth {
           const xUser: XUserData = await this.fetchXUser(accessToken);
 
           await this.xAction.linkXAccount(
-            Number(decoded.userId),
+            Number(decodedSession.userId),
             xUser.userId,
             xUser.username,
             xUser.name,
@@ -356,20 +359,23 @@ export class XAuth {
 
           return reply
             .status(302)
-            .redirect(this.frontBaseURL + decoded.frontState)
-            .send({
-              success: true,
-              AuthMethod: 'x-platform',
-              message: `The user with id ${decoded.userId} logged in successfully with X-platform`,
-            });
+            .redirect(
+              this.frontBaseURL +
+                decodedSession.frontState +
+                `?authMethod=x-platform&authMethodStatus=success&message=The user with id ${decodedSession.userId} logged in successfully with X-platform`,
+            );
         } catch (err) {
           this.logger.error(`X-platform callback failed`, {
             message: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
           return reply
-            .status(500)
-            .send({ error: 'X-platform authentication failed' });
+            .status(302)
+            .redirect(
+              this.frontBaseURL +
+                decodedSession.frontState +
+                `?authMethod=x-platform&authMethodStatus=false&message=The user with id ${decodedSession.userId} failed to log in with X-platform`,
+            );
         }
       },
     );

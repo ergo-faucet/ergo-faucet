@@ -1,7 +1,6 @@
 export {
   CallBackRouteQueryType,
   CallBackRouteQuery,
-  CallBackRouteResponse302,
   ErrorResponse,
 } from './schemas';
 

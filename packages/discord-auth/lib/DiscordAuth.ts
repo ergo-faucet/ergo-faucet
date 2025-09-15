@@ -11,7 +11,6 @@ import { DiscordAction } from '@ergo-faucet/database';
 import {
   CallBackRouteQuery,
   CallBackRouteQueryType,
-  CallBackRouteResponse302,
   discordToken,
   ErrorResponse,
   userDiscordData,
@@ -260,7 +259,9 @@ export class DiscordAuth {
         const frontState = request.query.state;
         const user = request.user as userRequestPayload;
         if (!frontState) {
-          return reply.status(400).send({ error: 'Missing state from front' });
+          return reply
+            .status(400)
+            .send({ error: 'Missing state from front', code: 'MISSING_STATE' });
         }
         const loginURL = await this.buildLoginURL(frontState, user.userId);
         return reply.status(302).redirect(loginURL);
@@ -285,10 +286,7 @@ export class DiscordAuth {
         schema: {
           querystring: CallBackRouteQuery,
           response: {
-            200: CallBackRouteResponse302,
-            400: ErrorResponse,
-            401: ErrorResponse,
-            500: ErrorResponse,
+            302: { description: 'Redirect to front-end with auth result' },
           },
         },
       },
@@ -297,24 +295,24 @@ export class DiscordAuth {
 
         if (!code || !state) {
           return reply
-            .status(400)
-            .send({
-              error: 'Missing code or state',
-              code: 'MISSING_CODE_OR_STATE',
-            });
+            .status(302)
+            .redirect(
+              this.frontBaseURL + `?authMethod=discord&authMethodStatus=false`,
+            );
         }
+        const session = await this.getSessionData(state);
+        if (!session) {
+          return reply
+            .status(302)
+            .redirect(
+              this.frontBaseURL + `?authMethod=discord&authMethodStatus=false`,
+            );
+        }
+        const decodedSession = JSON.parse(
+          Buffer.from(session, 'base64url').toString('utf-8'),
+        ) as SessionData;
 
         try {
-          const session = await this.getSessionData(state);
-          if (!session) {
-            return reply
-              .status(400)
-              .send({
-                error: 'Invalid or expired state',
-                code: 'INVALID_OR_EXPIRED_STATE',
-              });
-          }
-          const decodedSession = JSON.parse(session) as SessionData;
           const tokenData: discordToken = await this.exchangeCodeForToken(code);
           const accessToken = tokenData.accessToken;
           const refreshToken = tokenData.refreshToken;
@@ -336,24 +334,23 @@ export class DiscordAuth {
 
           return reply
             .status(302)
-            .redirect(this.frontBaseURL + decodedSession.frontState)
-            .send({
-              success: true,
-              authMethod: 'discord',
-              message: `The user with id ${decodedSession.userId} logged in successfully in discord`,
-            });
+            .redirect(
+              this.frontBaseURL +
+                decodedSession.frontState +
+                `?authMethod=discord&authMethodStatus=success&message=The user with id ${decodedSession.userId} logged in successfully with Discord`,
+            );
         } catch (err) {
           this.logger.error(`Discord callback failed`, {
             message: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
-
           return reply
-            .status(500)
-            .send({
-              error: 'Discord authentication failed',
-              code: 'DISCORD_AUTH_FAILED',
-            });
+            .status(302)
+            .redirect(
+              this.frontBaseURL +
+                decodedSession.frontState +
+                `?authMethod=discord&authMethodStatus=false&message=The user with id ${decodedSession.userId} failed to log in with Discord`,
+            );
         }
       },
     );
