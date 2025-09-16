@@ -212,6 +212,10 @@ class PackageController {
       this.fetchPackagesRoute,
       prefix + this.PACKAGES_PREFIX,
     );
+    await this.fastifyServer.register(
+      this.requestPackageRoute,
+      prefix + this.PACKAGES_PREFIX,
+    );
     this.logger.info(
       `PackageController routes registered under prefix "${prefix + this.PACKAGES_PREFIX}"`,
     );
