@@ -6,7 +6,6 @@ import {
 } from '@ergo-faucet/database';
 import fastify, { FastifyInstance, FastifyRequest } from 'fastify';
 import { vi } from 'vitest';
-import { PackageDTO } from '../lib/types';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
 /**
@@ -113,7 +112,7 @@ mockPackage = {
   status: 'show',
   //openAt: new Date('2025-07-01'),
   closeAt: new Date('2025-12-31'),
-  delay: 3600n,
+  delay: '3600',
   numberEachUser: 1,
   assets: [mockAsset1, mockAsset2],
   authMethods: [mockAuthMethod1, mockAuthMethod2],
@@ -121,7 +120,7 @@ mockPackage = {
   requests: [],
 };
 
-export const mockPackageDTO: PackageDTO[] = [
+export const mockPackageDTO = [
   {
     id: 101,
     name: 'Starter Pack',

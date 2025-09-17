@@ -8,5 +8,4 @@ export {
   RequestPackageResponse200,
   ErrorResponse,
 } from './schemas';
-export type { PackageDTO, AssetDTO, AuthMethodDTO, PackageType } from './DTOs';
 export { RequestPackageBodyType } from './routeBodyTypes';

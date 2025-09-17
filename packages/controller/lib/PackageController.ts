@@ -6,7 +6,6 @@ import {
 
 import {
   PackageAction,
-  UserAuthStatus,
   RequestLimitError,
   NotFoundError,
 } from '@ergo-faucet/database';
@@ -16,10 +15,8 @@ import {
   PackagesRouteQuery,
   RequestPackageBody,
   RequestPackageBodyType,
-  PackageDTO,
   RequestPackageResponse200,
 } from './types';
-import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import { isValidErgoAddress } from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
@@ -87,24 +84,13 @@ class PackageController {
             limit,
             sort,
             order,
+            user?.userId,
           );
 
-          let userStatuses: UserAuthStatus[] | [] = [];
-          if (user?.userId) {
-            userStatuses = await this.packageAction.getUserAuthStatuses(
-              user.userId,
-            );
-          }
-
-          const packageDTOs: PackageDTO[] = toPackageDTO(
-            packages,
-            userStatuses,
-          );
-
-          return reply.status(200).send(packageDTOs);
+          return reply.status(200).send(packages);
         } catch (err) {
           this.logger.error(
-            `Error fetching packages: ${err instanceof Error ? err.message : err}`,
+            `Error fetching packages: ${(err instanceof Error ? err.message : err, err instanceof Error ? err.stack : undefined)}`,
           );
           reply.status(500).send({
             error: 'Internal server error occured',

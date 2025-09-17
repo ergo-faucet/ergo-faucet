@@ -14,7 +14,13 @@ import {
   User,
 } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { NotFoundError, RequestLimitError } from '../types';
+import {
+  AssetDTO,
+  AuthMethodDTO,
+  NotFoundError,
+  PackageDTO,
+  RequestLimitError,
+} from '../types';
 
 class PackageAction {
   private static instance: PackageAction;
@@ -81,6 +87,7 @@ class PackageAction {
    * @param limit - The maximum number of records to return.
    * @param sort - The field to sort by ('name' or 'release').
    * @param order - The sort order ('asc' or 'desc').
+   * @param userId -
    * @returns {Promise<Package[]>} A promise that resolves to an array of Package entities.
    */
   public getPackages = async (
@@ -88,14 +95,14 @@ class PackageAction {
     limit: number,
     sort: 'id' | 'openAt' | 'closeAt' | 'name',
     order: 'asc' | 'desc',
-  ): Promise<Package[]> => {
+    userId?: number,
+  ): Promise<PackageDTO[]> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
 
     const orderOption: FindOptionsOrder<Package> = { [sort]: order };
 
-    // Query the database for packages with status 'show'
     const packages = await this.PackageRepository.find({
       where: { status: 'show' },
       order: orderOption,
@@ -103,22 +110,64 @@ class PackageAction {
       take: limit,
       relations: ['assets', 'authMethods', 'authMethods.authMethod'],
     });
-    return packages;
-  };
 
-  /**
-   * Fetches user authentication statuses from the database for a specific user.
-   * Includes related authMethod and package data.
-   *
-   * @param userId - The ID of the user to fetch authentication statuses for.
-   * @returns {Promise<UserAuthStatus[]>} A promise that resolves to an array of UserAuthStatus entities.
-   */
-  public getUserAuthStatuses = async (
-    userId: number,
-  ): Promise<UserAuthStatus[]> => {
-    return this.dataSource.getRepository(UserAuthStatus).find({
-      where: { user: { id: userId } },
-      relations: ['authMethod', 'package'],
+    let userAuthStatuses: UserAuthStatus[] = [];
+    if (userId) {
+      userAuthStatuses = await this.userAuthStatusRepository.find({
+        where: { user: { id: userId } },
+        relations: ['authMethod', 'package', 'user'],
+      });
+    }
+
+    return packages.map((pkg) => {
+      const assets: AssetDTO[] = pkg.assets.map((a) => ({
+        id: a.id,
+        tokenId: a.tokenId,
+        assetName: a.assetName,
+        amount: a.amount,
+        usageDescription: a.usageDescription,
+      }));
+
+      const authMethods: AuthMethodDTO[] = pkg.authMethods.map((pam) => {
+        let userStatus: AuthMethodDTO['status'] = undefined;
+
+        if (userId) {
+          const specificStatus = userAuthStatuses.find(
+            (uas) =>
+              uas.user?.id === userId &&
+              uas.authMethod?.id === pam.authMethod.id &&
+              uas.package?.id === pkg.id,
+          )?.status;
+
+          const globalStatus = userAuthStatuses.find(
+            (uas) =>
+              uas.user?.id === userId &&
+              uas.authMethod?.id === pam.authMethod.id &&
+              uas.package == null,
+          )?.status;
+
+          userStatus = specificStatus ?? globalStatus;
+        }
+
+        return {
+          id: pam.authMethod.id,
+          name: pam.authMethod.name,
+          status: userStatus,
+        };
+      });
+
+      return {
+        id: pkg.id,
+        name: pkg.name,
+        description: pkg.description,
+        type: pkg.type,
+        openAt: pkg.openAt?.toISOString(),
+        closeAt: pkg.closeAt?.toISOString(),
+        delay: pkg.delay,
+        numberEachUser: pkg.numberEachUser,
+        assets,
+        authMethods,
+      };
     });
   };
 
@@ -169,7 +218,7 @@ class PackageAction {
       const timeDifferenceMs =
         currentTime.getTime() - lastRequestTime.getTime();
 
-      if (timeDifferenceMs < pkg.delay)
+      if (timeDifferenceMs < Number(pkg.delay))
         throw new RequestLimitError('Cooldown period is still active.');
     }
 

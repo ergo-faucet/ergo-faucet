@@ -12,7 +12,6 @@ import {
   createMockedServer,
   mockedFastifyServer,
   mockedPackageAction,
-  mockPackage,
   mockPackageDTO,
 } from './mockUtils';
 import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
@@ -50,9 +49,9 @@ describe('PackageController', () => {
     });
 
     // Default mock for getPackages to return a package
-    vi.spyOn(mockedPackageAction, 'getPackages').mockResolvedValue([
-      mockPackage,
-    ]);
+    vi.spyOn(mockedPackageAction, 'getPackages').mockImplementation(
+      async () => mockPackageDTO,
+    );
 
     /**
      * Test for successful GET /packages

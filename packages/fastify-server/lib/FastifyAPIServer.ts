@@ -187,7 +187,11 @@ export class FastifyAPIServer {
       res: U,
     ) => {
       try {
-        await req.jwtVerify();
+        delete req.cookies[this.cookieConfig.name];
+        const payload = await req.jwtVerify<{ refresh?: object }>();
+        if (payload.refresh) {
+          throw new Error('Refresh tokens cannot be used here');
+        }
       } catch {
         // If enforcement is enabled, return 401 error
         if (verifyAndEnforce) {
