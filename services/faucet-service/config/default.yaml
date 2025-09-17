@@ -18,7 +18,7 @@ recaptcha:
 server:
   port: 3000
   host: 0.0.0.0
-  corsOrigins: '*'
+  corsOrigins: []
   jwtSecret: ''
   jwtExpiration: 86400
   activeFastifyLogger: false
@@ -35,7 +35,7 @@ server:
     secure: false
     sameSite: 'lax'
     path: '/'
-    domain: 'localhost'
+    domain: ''
     maxAge: 7200
 
 database:
