@@ -199,16 +199,16 @@ class PackageAction {
     if (pkg.openAt && currentTime < Number(pkg.openAt)) {
       throw new NotAvailableError(
         `Package ${packageId} is not open yet. 
-    Current time: ${new Date(currentTime * 1000).toISOString()}, 
-    opens at: ${new Date(pkg.openAt * 1000).toISOString()}`,
+    Current time: ${currentTime}, 
+    opens at: ${pkg.openAt}`,
       );
     }
 
     if (pkg.closeAt && currentTime > Number(pkg.closeAt)) {
       throw new NotAvailableError(
         `Package ${packageId} is already closed. 
-     Current time: ${new Date(currentTime * 1000).toISOString()}, 
-     closed at: ${new Date(pkg.closeAt * 1000).toISOString()}`,
+     Current time: ${currentTime}, 
+     closed at: ${pkg.closeAt}`,
       );
     }
 
