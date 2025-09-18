@@ -2,9 +2,12 @@
   "name": "@ergo-faucet/controller",
   "version": "0.0.0",
   "description": "API service for fetching faucet packages with pagination, part of the Ergo Faucet backend.",
-  "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ergo-faucet/ergo-faucet.git"
+  },
   "license": "GPL-3.0",
-  "author": "TechStack-BlockChain",
+  "author": "ergo-faucet",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

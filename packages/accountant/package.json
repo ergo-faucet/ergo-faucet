@@ -2,9 +2,12 @@
   "name": "@ergo-faucet/accountant",
   "version": "0.1.0",
   "description": "accountant utilities for ergo-faucet",
-  "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ergo-faucet/ergo-faucet.git"
+  },
   "license": "GPL-3.0",
-  "author": "TechStack-BlockChain",
+  "author": "ergo-faucet",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
