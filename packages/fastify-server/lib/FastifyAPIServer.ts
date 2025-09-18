@@ -85,7 +85,7 @@ export class FastifyAPIServer {
 
     // Register CORS
     if (this.instance.corsOrigins.includes('*')) {
-      await this.instance.fastify.register(fastifyCors, { credentials: true });
+      await this.instance.fastify.register(fastifyCors, {});
     } else {
       await this.instance.fastify.register(fastifyCors, {
         credentials: true,
