@@ -15,7 +15,6 @@ import {
 } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
-  AssetDTO,
   AuthMethodDTO,
   AuthMethodStatus,
   NotFoundError,
@@ -119,20 +118,12 @@ class PackageAction {
     const result: PackageDTO[] = [];
 
     for (const pkg of packages) {
-      const assets: AssetDTO[] = pkg.assets.map((a) => ({
-        id: a.id,
-        tokenId: a.tokenId,
-        assetName: a.assetName,
-        amount: a.amount,
-        usageDescription: a.usageDescription,
-      }));
-
       const authMethods: AuthMethodDTO[] = [];
       for (const pam of pkg.packageAuthMethods) {
         let userStatus: AuthMethodStatus;
 
         if (userId) {
-          const statuses = await this.userAuthStatusRepository.find({
+          const statusResault = await this.userAuthStatusRepository.findOne({
             where: [
               {
                 user: { id: userId },
@@ -145,14 +136,8 @@ class PackageAction {
                 package: IsNull(),
               },
             ],
-            relations: ['user', 'authMethod', 'package'],
           });
-
-          const status =
-            statuses.find((s) => s.package?.id === pkg.id) ??
-            statuses.find((s) => !s.package);
-
-          userStatus = status?.status;
+          userStatus = statusResault?.status;
         }
 
         authMethods.push({
@@ -170,7 +155,7 @@ class PackageAction {
         closeAt: pkg.closeAt?.toISOString(),
         delay: pkg.delay,
         numberEachUser: pkg.numberEachUser,
-        assets,
+        assets: pkg.assets,
         authMethods,
       });
     }
