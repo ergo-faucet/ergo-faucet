@@ -74,7 +74,6 @@ export class XAuth {
       throw new Error('XAuth has already been initialized.');
     }
     this.instance = new XAuth(config, logger);
-    await this.instance.xAction.ensureXAuthMethod();
     await this.instance.registerRoutes(this.instance.X_AUTH_PREFIX);
     this.instance.logger.info(`XAuth initialized successfully.`);
   };
@@ -261,7 +260,7 @@ export class XAuth {
     fastify.get<{ Querystring: { state?: string } }>(
       '/login',
       {
-        preHandler: this.fastifyServer.authPreHandler,
+        preHandler: this.fastifyServer.authPreHandler(),
         schema: {
           querystring: {
             type: 'object',

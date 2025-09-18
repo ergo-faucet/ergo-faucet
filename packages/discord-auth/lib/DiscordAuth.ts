@@ -77,7 +77,6 @@ export class DiscordAuth {
       throw new Error('DiscordAuth has already been initialized.');
     }
     this.instance = new DiscordAuth(config, logger);
-    await this.instance.discordAction.ensureDiscordAuthMethod();
     await this.instance.registerRoutes(this.instance.Discord_AUTH_PREFIX);
     this.instance.logger.info(`DiscordAuth initialized successfully.`);
   };
@@ -235,7 +234,7 @@ export class DiscordAuth {
     fastify.get<{ Querystring: { state?: string } }>(
       '/login',
       {
-        preHandler: this.fastifyServer.authPreHandler,
+        preHandler: this.fastifyServer.authPreHandler(),
         schema: {
           querystring: {
             type: 'object',

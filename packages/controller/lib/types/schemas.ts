@@ -19,7 +19,7 @@ export const PackagesRouteQuery = Type.Object({
   }),
 });
 
-const AssetSchema = Type.Object({
+export const AssetSchema = Type.Object({
   id: Type.Number(),
   tokenId: Type.String(),
   assetName: Type.String(),
@@ -27,18 +27,26 @@ const AssetSchema = Type.Object({
   usageDescription: Type.String(),
 });
 
-const AuthMethodSchema = Type.Object({
+export const AuthMethodSchema = Type.Object({
   id: Type.Number({ minimum: 0 }),
   name: Type.String({ minLength: 1 }),
+  status: Type.Optional(
+    Type.Union([
+      Type.Literal('pending'),
+      Type.Literal('passed'),
+      Type.Literal('failed'),
+      Type.Literal('expired'),
+    ]),
+  ),
 });
 
-const PackageSchema = Type.Object({
+export const PackageSchema = Type.Object({
   id: Type.Number({ minimum: 0 }),
   name: Type.String(),
   description: Type.String(),
   type: Type.Union([Type.Literal('normal'), Type.Literal('random')]),
-  openAt: Type.Optional(Type.String({ format: 'date-time' })),
-  closeAt: Type.Optional(Type.String({ format: 'date-time' })),
+  openAt: Type.Optional(Type.Number()),
+  closeAt: Type.Optional(Type.Number()),
   delay: Type.String(),
   numberEachUser: Type.Number({ minimum: 0 }),
   assets: Type.Array(AssetSchema),
