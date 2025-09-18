@@ -220,6 +220,11 @@ export class FastifyAPIServer {
     };
   };
 
+  /**
+   * Pre-handler hook that logout user with clear its refreshToken.
+   * If cookie not set fails, it sends an error response.
+   * @param res - FastifyReply (used to send early error responses and clear the cookie)
+   */
   public logoutPreHandler = async <
     T extends FastifyRequest,
     U extends FastifyReply,
