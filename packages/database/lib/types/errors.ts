@@ -18,3 +18,10 @@ export class UnexpectedError extends Error {
     this.name = 'unexpected Error';
   }
 }
+
+export class NotAvailableError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'Not Available Error';
+  }
+}

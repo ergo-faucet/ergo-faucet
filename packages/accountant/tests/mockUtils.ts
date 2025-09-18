@@ -60,7 +60,7 @@ export const mockUserRequest: UserRequest = {
     type: 'normal',
     assets: [{ tokenId: 'token1', amount: '100' }],
   } as Package,
-  timestamp: new Date(),
+  timestamp: Date.now(),
   destinationAddress: '3WxFE2x4KVDYeQyJhKvK912AHHME6wNLBT8p6w7M1KqMp71jCAWc',
   status: 'pending',
   txSerialized: null,

@@ -1,4 +1,14 @@
-export { DatabaseConfig } from './types';
+export {
+  DatabaseConfig,
+  NotFoundError,
+  RequestLimitError,
+  NotAvailableError,
+  PackageDTO,
+  AssetDTO,
+  AuthMethodDTO,
+  PackageType,
+  AuthMethodStatus,
+} from './types';
 export { DataSourceHandler } from './DataSourceHandler';
 export {
   UserAddressAction,
@@ -18,4 +28,3 @@ export {
   UserAuthStatus,
   UserRequest,
 } from './entities';
-export { NotFoundError, RequestLimitError } from './types';

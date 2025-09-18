@@ -20,6 +20,7 @@ import {
   NotFoundError,
   PackageDTO,
   RequestLimitError,
+  NotAvailableError,
 } from '../types';
 
 class PackageAction {
@@ -151,8 +152,8 @@ class PackageAction {
         name: pkg.name,
         description: pkg.description,
         type: pkg.type,
-        openAt: pkg.openAt?.toISOString(),
-        closeAt: pkg.closeAt?.toISOString(),
+        openAt: pkg.openAt,
+        closeAt: pkg.closeAt,
         delay: pkg.delay,
         numberEachUser: pkg.numberEachUser,
         assets: pkg.assets,
@@ -193,6 +194,24 @@ class PackageAction {
     });
     if (!usr) throw new NotFoundError(`There is no user with id ${userId}`);
 
+    const currentTime = Date.now() / 1000; // In seconds
+
+    if (pkg.openAt && currentTime < Number(pkg.openAt)) {
+      throw new NotAvailableError(
+        `Package ${packageId} is not open yet. 
+    Current time: ${new Date(currentTime * 1000).toISOString()}, 
+    opens at: ${new Date(pkg.openAt * 1000).toISOString()}`,
+      );
+    }
+
+    if (pkg.closeAt && currentTime > Number(pkg.closeAt)) {
+      throw new NotAvailableError(
+        `Package ${packageId} is already closed. 
+     Current time: ${new Date(currentTime * 1000).toISOString()}, 
+     closed at: ${new Date(pkg.closeAt * 1000).toISOString()}`,
+      );
+    }
+
     const userRequests = await this.userRequestRepository.find({
       where: {
         package: { id: packageId },
@@ -203,20 +222,20 @@ class PackageAction {
     });
     const requestsCount = userRequests.length;
 
-    if (userRequests) {
+    if (requestsCount) {
       const latestRequest = userRequests[0];
-      const currentTime = new Date();
       const lastRequestTime = latestRequest.timestamp;
-      const timeDifferenceMs =
-        currentTime.getTime() - lastRequestTime.getTime();
+      const timeDifference = currentTime - lastRequestTime;
 
-      if (timeDifferenceMs < Number(pkg.delay))
-        throw new RequestLimitError('Cooldown period is still active.');
+      if (timeDifference < Number(pkg.delay))
+        throw new RequestLimitError(
+          `Cooldown period is still active for package with Id: ${packageId}.`,
+        );
     }
 
     if (requestsCount + 1 > pkg.numberEachUser) {
       throw new RequestLimitError(
-        'User has reached request limit for this package.',
+        `User has reached request limit for package with Id: ${packageId}.`,
       );
     }
     return true;
@@ -322,7 +341,7 @@ class PackageAction {
       package: pkg!,
       status: 'pending',
       user: usr!,
-      timestamp: new Date(),
+      timestamp: Math.floor(Date.now() / 1000), // In seconds
     });
 
     await this.userRequestRepository.save(userRequest);

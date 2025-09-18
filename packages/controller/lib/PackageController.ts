@@ -8,6 +8,7 @@ import {
   PackageAction,
   RequestLimitError,
   NotFoundError,
+  NotAvailableError,
 } from '@ergo-faucet/database';
 import {
   ErrorResponse,
@@ -143,7 +144,6 @@ class PackageController {
       async (request, reply) => {
         this.logger.debug(`New request for package ${request.body.packageId}`);
         const user = request.user as userRequestPayload;
-
         const { packageId, destAddress } = request.body;
 
         try {
@@ -181,6 +181,11 @@ class PackageController {
             return reply
               .status(403)
               .send({ error: error.message, code: 'REQUEST_LIMIT' });
+          } else if (error instanceof NotAvailableError) {
+            this.logger.debug(error.message);
+            return reply
+              .status(403)
+              .send({ error: error.message, code: 'NOT_AVAILABLE' });
           } else {
             this.logger.error(
               `Error requesting package  ${packageId} for userId=${user.userId}`,
