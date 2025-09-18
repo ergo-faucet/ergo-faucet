@@ -5,17 +5,15 @@ import {
   AuthenticationBody,
   AuthenticationBodyType,
   AuthenticationResponse200,
-  AuthenticationResponseError,
   ChallengeBody,
   ChallengeBodyType,
-  ChallengeErrorResponse,
   ChallengeRecord,
   ChallengeResponse200,
   ChallengeVerificationResult,
   ErgoAuthConfig,
   RefreshTokenResponse200,
-  RefreshTokenResponse401,
   LogoutResponse200,
+  ErrorResponse,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import {
@@ -232,8 +230,8 @@ export class ErgoAuth {
           body: ChallengeBody,
           response: {
             200: ChallengeResponse200,
-            400: ChallengeErrorResponse,
-            500: ChallengeErrorResponse,
+            400: ErrorResponse,
+            500: ErrorResponse,
           },
         },
         preHandler: async (req, res) => {
@@ -301,9 +299,9 @@ export class ErgoAuth {
           body: AuthenticationBody,
           response: {
             200: AuthenticationResponse200,
-            400: AuthenticationResponseError,
-            401: AuthenticationResponseError,
-            500: AuthenticationResponseError,
+            400: ErrorResponse,
+            401: ErrorResponse,
+            500: ErrorResponse,
           },
         },
         preHandler: [
@@ -385,7 +383,7 @@ export class ErgoAuth {
         schema: {
           response: {
             200: RefreshTokenResponse200,
-            401: RefreshTokenResponse401,
+            401: ErrorResponse,
           },
         },
       },
@@ -401,13 +399,14 @@ export class ErgoAuth {
 
           return reply.send({ success: true, newToken });
         } catch (err) {
-          if (err instanceof Error) {
-            this.logger.debug(`Token refresh failed:`, {
-              message: err.message,
-              stack: err.stack,
-            });
-          }
-          return reply.status(401).send({ error: 'Invalid or expired token' });
+          this.logger.debug(`Token refresh failed:`, {
+            error: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+
+          return reply
+            .status(401)
+            .send({ error: 'Invalid or expired token', code: 'INVALID_TOKEN' });
         }
       },
     );
@@ -428,8 +427,13 @@ export class ErgoAuth {
         schema: {
           response: {
             200: LogoutResponse200,
-            401: RefreshTokenResponse401,
+            401: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
         preHandler: [
           this.fastifyServer.authPreHandler,
@@ -445,15 +449,16 @@ export class ErgoAuth {
             message: `The user with ${user.userId} was loged out`,
           });
         } catch (err) {
-          if (err instanceof Error) {
-            this.logger.debug(`Logout Failed:`, {
-              message: err.message,
-              stack: err.stack,
-            });
-          }
+          this.logger.debug(`Logout Failed:`, {
+            error: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
           return reply
             .status(401)
-            .send({ error: 'Unauthorized , you must login first' });
+            .send({
+              error: 'Unauthorized , you must login first',
+              code: 'AUTH_REQUIRED',
+            });
         }
       },
     );

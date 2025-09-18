@@ -5,13 +5,11 @@ export {
 export {
   AuthenticationBody,
   AuthenticationResponse200,
-  AuthenticationResponseError,
   RefreshTokenResponse200,
-  RefreshTokenResponse401,
   ChallengeBody,
-  ChallengeErrorResponse,
   ChallengeResponse200,
   LogoutResponse200,
+  ErrorResponse,
 } from './schemas';
 export { AuthenticationBodyType, ChallengeBodyType } from './routeBodyType';
 export { ErgoAuthConfig } from './ergoAuthConfig';
