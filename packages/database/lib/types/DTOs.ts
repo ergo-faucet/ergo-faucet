@@ -25,8 +25,8 @@ export interface PackageDTO {
   name: string;
   description: string;
   type: PackageType;
-  openAt?: string;
-  closeAt?: string;
+  openAt?: number;
+  closeAt?: number;
   delay: string;
   numberEachUser: number;
   assets: AssetDTO[];

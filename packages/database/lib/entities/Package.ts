@@ -27,11 +27,11 @@ export class Package {
   @Column({ type: 'text', default: 'show' })
   status!: 'show' | 'hide';
 
-  @Column({ name: 'open_at', type: 'date', nullable: true })
-  openAt?: Date;
+  @Column({ name: 'open_at', type: 'int', nullable: true })
+  openAt?: number;
 
-  @Column({ name: 'close_at', type: 'date', nullable: true })
-  closeAt?: Date;
+  @Column({ name: 'close_at', type: 'int', nullable: true })
+  closeAt?: number;
 
   @Column({ type: 'varchar', default: '0' })
   delay!: string;

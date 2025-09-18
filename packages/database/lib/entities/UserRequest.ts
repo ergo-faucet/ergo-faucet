@@ -28,8 +28,8 @@ export class UserRequest {
   @JoinColumn()
   package!: Relation<Package>;
 
-  @Column({ type: 'date' })
-  timestamp!: Date;
+  @Column({ type: 'int' })
+  timestamp!: number;
 
   @Column({ type: 'varchar' })
   destinationAddress!: string;
