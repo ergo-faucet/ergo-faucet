@@ -115,7 +115,7 @@ mockPackage = {
   delay: '3600',
   numberEachUser: 1,
   assets: [mockAsset1, mockAsset2],
-  authMethods: [mockAuthMethod1, mockAuthMethod2],
+  packageAuthMethods: [mockAuthMethod1, mockAuthMethod2],
   authStatuses: [],
   requests: [],
 };

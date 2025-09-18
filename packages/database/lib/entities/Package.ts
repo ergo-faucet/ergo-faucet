@@ -33,7 +33,7 @@ export class Package {
   @Column({ name: 'close_at', type: 'date', nullable: true })
   closeAt?: Date;
 
-  @Column({ type: 'varchar', default: 0 })
+  @Column({ type: 'varchar', default: '0' })
   delay!: string;
 
   @Column({ name: 'number_each_user', type: 'int' })
