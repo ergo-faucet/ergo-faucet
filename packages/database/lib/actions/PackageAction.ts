@@ -14,7 +14,13 @@ import {
   User,
 } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { NotFoundError, RequestLimitError } from '../types';
+import {
+  AuthMethodDTO,
+  AuthMethodStatus,
+  NotFoundError,
+  PackageDTO,
+  RequestLimitError,
+} from '../types';
 
 class PackageAction {
   private static instance: PackageAction;
@@ -81,6 +87,7 @@ class PackageAction {
    * @param limit - The maximum number of records to return.
    * @param sort - The field to sort by ('name' or 'release').
    * @param order - The sort order ('asc' or 'desc').
+   * @param userId - Optional user ID to fetch user-specific auth method status.
    * @returns {Promise<Package[]>} A promise that resolves to an array of Package entities.
    */
   public getPackages = async (
@@ -88,22 +95,72 @@ class PackageAction {
     limit: number,
     sort: 'id' | 'openAt' | 'closeAt' | 'name',
     order: 'asc' | 'desc',
-  ): Promise<Package[]> => {
+    userId?: number,
+  ): Promise<PackageDTO[]> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
 
     const orderOption: FindOptionsOrder<Package> = { [sort]: order };
 
-    // Query the database for packages with status 'show'
     const packages = await this.PackageRepository.find({
       where: { status: 'show' },
       order: orderOption,
       skip: offset,
       take: limit,
-      relations: ['assets', 'authMethods', 'authMethods.authMethod'],
+      relations: [
+        'assets',
+        'packageAuthMethods',
+        'packageAuthMethods.authMethod',
+      ],
     });
-    return packages;
+
+    const result: PackageDTO[] = [];
+
+    for (const pkg of packages) {
+      const authMethods: AuthMethodDTO[] = [];
+      for (const pam of pkg.packageAuthMethods) {
+        let userStatus: AuthMethodStatus;
+
+        if (userId) {
+          const statusResault = await this.userAuthStatusRepository.findOne({
+            where: [
+              {
+                user: { id: userId },
+                authMethod: { id: pam.authMethod.id },
+                package: { id: pkg.id },
+              },
+              {
+                user: { id: userId },
+                authMethod: { id: pam.authMethod.id },
+                package: IsNull(),
+              },
+            ],
+          });
+          userStatus = statusResault?.status;
+        }
+
+        authMethods.push({
+          id: pam.authMethod.id,
+          name: pam.authMethod.name,
+          status: userStatus,
+        });
+      }
+      result.push({
+        id: pkg.id,
+        name: pkg.name,
+        description: pkg.description,
+        type: pkg.type,
+        openAt: pkg.openAt?.toISOString(),
+        closeAt: pkg.closeAt?.toISOString(),
+        delay: pkg.delay,
+        numberEachUser: pkg.numberEachUser,
+        assets: pkg.assets,
+        authMethods,
+      });
+    }
+
+    return result;
   };
 
   /**
@@ -153,7 +210,7 @@ class PackageAction {
       const timeDifferenceMs =
         currentTime.getTime() - lastRequestTime.getTime();
 
-      if (timeDifferenceMs < pkg.delay)
+      if (timeDifferenceMs < Number(pkg.delay))
         throw new RequestLimitError('Cooldown period is still active.');
     }
 

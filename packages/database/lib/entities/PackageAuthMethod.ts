@@ -16,7 +16,9 @@ export class PackageAuthMethod {
   @PrimaryGeneratedColumn()
   id!: number;
 
-  @ManyToOne(() => Package, (pkg) => pkg.authMethods, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Package, (pkg) => pkg.packageAuthMethods, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn()
   package!: Relation<Package>;
 

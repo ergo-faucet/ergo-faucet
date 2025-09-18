@@ -4,9 +4,8 @@ import {
   Asset,
   PackageAuthMethod,
 } from '@ergo-faucet/database';
-import fastify, { FastifyInstance } from 'fastify';
+import fastify, { FastifyInstance, FastifyRequest } from 'fastify';
 import { vi } from 'vitest';
-import { PackageDTO } from '../lib/types';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
 /**
@@ -40,18 +39,21 @@ export const mockedFastifyServer: FastifyAPIServer & {
   captchaPreHandler: ReturnType<typeof vi.fn>;
   setAuthCookie: ReturnType<typeof vi.fn>;
 } = {
-  authPreHandler: vi.fn(async (request) => {
-    // Simulate JWT verification and set request.user
-    request.user = {
-      userId: 123,
-      address: 'mocked-user-address',
+  authPreHandler: vi.fn((verifyAndEnforce: boolean = true) => {
+    return async (request: FastifyRequest) => {
+      if (!verifyAndEnforce) return;
+      else {
+        // Simulate JWT verification and set request.user
+        request.user = {
+          userId: 123,
+          address: 'mocked-user-address',
+        };
+      }
     };
   }),
 
   register: vi.fn(async () => {}),
-  captchaPreHandler: vi.fn(async () => {
-    return;
-  }),
+  captchaPreHandler: vi.fn(async () => {}),
   setAuthCookie: vi.fn(),
   // eslint-disable-next-line
 } as any;
@@ -110,15 +112,15 @@ mockPackage = {
   status: 'show',
   //openAt: new Date('2025-07-01'),
   closeAt: new Date('2025-12-31'),
-  delay: 3600n,
+  delay: '3600',
   numberEachUser: 1,
   assets: [mockAsset1, mockAsset2],
-  authMethods: [mockAuthMethod1, mockAuthMethod2],
+  packageAuthMethods: [mockAuthMethod1, mockAuthMethod2],
   authStatuses: [],
   requests: [],
 };
 
-export const mockPackageDTO: PackageDTO[] = [
+export const mockPackageDTO = [
   {
     id: 101,
     name: 'Starter Pack',

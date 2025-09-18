@@ -3,10 +3,11 @@ import {
   FastifyAPIServer,
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
+
 import {
+  PackageAction,
   RequestLimitError,
   NotFoundError,
-  PackageAction,
 } from '@ergo-faucet/database';
 import {
   ErrorResponse,
@@ -14,10 +15,8 @@ import {
   PackagesRouteQuery,
   RequestPackageBody,
   RequestPackageBodyType,
-  PackageDTO,
   RequestPackageResponse200,
 } from './types';
-import { toPackageDTO } from './utils';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import { isValidErgoAddress } from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
@@ -31,6 +30,8 @@ class PackageController {
   /**
    * Constructs a new PackageController.
    * @param packageAction - Instance of PackageAction for DB operations.
+   * @param fastifyServer - Instance of fastify server
+   * @param NETWORK_TYPE - The network type (e.g., mainnet, testnet).
    * @param logger - Optional logger instance.
    */
   public constructor(
@@ -47,7 +48,8 @@ class PackageController {
   /**
    * Registers the /packages GET route on the provided Fastify instance.
    * Handles query parameters for pagination and sorting, and returns a list of packages.
-   * Responds with 200 and a list of packages or 500 if an internal server error occurs.
+   * Includes user authentication status data when a valid JWT token is provided.
+   * Responds with 200 and a list of packages, 401 for invalid token, or 500 if an internal server error occurs.
    *
    * @param fastify - The Fastify server instance to register the route on.
    * @returns {Promise<void>}
@@ -58,16 +60,23 @@ class PackageController {
     fastify.get(
       '',
       {
+        preHandler: this.fastifyServer.authPreHandler(false),
         schema: {
           querystring: PackagesRouteQuery,
           response: {
             200: GetPackagesResponse200,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
         const { offset, limit, sort, order } = request.query;
+        const user = request.user as userRequestPayload;
 
         try {
           const packages = await this.packageAction.getPackages(
@@ -75,14 +84,13 @@ class PackageController {
             limit,
             sort,
             order,
+            user?.userId,
           );
 
-          const packageDTOs: PackageDTO[] = toPackageDTO(packages);
-
-          return reply.status(200).send(packageDTOs);
+          return reply.status(200).send(packages);
         } catch (err) {
           this.logger.error(
-            `Error fetching packages: ${err instanceof Error ? err.message : err}`,
+            `Error fetching packages: ${(err instanceof Error ? err.message : err, err instanceof Error ? err.stack : undefined)}`,
           );
           reply.status(500).send({
             error: 'Internal server error occured',
@@ -109,7 +117,7 @@ class PackageController {
       '/request',
       {
         preHandler: [
-          this.fastifyServer.authPreHandler,
+          this.fastifyServer.authPreHandler(),
           this.fastifyServer.captchaPreHandler,
           async (req, res) => {
             const { destAddress } = req.body;

@@ -1,6 +1,6 @@
 {
   "name": "@ergo-faucet/controller",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "API service for fetching faucet packages with pagination, part of the Ergo Faucet backend.",
   "repository": {
     "type": "git",
