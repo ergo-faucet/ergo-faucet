@@ -116,64 +116,66 @@ class PackageAction {
       ],
     });
 
-    return Promise.all(
-      packages.map(async (pkg) => {
-        const assets: AssetDTO[] = pkg.assets.map((a) => ({
-          id: a.id,
-          tokenId: a.tokenId,
-          assetName: a.assetName,
-          amount: a.amount,
-          usageDescription: a.usageDescription,
-        }));
+    const result: PackageDTO[] = [];
 
-        const authMethods: AuthMethodDTO[] = await Promise.all(
-          pkg.packageAuthMethods.map(async (pam) => {
-            let userStatus: AuthMethodStatus;
+    for (const pkg of packages) {
+      const assets: AssetDTO[] = pkg.assets.map((a) => ({
+        id: a.id,
+        tokenId: a.tokenId,
+        assetName: a.assetName,
+        amount: a.amount,
+        usageDescription: a.usageDescription,
+      }));
 
-            if (userId) {
-              const statuses = await this.userAuthStatusRepository.find({
-                where: [
-                  {
-                    user: { id: userId },
-                    authMethod: { id: pam.authMethod.id },
-                    package: { id: pkg.id },
-                  },
-                  {
-                    user: { id: userId },
-                    authMethod: { id: pam.authMethod.id },
-                    package: IsNull(),
-                  },
-                ],
-                relations: ['user', 'authMethod', 'package'],
-              });
+      const authMethods: AuthMethodDTO[] = [];
+      for (const pam of pkg.packageAuthMethods) {
+        let userStatus: AuthMethodStatus;
 
-              const statuse =
-                statuses.find((s) => s.package?.id === pkg.id) ??
-                statuses.find((s) => !s.package);
-              userStatus = statuse ? statuse.status : undefined;
-            }
-            return {
-              id: pam.authMethod.id,
-              name: pam.authMethod.name,
-              status: userStatus,
-            };
-          }),
-        );
+        if (userId) {
+          const statuses = await this.userAuthStatusRepository.find({
+            where: [
+              {
+                user: { id: userId },
+                authMethod: { id: pam.authMethod.id },
+                package: { id: pkg.id },
+              },
+              {
+                user: { id: userId },
+                authMethod: { id: pam.authMethod.id },
+                package: IsNull(),
+              },
+            ],
+            relations: ['user', 'authMethod', 'package'],
+          });
 
-        return {
-          id: pkg.id,
-          name: pkg.name,
-          description: pkg.description,
-          type: pkg.type,
-          openAt: pkg.openAt?.toISOString(),
-          closeAt: pkg.closeAt?.toISOString(),
-          delay: pkg.delay,
-          numberEachUser: pkg.numberEachUser,
-          assets,
-          authMethods,
-        };
-      }),
-    );
+          const status =
+            statuses.find((s) => s.package?.id === pkg.id) ??
+            statuses.find((s) => !s.package);
+
+          userStatus = status?.status;
+        }
+
+        authMethods.push({
+          id: pam.authMethod.id,
+          name: pam.authMethod.name,
+          status: userStatus,
+        });
+      }
+      result.push({
+        id: pkg.id,
+        name: pkg.name,
+        description: pkg.description,
+        type: pkg.type,
+        openAt: pkg.openAt?.toISOString(),
+        closeAt: pkg.closeAt?.toISOString(),
+        delay: pkg.delay,
+        numberEachUser: pkg.numberEachUser,
+        assets,
+        authMethods,
+      });
+    }
+
+    return result;
   };
 
   /**

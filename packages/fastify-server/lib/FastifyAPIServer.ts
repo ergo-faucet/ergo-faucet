@@ -203,17 +203,19 @@ export class FastifyAPIServer {
     ) => {
       try {
         delete req.cookies[this.cookieConfig.name];
+
         const payload = await req.jwtVerify<{ refresh?: object }>();
+
         if (payload.refresh) {
-          throw new Error('Refresh tokens cannot be used here');
+          return res
+            .status(401)
+            .send({ error: "Refresh token cookies can't be used in header" });
         }
       } catch {
-        // If enforcement is enabled, return 401 error
         if (verifyAndEnforce) {
           return res.status(401).send({ error: 'Unauthorized' });
         }
-        // If enforcement is disabled, just let the verification fail silently
-        // The route handler can check req.user to see if authentication was successful
+        // if not enforcing, fail silently
       }
     };
   };

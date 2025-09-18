@@ -1,4 +1,4 @@
-import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import sqliteDataSource from '../lib/migrationDataSource/sqliteDataSource';
 import {
   Package,
@@ -18,6 +18,11 @@ describe('PackageAction.getPackages with mock data', () => {
   let savedPackages: { pkg: Package; mock: (typeof mockPackages)[number] }[] =
     [];
 
+  afterAll(async () => {
+    if (sqliteDataSource.isInitialized) {
+      await sqliteDataSource.destroy();
+    }
+  });
   beforeAll(async () => {
     if (sqliteDataSource.isInitialized) {
       await sqliteDataSource.destroy();
@@ -93,6 +98,18 @@ describe('PackageAction.getPackages with mock data', () => {
     }
   });
 
+  /**
+   * Test for fetching all packages with assets and user-specific auth status
+   * @target PackageAction.getPackages
+   * @scenario
+   * - Create packages with assets and different auth methods
+   * - Assign user-specific statuses for some auth methods
+   * - Call getPackages with userId
+   * @expected
+   * - Returned packages should match mock data
+   * - Each package contains correct assets
+   * - Each package contains correct authMethods with user status applied
+   */
   it('should fetch all packages with assets and user-specific auth status', async () => {
     const result = await action.getPackages(0, 10, 'id', 'asc', user.id);
 
@@ -125,6 +142,15 @@ describe('PackageAction.getPackages with mock data', () => {
     }
   });
 
+  /**
+   * Test for fetching packages without userId
+   * @target PackageAction.getPackages
+   * @scenario
+   * - Call getPackages without passing userId
+   * @expected
+   * - Returned packages should still include assets and authMethods
+   * - All authMethods should have undefined status
+   */
   it('should fetch packages without userId (all statuses undefined)', async () => {
     const result = await action.getPackages(0, 10, 'id', 'asc');
 
@@ -136,6 +162,15 @@ describe('PackageAction.getPackages with mock data', () => {
     }
   });
 
+  /**
+   * Test for pagination with limit and offset
+   * @target PackageAction.getPackages
+   * @scenario
+   * - Request with offset=1 and limit=1
+   * @expected
+   * - Only one package should be returned
+   * - Returned package should be the second one in savedPackages
+   */
   it('should fetch packages with limit and offset', async () => {
     const result = await action.getPackages(1, 1, 'id', 'asc', user.id);
 
@@ -143,6 +178,14 @@ describe('PackageAction.getPackages with mock data', () => {
     expect(result[0].id).toBe(savedPackages[1].pkg.id);
   });
 
+  /**
+   * Test for sorting packages by id in descending order
+   * @target PackageAction.getPackages
+   * @scenario
+   * - Request with sort='id' and order='desc'
+   * @expected
+   * - Returned package IDs should match savedPackages sorted descending
+   */
   it('should fetch packages sorted by id desc', async () => {
     const result = await action.getPackages(0, 10, 'id', 'desc', user.id);
 
