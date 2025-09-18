@@ -8,9 +8,7 @@ import {
   ErrorResponse,
   GetRequestHistoryResponse200,
   RequsetHistoryRouteQuery,
-  RequestDTO,
 } from './types';
-import { toRequestDTO } from './utils';
 
 class RequestController {
   private readonly logger: AbstractLogger;
@@ -51,19 +49,19 @@ class RequestController {
         const { offset, limit, sort, order } = request.query;
 
         try {
-          const requests = await this.requestHistoryAction.getRequestHistoty(
+          const requestDTOs = await this.requestHistoryAction.getRequestHistory(
             offset,
             limit,
             sort,
             order,
           );
-
-          const requsetDTOs: RequestDTO[] = toRequestDTO(requests);
-
-          return reply.status(200).send(requsetDTOs);
+          return reply.status(200).send(requestDTOs);
         } catch (err) {
           this.logger.error(
-            `Error fetching packages: ${err instanceof Error ? err.message : err}`,
+            `Error fetching packages: ${
+              (err instanceof Error ? err.message : err,
+              err instanceof Error ? err.stack : undefined)
+            }`,
           );
           reply.status(500).send({
             error: 'Internal server error occured',

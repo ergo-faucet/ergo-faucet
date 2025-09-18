@@ -11,7 +11,6 @@ import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import {
   createMockedServer,
   mockedRequestHistoryAction,
-  mockRequest,
   mockRequestDTO,
 } from './mockUtils';
 import { RequestController } from '../lib';
@@ -19,6 +18,9 @@ import { RequestController } from '../lib';
 describe('RequestController', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(mockedRequestHistoryAction, 'getRequestHistory').mockResolvedValue(
+      mockRequestDTO,
+    );
   });
 
   afterAll(() => {
@@ -43,11 +45,6 @@ describe('RequestController', () => {
       vi.restoreAllMocks();
       await mockedServer.close();
     });
-
-    // Default mock for getRequestHistory
-    vi.spyOn(mockedRequestHistoryAction, 'getRequestHistoty').mockResolvedValue(
-      [mockRequest],
-    );
 
     /**
      * Test for successful GET /request-history
@@ -99,7 +96,7 @@ describe('RequestController', () => {
     it('should return 500 on internal server error', async () => {
       vi.spyOn(
         mockedRequestHistoryAction,
-        'getRequestHistoty',
+        'getRequestHistory',
       ).mockRejectedValue(new Error('Database error'));
 
       const result = await mockedServer.inject({

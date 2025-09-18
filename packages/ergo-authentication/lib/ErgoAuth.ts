@@ -335,24 +335,31 @@ export class ErgoAuth {
           const user =
             await this.userAddressAction.findOrCreateUserWithAddress(address);
 
-          const payload: userRequestPayload = {
+          const accessTokenPayload: userRequestPayload = {
             userId: user.id,
             address: address,
             name: user.name,
           };
 
-          const refreshToken = await reply.jwtSign(payload, {
+          const refreshTokenPayload = {
+            refresh: accessTokenPayload,
+          };
+
+          const refreshToken = await reply.jwtSign(refreshTokenPayload, {
             expiresIn: this.refreshTokenExpirySeconds,
+            jti: uuidv4(),
           });
-          const accessToken = await reply.jwtSign(payload, {
+
+          const accessToken = await reply.jwtSign(accessTokenPayload, {
             expiresIn: this.accessTokenExpirySeconds,
+            jti: uuidv4(),
           });
 
           this.fastifyServer.setAuthCookie(reply, refreshToken);
 
           return reply.send({
             success: true,
-            payload: payload,
+            payload: accessTokenPayload,
             accessToken,
           });
         } catch (err) {
@@ -390,12 +397,15 @@ export class ErgoAuth {
       },
       async (request, reply) => {
         try {
-          const decoded = await request.jwtVerify<userRequestPayload>({
+          const decoded = await request.jwtVerify<{
+            refresh: userRequestPayload;
+          }>({
             onlyCookie: true,
           });
 
-          const newToken = await reply.jwtSign(decoded, {
+          const newToken = await reply.jwtSign(decoded.refresh, {
             expiresIn: this.accessTokenExpirySeconds,
+            jti: uuidv4(),
           });
 
           return reply.send({ success: true, newToken });

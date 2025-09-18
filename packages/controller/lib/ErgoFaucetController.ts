@@ -96,6 +96,7 @@ class ErgoFaucetController {
    */
   public registerRoutes = async (prefix: string): Promise<void> => {
     await this.packageController.registerRoutes(prefix);
+    await this.requestController.registerRoutes(prefix);
     this.logger.info(
       `ErgoFaucetController routes registered under prefix "${prefix}"`,
     );

@@ -1,3 +1,16 @@
 export { DatabaseConfig } from './dataSourceTypes';
 
-export { NotFoundError, RequestLimitError, UnexpectedError } from './errors';
+export type {
+  PackageDTO,
+  AssetDTO,
+  AuthMethodDTO,
+  PackageType,
+  AuthMethodStatus,
+  RequestDTO,
+} from './DTOs';
+export {
+  NotFoundError,
+  RequestLimitError,
+  UnexpectedError,
+  NotAvailableError,
+} from './errors';

@@ -84,9 +84,24 @@ export class FastifyAPIServer {
     this.instance = new FastifyAPIServer(config, logger);
 
     // Register CORS
-    await this.instance.fastify.register(fastifyCors, {
-      origin: this.instance.corsOrigins,
-    });
+    if (this.instance.corsOrigins.includes('*')) {
+      await this.instance.fastify.register(fastifyCors, {});
+    } else {
+      await this.instance.fastify.register(fastifyCors, {
+        credentials: true,
+        origin: (origin, callback) => {
+          if (!origin) return callback(null, true);
+          const allowedOrigins = Array.isArray(this.instance.corsOrigins)
+            ? this.instance.corsOrigins
+            : [this.instance.corsOrigins];
+          if (allowedOrigins.some((item) => origin === item)) {
+            return callback(null, true);
+          }
+          return callback(null, false);
+        },
+      });
+    }
+
     await this.instance.fastify.register(cookie, {
       secret: this.instance.cookieConfig.secret,
     });
@@ -174,24 +189,35 @@ export class FastifyAPIServer {
   };
 
   /**
-   * Pre-handler hook that verifies JWT before executing the route handler.
-   * If JWT validation fails, it sends an error Unauthorized.
-   * @param req - FastifyRequest (expects `JWT token`)
-   * @param res - FastifyReply (used to send early error responses)
+   * Pre-handler hook that conditionally verifies JWT before executing the route handler.
+   * If enabled (default) and JWT validation fails, it sends an error Unauthorized.
+   * If disabled, it only attempts verification but doesn't throw errors.
    *
+   * @param verifyAndEnforce - Whether to enforce JWT verification (default: true)
+   * @returns Pre-handler function
    */
-  public authPreHandler = async <
-    T extends FastifyRequest,
-    U extends FastifyReply,
-  >(
-    req: T,
-    res: U,
-  ) => {
-    try {
-      await req.jwtVerify();
-    } catch {
-      return res.status(401).send({ error: 'Unauthorized' });
-    }
+  public authPreHandler = (verifyAndEnforce: boolean = true) => {
+    return async <T extends FastifyRequest, U extends FastifyReply>(
+      req: T,
+      res: U,
+    ) => {
+      try {
+        delete req.cookies[this.cookieConfig.name];
+
+        const payload = await req.jwtVerify<{ refresh?: object }>();
+
+        if (payload.refresh) {
+          return res
+            .status(401)
+            .send({ error: "Refresh token cookies can't be used in header" });
+        }
+      } catch {
+        if (verifyAndEnforce) {
+          return res.status(401).send({ error: 'Unauthorized' });
+        }
+        // if not enforcing, fail silently
+      }
+    };
   };
 
   /**

@@ -12,7 +12,9 @@ export const cookieConfig: CookieConfig = {
   secure: config.get<boolean>('server.cookie.secure'),
   sameSite: config.get<'strict' | 'lax' | 'none'>('server.cookie.sameSite'),
   path: config.get<string>('server.cookie.path'),
-  domain: config.get<string>('server.cookie.domain'),
+  domain: config.has('server.cookie.domain')
+    ? config.get<string>('server.cookie.domain')
+    : undefined,
   maxAge: config.get<number>('server.cookie.maxAge'),
 };
 

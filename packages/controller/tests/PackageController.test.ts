@@ -12,10 +12,8 @@ import {
   createMockedServer,
   mockedFastifyServer,
   mockedPackageAction,
-  mockPackage,
   mockPackageDTO,
 } from './mockUtils';
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
 import * as ergo_utils from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
@@ -31,15 +29,13 @@ describe('PackageController', () => {
 
   describe('GET /packages', async () => {
     const mockedServer = createMockedServer();
-
     /**
      * Register the /packages route before running the tests in this block.
      */
     beforeAll(async () => {
       const instance = new PackageController(
         mockedPackageAction,
-        // eslint-disable-next-line
-        {} as any as FastifyAPIServer,
+        mockedFastifyServer,
         Network.Testnet,
       );
       await mockedServer.register(instance.fetchPackagesRoute, {
@@ -53,9 +49,9 @@ describe('PackageController', () => {
     });
 
     // Default mock for getPackages to return a package
-    vi.spyOn(mockedPackageAction, 'getPackages').mockResolvedValue([
-      mockPackage,
-    ]);
+    vi.spyOn(mockedPackageAction, 'getPackages').mockImplementation(
+      async () => mockPackageDTO,
+    );
 
     /**
      * Test for successful GET /packages

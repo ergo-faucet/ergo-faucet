@@ -2,9 +2,12 @@
   "name": "faucet-service",
   "version": "0.1.0",
   "description": "A service for managing faucet operations",
-  "repository": "https://github.com/TechStack-BlockChain/ergo-faucet.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ergo-faucet/ergo-faucet.git"
+  },
   "license": "GPL-3.0",
-  "author": "TechStack-BlockChain",
+  "author": "ergo-faucet",
   "type": "module",
   "main": "src/index.ts",
   "scripts": {
@@ -15,7 +18,7 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@ergo-faucet/controller": "^0.0.0",
+    "@ergo-faucet/controller": "^0.1.0",
     "@ergo-faucet/database": "^0.1.0",
     "@ergo-faucet/discord-auth": "^0.1.0",
     "@ergo-faucet/ergo-authentication": "^0.1.0",

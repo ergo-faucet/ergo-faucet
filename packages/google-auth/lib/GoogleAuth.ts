@@ -245,7 +245,7 @@ export class GoogleAuth {
     fastify.get(
       '/login',
       {
-        preHandler: this.fastifyServer.authPreHandler,
+        preHandler: this.fastifyServer.authPreHandler(),
         schema: {
           response: {
             302: { description: 'Redirect to Google OAuth2 login' },
@@ -279,7 +279,7 @@ export class GoogleAuth {
     fastify.get<{ Querystring: CallBackRouteQueryType }>(
       '/callback',
       {
-        preHandler: this.fastifyServer.authPreHandler,
+        preHandler: this.fastifyServer.authPreHandler(),
         schema: {
           querystring: CallBackRouteQuery,
           response: {

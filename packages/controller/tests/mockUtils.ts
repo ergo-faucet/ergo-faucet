@@ -3,12 +3,10 @@ import {
   Package,
   Asset,
   PackageAuthMethod,
-  UserRequest,
   RequestHistoryAction,
 } from '@ergo-faucet/database';
-import fastify, { FastifyInstance } from 'fastify';
+import fastify, { FastifyInstance, FastifyRequest } from 'fastify';
 import { vi } from 'vitest';
-import { PackageDTO, RequestDTO } from '../lib/types';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
 /**
@@ -42,18 +40,21 @@ export const mockedFastifyServer: FastifyAPIServer & {
   captchaPreHandler: ReturnType<typeof vi.fn>;
   setAuthCookie: ReturnType<typeof vi.fn>;
 } = {
-  authPreHandler: vi.fn(async (request) => {
-    // Simulate JWT verification and set request.user
-    request.user = {
-      userId: 123,
-      address: 'mocked-user-address',
+  authPreHandler: vi.fn((verifyAndEnforce: boolean = true) => {
+    return async (request: FastifyRequest) => {
+      if (!verifyAndEnforce) return;
+      else {
+        // Simulate JWT verification and set request.user
+        request.user = {
+          userId: 123,
+          address: 'mocked-user-address',
+        };
+      }
     };
   }),
 
   register: vi.fn(async () => {}),
-  captchaPreHandler: vi.fn(async () => {
-    return;
-  }),
+  captchaPreHandler: vi.fn(async () => {}),
   setAuthCookie: vi.fn(),
   // eslint-disable-next-line
 } as any;
@@ -110,24 +111,24 @@ mockPackage = {
   description: 'A package for new users',
   type: 'normal',
   status: 'show',
-  //openAt: new Date('2025-07-01'),
-  closeAt: new Date('2025-12-31'),
-  delay: 3600n,
+  //openAt: new Date('2025-07-01').getTime()/1000,
+  closeAt: new Date('2025-12-31').getTime() / 1000,
+  delay: '3600',
   numberEachUser: 1,
   assets: [mockAsset1, mockAsset2],
-  authMethods: [mockAuthMethod1, mockAuthMethod2],
+  packageAuthMethods: [mockAuthMethod1, mockAuthMethod2],
   authStatuses: [],
   requests: [],
 };
 
-export const mockPackageDTO: PackageDTO[] = [
+export const mockPackageDTO = [
   {
     id: 101,
     name: 'Starter Pack',
     type: 'normal',
     delay: '3600',
-    //openAt: new Date('2025-07-01').toISOString(),
-    closeAt: new Date('2025-12-31').toISOString(),
+    //openAt: new Date('2025-07-01').getTime() / 1000,
+    closeAt: new Date('2025-12-31').getTime() / 1000,
     description: 'A package for new users',
     numberEachUser: 1,
     assets: [
@@ -160,31 +161,21 @@ export const mockPackageDTO: PackageDTO[] = [
 ];
 
 /**
- * A mocked RequestHistoryAction instance with a spyable getRequestHistoty method.
+ * A mocked RequestHistoryAction instance with a spyable getRequestHistory method.
  */
 export const mockedRequestHistoryAction: RequestHistoryAction & {
-  getRequestHistoty: ReturnType<typeof vi.fn>;
+  getRequestHistory: ReturnType<typeof vi.fn>;
 } = {
-  getRequestHistoty: vi.fn(),
+  getRequestHistory: vi.fn(),
   // eslint-disable-next-line
 } as any;
 
-export const mockRequest: UserRequest = {
-  id: 1,
-  package: mockPackage,
-  status: 'submitted',
-  timestamp: new Date('2025-09-09T12:00:00Z'),
-  destinationAddress: '9hT2oAddress',
-  txId: 'tx_abc',
-  // eslint-disable-next-line
-} as any;
-
-export const mockRequestDTO: RequestDTO[] = [
+export const mockRequestDTO = [
   {
     packageId: 101,
     packageName: 'Starter Pack',
     status: 'submitted',
-    timestamp: '2025-09-09T12:00:00.000Z',
+    timestamp: 19900822100,
     destinationAddress: '9hT2oAddress',
     txId: 'tx_abc',
   },

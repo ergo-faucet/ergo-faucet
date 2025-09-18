@@ -36,7 +36,7 @@ export default {
 
         '*.{js,ts}': ['eslint --fix', 'npm run test -- related -- --run'],
 
-        '**/*.{ts}': perPackage((directory) => {
+        '**/*.{ts,js}': perPackage((directory) => {
           return `npm run type-check --workspace ${path.relative(
             process.cwd(),
             directory,

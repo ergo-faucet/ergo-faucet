@@ -5,6 +5,7 @@ import {
 } from '@rosen-bridge/extended-typeorm';
 import { UserRequest } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { RequestDTO } from '../types';
 
 class RequestHistoryAction {
   private static instance: RequestHistoryAction;
@@ -67,29 +68,38 @@ class RequestHistoryAction {
    * @param limit - The maximum number of records to return.
    * @param sort - The field to sort by ('destinationAddress', 'timestamp', or 'status').
    * @param order - The sort order ('asc' or 'desc').
-   * @returns {Promise<UserRequest[]>} - Array of UserRequest entities.
+   * @returns {Promise<RequestDTO[]>} - Array of RequestDTO entities.
    */
 
-  public getRequestHistoty = async (
+  public getRequestHistory = async (
     offset: number,
     limit: number,
     sort: 'destinationAddress' | 'timestamp' | 'status',
     order: 'asc' | 'desc',
-  ): Promise<UserRequest[]> => {
+  ): Promise<RequestDTO[]> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
 
     const orderOption: FindOptionsOrder<UserRequest> = { [sort]: order };
 
-    // Query the database with pagination and sorting
     const requests = await this.userRequestRepository.find({
       order: orderOption,
       skip: offset,
       take: limit,
       relations: ['user', 'package'],
     });
-    return requests;
+
+    return requests.map(
+      (r: UserRequest): RequestDTO => ({
+        packageId: r.package.id,
+        packageName: r.package.name,
+        status: r.status,
+        timestamp: r.timestamp,
+        destinationAddress: r.destinationAddress,
+        txId: r.txId || undefined,
+      }),
+    );
   };
 }
 
