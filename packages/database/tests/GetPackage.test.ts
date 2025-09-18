@@ -1,0 +1,155 @@
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
+import sqliteDataSource from '../lib/migrationDataSource/sqliteDataSource';
+import {
+  Package,
+  PackageAuthMethod,
+  User,
+  UserAuthStatus,
+  Asset,
+  AuthMethod,
+} from '../lib/entities';
+import { DummyLogger } from '@rosen-bridge/abstract-logger';
+import { PackageAction } from '../lib/actions/PackageAction';
+import { mockPackages } from './mockData';
+
+describe('PackageAction.getPackages with mock data', () => {
+  let action: PackageAction;
+  let user: User;
+  let savedPackages: { pkg: Package; mock: (typeof mockPackages)[number] }[] =
+    [];
+
+  beforeAll(async () => {
+    if (sqliteDataSource.isInitialized) {
+      await sqliteDataSource.destroy();
+    }
+    await sqliteDataSource.initialize();
+    await sqliteDataSource.synchronize(true);
+
+    // Initialize singleton once
+    PackageAction.initialize(sqliteDataSource, new DummyLogger());
+    action = PackageAction.getInstance();
+  });
+
+  beforeEach(async () => {
+    await sqliteDataSource.synchronize(true);
+
+    const userRepo = sqliteDataSource.getRepository(User);
+    user = await userRepo.save({ name: 'test-user' } as User);
+
+    const pkgRepo = sqliteDataSource.getRepository(Package);
+    const authRepo = sqliteDataSource.getRepository(AuthMethod);
+    const pamRepo = sqliteDataSource.getRepository(PackageAuthMethod);
+    const assetRepo = sqliteDataSource.getRepository(Asset);
+    const statusRepo = sqliteDataSource.getRepository(UserAuthStatus);
+
+    savedPackages = [];
+
+    for (const pkgMock of mockPackages) {
+      const pkg = await pkgRepo.save({
+        name: pkgMock.name,
+        description: pkgMock.description,
+        type: pkgMock.type,
+        status: 'show',
+        delay: pkgMock.delay,
+        numberEachUser: pkgMock.numberEachUser,
+      });
+
+      savedPackages.push({ pkg, mock: pkgMock });
+
+      for (const a of pkgMock.assets) {
+        await assetRepo.save({
+          package: pkg,
+          tokenId: a.tokenId,
+          assetName: a.assetName,
+          amount: a.amount,
+          usageDescription: a.usageDescription,
+        });
+      }
+
+      let orderCounter = 1;
+      for (const am of pkgMock.authMethods) {
+        let authMethod = await authRepo.findOne({ where: { name: am.name } });
+        if (!authMethod) {
+          authMethod = await authRepo.save({ name: am.name, config: '{}' });
+        }
+
+        await pamRepo.save({
+          package: pkg,
+          authMethod,
+          order: orderCounter++,
+        });
+
+        if (am.status) {
+          await statusRepo.save({
+            user,
+            authMethod,
+            package: pkg,
+            status: am.status,
+            verifiedAt: new Date(),
+            metadata: { token: 'dummy', refresh_token: 'dummy' },
+          });
+        }
+      }
+    }
+  });
+
+  it('should fetch all packages with assets and user-specific auth status', async () => {
+    const result = await action.getPackages(0, 10, 'id', 'asc', user.id);
+
+    expect(result).toHaveLength(savedPackages.length);
+
+    for (const { pkg, mock } of savedPackages) {
+      const pkgDTO = result.find((p) => p.id === pkg.id);
+      expect(pkgDTO).toBeDefined();
+      expect(pkgDTO!.name).toBe(mock.name);
+
+      expect(pkgDTO!.assets).toHaveLength(mock.assets.length);
+      for (const assetMock of mock.assets) {
+        const assetDTO = pkgDTO!.assets.find(
+          (a) => a.tokenId === assetMock.tokenId,
+        );
+        expect(assetDTO).toBeDefined();
+        expect(assetDTO!.amount).toBe(assetMock.amount);
+      }
+
+      expect(pkgDTO!.authMethods).toHaveLength(mock.authMethods.length);
+      for (const amMock of mock.authMethods) {
+        const amDTO = pkgDTO!.authMethods.find((a) => a.name === amMock.name);
+        expect(amDTO).toBeDefined();
+        if (amMock.status) {
+          expect(amDTO!.status).toBe(amMock.status);
+        } else {
+          expect(amDTO!.status).toBeUndefined();
+        }
+      }
+    }
+  });
+
+  it('should fetch packages without userId (all statuses undefined)', async () => {
+    const result = await action.getPackages(0, 10, 'id', 'asc');
+
+    expect(result).toHaveLength(savedPackages.length);
+    for (const pkg of result) {
+      for (const am of pkg.authMethods) {
+        expect(am.status).toBeUndefined();
+      }
+    }
+  });
+
+  it('should fetch packages with limit and offset', async () => {
+    const result = await action.getPackages(1, 1, 'id', 'asc', user.id);
+
+    expect(result).toHaveLength(1);
+    expect(result[0].id).toBe(savedPackages[1].pkg.id);
+  });
+
+  it('should fetch packages sorted by id desc', async () => {
+    const result = await action.getPackages(0, 10, 'id', 'desc', user.id);
+
+    const sortedIds = [...savedPackages.map((s) => s.pkg.id)].sort(
+      (a, b) => b - a,
+    );
+    const resultIds = result.map((p) => p.id);
+    expect(resultIds).toEqual(sortedIds);
+  });
+});

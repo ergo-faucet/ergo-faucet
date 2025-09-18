@@ -1,4 +1,10 @@
 export type PackageType = 'normal' | 'random';
+export type AuthMethodStatus =
+  | 'passed'
+  | 'failed'
+  | 'pending'
+  | 'expired'
+  | undefined;
 
 export interface AssetDTO {
   id: number;
@@ -11,7 +17,7 @@ export interface AssetDTO {
 export interface AuthMethodDTO {
   id: number;
   name: string;
-  status?: 'passed' | 'failed' | 'pending' | 'expired';
+  status?: AuthMethodStatus;
 }
 
 export interface PackageDTO {

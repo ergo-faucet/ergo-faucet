@@ -43,7 +43,7 @@ export class Package {
   assets!: Relation<Asset[]>;
 
   @OneToMany(() => PackageAuthMethod, (pam) => pam.package)
-  authMethods!: Relation<PackageAuthMethod[]>;
+  packageAuthMethods!: Relation<PackageAuthMethod[]>;
 
   @OneToMany(() => UserAuthStatus, (status) => status.package)
   authStatuses!: Relation<UserAuthStatus[]>;

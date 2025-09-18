@@ -17,6 +17,7 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   AssetDTO,
   AuthMethodDTO,
+  AuthMethodStatus,
   NotFoundError,
   PackageDTO,
   RequestLimitError,
@@ -87,7 +88,7 @@ class PackageAction {
    * @param limit - The maximum number of records to return.
    * @param sort - The field to sort by ('name' or 'release').
    * @param order - The sort order ('asc' or 'desc').
-   * @param userId -
+   * @param userId - Optional user ID to fetch user-specific auth method status.
    * @returns {Promise<Package[]>} A promise that resolves to an array of Package entities.
    */
   public getPackages = async (
@@ -108,67 +109,71 @@ class PackageAction {
       order: orderOption,
       skip: offset,
       take: limit,
-      relations: ['assets', 'authMethods', 'authMethods.authMethod'],
+      relations: [
+        'assets',
+        'packageAuthMethods',
+        'packageAuthMethods.authMethod',
+      ],
     });
 
-    let userAuthStatuses: UserAuthStatus[] = [];
-    if (userId) {
-      userAuthStatuses = await this.userAuthStatusRepository.find({
-        where: { user: { id: userId } },
-        relations: ['authMethod', 'package', 'user'],
-      });
-    }
+    return Promise.all(
+      packages.map(async (pkg) => {
+        const assets: AssetDTO[] = pkg.assets.map((a) => ({
+          id: a.id,
+          tokenId: a.tokenId,
+          assetName: a.assetName,
+          amount: a.amount,
+          usageDescription: a.usageDescription,
+        }));
 
-    return packages.map((pkg) => {
-      const assets: AssetDTO[] = pkg.assets.map((a) => ({
-        id: a.id,
-        tokenId: a.tokenId,
-        assetName: a.assetName,
-        amount: a.amount,
-        usageDescription: a.usageDescription,
-      }));
+        const authMethods: AuthMethodDTO[] = await Promise.all(
+          pkg.packageAuthMethods.map(async (pam) => {
+            let userStatus: AuthMethodStatus;
 
-      const authMethods: AuthMethodDTO[] = pkg.authMethods.map((pam) => {
-        let userStatus: AuthMethodDTO['status'] = undefined;
+            if (userId) {
+              const statuses = await this.userAuthStatusRepository.find({
+                where: [
+                  {
+                    user: { id: userId },
+                    authMethod: { id: pam.authMethod.id },
+                    package: { id: pkg.id },
+                  },
+                  {
+                    user: { id: userId },
+                    authMethod: { id: pam.authMethod.id },
+                    package: IsNull(),
+                  },
+                ],
+                relations: ['user', 'authMethod', 'package'],
+              });
 
-        if (userId) {
-          const specificStatus = userAuthStatuses.find(
-            (uas) =>
-              uas.user?.id === userId &&
-              uas.authMethod?.id === pam.authMethod.id &&
-              uas.package?.id === pkg.id,
-          )?.status;
-
-          const globalStatus = userAuthStatuses.find(
-            (uas) =>
-              uas.user?.id === userId &&
-              uas.authMethod?.id === pam.authMethod.id &&
-              uas.package == null,
-          )?.status;
-
-          userStatus = specificStatus ?? globalStatus;
-        }
+              const statuse =
+                statuses.find((s) => s.package?.id === pkg.id) ??
+                statuses.find((s) => !s.package);
+              userStatus = statuse ? statuse.status : undefined;
+            }
+            return {
+              id: pam.authMethod.id,
+              name: pam.authMethod.name,
+              status: userStatus,
+            };
+          }),
+        );
 
         return {
-          id: pam.authMethod.id,
-          name: pam.authMethod.name,
-          status: userStatus,
+          id: pkg.id,
+          name: pkg.name,
+          description: pkg.description,
+          type: pkg.type,
+          openAt: pkg.openAt?.toISOString(),
+          closeAt: pkg.closeAt?.toISOString(),
+          delay: pkg.delay,
+          numberEachUser: pkg.numberEachUser,
+          assets,
+          authMethods,
         };
-      });
-
-      return {
-        id: pkg.id,
-        name: pkg.name,
-        description: pkg.description,
-        type: pkg.type,
-        openAt: pkg.openAt?.toISOString(),
-        closeAt: pkg.closeAt?.toISOString(),
-        delay: pkg.delay,
-        numberEachUser: pkg.numberEachUser,
-        assets,
-        authMethods,
-      };
-    });
+      }),
+    );
   };
 
   /**
