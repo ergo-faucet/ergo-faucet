@@ -1,7 +1,7 @@
 import axios from 'axios';
 import Redis from 'ioredis';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import crypto from 'crypto';
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   FastifyAPIServer,
@@ -159,7 +159,7 @@ export class DiscordAuth {
     frontState: string,
     userId: number,
   ): Promise<string> => {
-    const state = crypto.randomBytes(16).toString('hex');
+    const state = uuidv4();
     const value = { frontState, userId };
     const encodedValue = Buffer.from(JSON.stringify(value), 'utf-8').toString(
       'base64url',

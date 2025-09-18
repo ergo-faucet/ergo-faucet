@@ -470,6 +470,7 @@ export class ErgoAuth {
     await this.fastifyServer.register(this.challengeRoute, prefix);
     await this.fastifyServer.register(this.authenticationRoute, prefix);
     await this.fastifyServer.register(this.refreshTokenRoute, prefix);
+    await this.fastifyServer.register(this.logoutRoute, prefix);
     this.logger.info(`Routes registered under prefix "${prefix}"`);
   };
 }

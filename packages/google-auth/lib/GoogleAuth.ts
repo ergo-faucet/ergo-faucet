@@ -17,6 +17,8 @@ import {
   SessionData,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
+import { v4 as uuidv4 } from 'uuid';
+
 export class GoogleAuth {
   private static instance: GoogleAuth;
   private readonly logger: AbstractLogger;
@@ -172,7 +174,7 @@ export class GoogleAuth {
     userId: number,
   ): Promise<string> => {
     const { codeVerifier, codeChallenge } = this.generatePKCECodes();
-    const state = crypto.randomBytes(16).toString('hex');
+    const state = uuidv4();
     const value = { frontState, codeVerifier, userId };
 
     const encodedValue = Buffer.from(JSON.stringify(value), 'utf-8').toString(
