@@ -67,7 +67,6 @@ export class DiscordAuth {
       throw new Error('DiscordAuth has already been initialized.');
     }
     this.instance = new DiscordAuth(config, logger);
-    await this.instance.discordAction.ensureDiscordAuthMethod();
     await this.instance.registerRoutes(this.instance.Discord_AUTH_PREFIX);
     this.instance.logger.info(`DiscordAuth initialized successfully.`);
   };

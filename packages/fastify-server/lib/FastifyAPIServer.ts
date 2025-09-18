@@ -85,9 +85,24 @@ export class FastifyAPIServer {
     this.instance = new FastifyAPIServer(config, logger);
 
     // Register CORS
-    await this.instance.fastify.register(fastifyCors, {
-      origin: this.instance.corsOrigins,
-    });
+    if (this.instance.corsOrigins.includes('*')) {
+      await this.instance.fastify.register(fastifyCors, { credentials: true });
+    } else {
+      await this.instance.fastify.register(fastifyCors, {
+        credentials: true,
+        origin: (origin, callback) => {
+          if (!origin) return callback(null, true);
+          const allowedOrigins = Array.isArray(this.instance.corsOrigins)
+            ? this.instance.corsOrigins
+            : [this.instance.corsOrigins];
+          if (allowedOrigins.some((item) => origin === item)) {
+            return callback(null, true);
+          }
+          return callback(null, false);
+        },
+      });
+    }
+
     await this.instance.fastify.register(cookie, {
       secret: this.instance.cookieConfig.secret,
     });
