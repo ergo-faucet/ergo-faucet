@@ -55,8 +55,6 @@ export const GetPackagesResponse200 = Type.Array(PackageSchema);
 export const ErrorResponse = Type.Object({
   error: Type.String(),
   code: Type.String(),
-  message: Type.Optional(Type.String()),
-  statusCode: Type.Optional(Type.Number({ minimum: 100, maximum: 599 })),
 });
 
 export const RequestPackageBody = Type.Object({
