@@ -93,14 +93,14 @@ export class GoogleAuth {
   /**
    * Sets session data in Redis with TTL.
    * @param key - Session key
-   * @param value - Session data
+   * @param value - string data
    * @param ttl - Time to live in seconds
    */
-  private async setSessionData(
+  private setSessionData = async (
     key: string,
     value: string,
     ttl: number,
-  ): Promise<void> {
+  ): Promise<void> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
     try {
       await this.redis.set(fullKey, value);
@@ -111,40 +111,38 @@ export class GoogleAuth {
       this.logger.error(`Failed to set session data for key: ${key}`, error);
       throw error;
     }
-  }
+  };
 
   /**
    * Gets session data from Redis.
    * @param key - Session key
    * @returns Session data or null if not found
    */
-  private async getSessionData(key: string): Promise<string | null> {
+  private getSessionData = async (key: string): Promise<string | undefined> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
     try {
       const raw = await this.redis.get(fullKey);
       if (!raw) {
-        return null;
+        return undefined;
       }
       return raw;
     } catch (error) {
       this.logger.error(`Failed to get session data for key: ${key}`, error);
-      throw error;
     }
-  }
+  };
 
   /**
    * Deletes session data from Redis.
    * @param key - Session key
    */
-  private async deleteSessionData(key: string): Promise<void> {
+  private deleteSessionData = async (key: string): Promise<void> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
     try {
       await this.redis.del(fullKey);
     } catch (error) {
       this.logger.error(`Failed to delete session data for key: ${key}`, error);
-      throw error;
     }
-  }
+  };
 
   /**
    * Generates PKCE codes (code verifier and challenge)
@@ -279,15 +277,32 @@ export class GoogleAuth {
         },
       },
       async (request, reply) => {
-        const stateFromFront = request.query.state;
-        const user = request.user as userRequestPayload;
-        if (!stateFromFront) {
-          return reply
-            .status(400)
-            .send({ error: 'Missing state from front', code: 'MISSING_STATE' });
+        try {
+          const stateFromFront = request.query.state;
+          const user = request.user as userRequestPayload;
+          if (!stateFromFront) {
+            return reply
+              .status(400)
+              .send({
+                error: 'Missing state from front',
+                code: 'MISSING_STATE',
+              });
+          }
+          const loginURL = await this.buildLoginURL(
+            stateFromFront,
+            user.userId,
+          );
+          return reply.status(302).redirect(loginURL);
+        } catch (err) {
+          this.logger.debug(`Error in build login url`, {
+            message: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          reply.status(500).send({
+            error: 'Internal server error occured',
+            code: 'internal-error',
+          });
         }
-        const loginURL = await this.buildLoginURL(stateFromFront, user.userId);
-        return reply.status(302).redirect(loginURL);
       },
     );
   };
@@ -363,7 +378,7 @@ export class GoogleAuth {
             .redirect(
               this.frontBaseURL +
                 decodedSession.frontState +
-                `?authMethod=google&authMethodStatus=success&message=The user with id ${decodedSession.userId} logged in successfully with Google`,
+                `?authMethod=google&authMethodStatus=success&message=The user with name ${googleUser.name} logged in successfully with Google`,
             );
         } catch (err) {
           this.logger.error(`Google callback failed`, {
@@ -375,7 +390,7 @@ export class GoogleAuth {
             .redirect(
               this.frontBaseURL +
                 decodedSession.frontState +
-                `?authMethod=google&authMethodStatus=false&message=The user with id ${decodedSession.userId} failed to log in with Google`,
+                `?authMethod=google&authMethodStatus=false&message=Failed to log in with Google`,
             );
         }
       },
