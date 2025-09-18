@@ -2,7 +2,10 @@
   "name": "@ergo-faucet/google-auth",
   "version": "0.1.0",
   "description": "google auth utilities for ergo-faucet",
-  "repository": "https://github.com/ergo-faucet/ergo-faucet.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ergo-faucet/ergo-faucet.git"
+  },
   "license": "GPL-3.0",
   "author": "ergo-faucet",
   "type": "module",

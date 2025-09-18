@@ -28,10 +28,6 @@
   ],
   "author": "ergo-faucet",
   "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/ergo-faucet/ergo-faucet/issues"
-  },
-  "homepage": "https://github.com/ergo-faucet/ergo-faucet#readme",
   "dependencies": {
     "@ergo-faucet/google-recaptcha": "^0.1.0",
     "@fastify/cookie": "^11.0.2",
