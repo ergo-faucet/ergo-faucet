@@ -9,7 +9,6 @@ import {
 } from 'vitest';
 import { PackageController } from '../lib';
 import {
-  createMockedServer,
   mockedFastifyServer,
   mockConfig,
   mockedPackageAction,
@@ -36,27 +35,37 @@ describe('PackageController', () => {
   });
 
   describe('GET /packages', async () => {
-    const mockedServer = createMockedServer();
+    let fastifyInstance: FastifyAPIServer;
+    let packageController: PackageController;
 
-    /**
-     * Register the /packages route before running the tests in this block.
-     */
     beforeAll(async () => {
-      const instance = new PackageController({
+      // eslint-disable-next-line
+      (FastifyAPIServer as any).instance = undefined;
+      await FastifyAPIServer.initialize(mockConfig);
+      fastifyInstance = FastifyAPIServer.getInstance();
+
+      packageController = new PackageController({
         packageAction: mockedPackageAction,
-        // eslint-disable-next-line
-        fastifyServer: {} as any as FastifyAPIServer,
+        fastifyServer: fastifyInstance,
         networkType: Network.Testnet,
         nodeModel: mockNodeModel,
       });
-      await mockedServer.register(instance.fetchPackagesRoute, {
-        prefix: '/packages',
-      });
+
+      await fastifyInstance.register(
+        packageController.fetchPackagesRoute,
+        '/packages',
+      );
+
+      await fastifyInstance.start();
     });
 
     afterAll(async () => {
       vi.restoreAllMocks();
-      await mockedServer.close();
+      await fastifyInstance.close();
+    });
+
+    beforeEach(() => {
+      vi.clearAllMocks();
     });
 
     // Default mock for getPackages to return a package
@@ -73,7 +82,7 @@ describe('PackageController', () => {
      * - returns 200 and the expected package DTOs
      */
     it('should returns packages successfully', async () => {
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'GET',
         url: '/packages?offset=0&limit=100&sort=name&order=desc',
       });
@@ -91,17 +100,15 @@ describe('PackageController', () => {
      * - returns 400
      */
     it('should returns Bad Request', async () => {
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'GET',
         url: '/packages?offset=0&limit=200&sort=name&order=desc', //limit is greater than maximum 100
       });
 
       expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
-        code: 'FST_ERR_VALIDATION',
-        error: 'Bad Request',
-        message: 'querystring/limit must be <= 100',
-        statusCode: 400,
+        code: 'Bad Request',
+        error: 'querystring/limit must be <= 100',
       });
     });
 
@@ -117,7 +124,7 @@ describe('PackageController', () => {
       vi.spyOn(mockedPackageAction, 'getPackages').mockRejectedValue(
         new Error('Database error'),
       );
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'GET',
         url: '/packages?offset=0&limit=10&sort=name&order=desc',
       });
@@ -131,21 +138,51 @@ describe('PackageController', () => {
   });
 
   describe('POST /packages/request', () => {
-    const mockedServer = createMockedServer();
+    let fastifyInstance: FastifyAPIServer;
+    let packageController: PackageController;
 
-    /**
-     * Register the /packages/request route before running the tests in this block.
-     */
     beforeAll(async () => {
-      const instance = new PackageController({
+      // eslint-disable-next-line
+      (FastifyAPIServer as any).instance = undefined;
+      await FastifyAPIServer.initialize(mockConfig);
+      fastifyInstance = FastifyAPIServer.getInstance();
+
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        async (request) => {
+          request.user = {
+            userId: 123,
+            address: 'mocked-user-address',
+            isAdmin: true,
+          };
+        },
+      );
+
+      vi.spyOn(fastifyInstance, 'captchaPreHandler').mockImplementation(
+        async () => {},
+      );
+
+      packageController = new PackageController({
         packageAction: mockedPackageAction,
-        fastifyServer: mockedFastifyServer,
+        fastifyServer: fastifyInstance,
         networkType: Network.Testnet,
         nodeModel: mockNodeModel,
       });
-      await mockedServer.register(instance.requestPackageRoute, {
-        prefix: '/packages',
-      });
+
+      await fastifyInstance.register(
+        packageController.requestPackageRoute,
+        '/packages',
+      );
+
+      await fastifyInstance.start();
+    });
+
+    afterAll(async () => {
+      vi.restoreAllMocks();
+      await fastifyInstance.close();
+    });
+
+    beforeEach(() => {
+      vi.clearAllMocks();
     });
 
     /**
@@ -162,7 +199,7 @@ describe('PackageController', () => {
       mockedPackageAction.hasUserPassedAllAuthMethods.mockResolvedValue(true);
       mockedPackageAction.addUserRequest.mockResolvedValue(123);
 
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
         payload: {
@@ -200,7 +237,7 @@ describe('PackageController', () => {
 
       mockedPackageAction.hasUserPassedAllAuthMethods.mockResolvedValue(false);
 
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
         payload: {
@@ -230,7 +267,7 @@ describe('PackageController', () => {
         new NotFoundError('Package or user not found'),
       );
 
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
         payload: {
@@ -260,7 +297,7 @@ describe('PackageController', () => {
         new RequestLimitError('Cooldown limit active'),
       );
 
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
         payload: {
@@ -291,7 +328,7 @@ describe('PackageController', () => {
         'isPackageAvailableForUser',
       ).mockRejectedValue(new Error('Unexpected error'));
 
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
         payload: {
@@ -462,8 +499,7 @@ describe('PackageController', () => {
 
       expect(result.statusCode).toEqual(400);
       const response = JSON.parse(result.body);
-      expect(response.error).toBe('Bad Request');
-      expect(response.code).toBe('FST_ERR_VALIDATION');
+      expect(response.code).toBe('Bad Request');
     });
 
     /**
@@ -755,10 +791,8 @@ describe('PackageController', () => {
       expect(result.statusCode).toEqual(400);
 
       expect(JSON.parse(result.body)).toEqual({
-        code: 'FST_ERR_VALIDATION',
-        error: 'Bad Request',
-        message: 'body must be array',
-        statusCode: 400,
+        code: 'Bad Request',
+        error: 'body must be array',
       });
     });
 
@@ -804,10 +838,8 @@ describe('PackageController', () => {
       expect(result.statusCode).toEqual(400);
 
       expect(JSON.parse(result.body)).toEqual({
-        code: 'FST_ERR_VALIDATION',
-        error: 'Bad Request',
-        message: 'params/packageId must be number',
-        statusCode: 400,
+        code: 'Bad Request',
+        error: 'params/packageId must be number',
       });
     });
 
@@ -1069,10 +1101,8 @@ describe('PackageController', () => {
 
       expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
-        code: 'FST_ERR_VALIDATION',
-        error: 'Bad Request',
-        message: 'body must be array',
-        statusCode: 400,
+        code: 'Bad Request',
+        error: 'body must be array',
       });
     });
 
@@ -1093,10 +1123,8 @@ describe('PackageController', () => {
 
       expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
-        code: 'FST_ERR_VALIDATION',
-        error: 'Bad Request',
-        message: 'body/0/id must be number',
-        statusCode: 400,
+        code: 'Bad Request',
+        error: 'body/0/id must be number',
       });
     });
 
@@ -1117,10 +1145,8 @@ describe('PackageController', () => {
 
       expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
-        code: 'FST_ERR_VALIDATION',
-        error: 'Bad Request',
-        message: 'body/0/order must be >= 0',
-        statusCode: 400,
+        code: 'Bad Request',
+        error: 'body/0/order must be >= 0',
       });
     });
 
@@ -1165,10 +1191,8 @@ describe('PackageController', () => {
 
       expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
-        code: 'FST_ERR_VALIDATION',
-        error: 'Bad Request',
-        message: 'params/packageId must be number',
-        statusCode: 400,
+        code: 'Bad Request',
+        error: 'params/packageId must be number',
       });
     });
 

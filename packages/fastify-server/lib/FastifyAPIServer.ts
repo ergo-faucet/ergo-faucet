@@ -1,4 +1,4 @@
-import fastify, { FastifyReply, FastifyRequest } from 'fastify';
+import fastify, { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
@@ -289,6 +289,22 @@ export class FastifyAPIServer {
     if (!user.isAdmin) {
       this.logger.debug(`User ${user.userId} is not marked as admin.`);
       return res.status(403).send({ error: 'Forbidden' });
+    }
+  };
+
+  public errorHandler = (
+    error: FastifyError,
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
+    if (error.validation) {
+      this.logger.debug('Validation error occurred', {
+        details: error.validation,
+      });
+      return reply.status(400).send({
+        code: 'Bad Request',
+        error: error.message,
+      });
     }
   };
 

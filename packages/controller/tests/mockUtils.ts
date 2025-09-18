@@ -4,17 +4,9 @@ import {
   Asset,
   PackageAuthMethod,
 } from '@ergo-faucet/database';
-import fastify, { FastifyInstance } from 'fastify';
 import { vi } from 'vitest';
 import { PackageDTO } from '../lib/types';
 import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
-
-/**
- * Factory function to create a new Fastify instance for testing.
- */
-export const createMockedServer = (): FastifyInstance => {
-  return fastify();
-};
 
 /**
  * A mocked PackageAction instance with a spyable getPackages method.

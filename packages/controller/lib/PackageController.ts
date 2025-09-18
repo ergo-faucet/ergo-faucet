@@ -82,10 +82,12 @@ class PackageController {
     fastify.get(
       '',
       {
+        errorHandler: this.fastifyServer.errorHandler,
         schema: {
           querystring: PackagesRouteQuery,
           response: {
             200: GetPackagesResponse200,
+            400: ErrorResponse,
             500: ErrorResponse,
           },
         },
@@ -229,6 +231,7 @@ class PackageController {
     fastify.post<{ Body: AddPackageBodyType }>(
       '',
       {
+        errorHandler: this.fastifyServer.errorHandler,
         preHandler: [
           this.fastifyServer.authPreHandler,
           this.fastifyServer.adminPreHandler,
@@ -295,6 +298,7 @@ class PackageController {
     }>(
       '/:packageId/assets',
       {
+        errorHandler: this.fastifyServer.errorHandler,
         preHandler: [
           this.fastifyServer.authPreHandler,
           this.fastifyServer.adminPreHandler,
@@ -390,6 +394,7 @@ class PackageController {
     fastify.post<{ Body: AddAuthMethodsToPackageBodyType }>(
       '/:packageId/auths',
       {
+        errorHandler: this.fastifyServer.errorHandler,
         preHandler: [
           this.fastifyServer.authPreHandler,
           //  this.fastifyServer.adminPreHandler,
