@@ -26,12 +26,11 @@ class ErgoFaucetController {
   ) {
     this.logger = logger ? logger : new DummyLogger();
     this.fastifyServer = fastifyServer;
-    this.nodeModel = nodeModel;
     this.packageController = new PackageController({
       packageAction: this.packageAction,
-      fastifyServer: fastifyServer,
+      fastifyServer: this.fastifyServer,
       networkType: this.NETWORK_TYPE,
-      nodeModel: nodeModel,
+      nodeModel: this.nodeModel,
       logger,
     });
   }
