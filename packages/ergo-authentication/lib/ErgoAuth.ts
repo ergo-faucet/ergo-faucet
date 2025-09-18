@@ -347,9 +347,12 @@ export class ErgoAuth {
 
           const refreshToken = await reply.jwtSign(refreshTokenPayload, {
             expiresIn: this.refreshTokenExpirySeconds,
+            jti: uuidv4(),
           });
+
           const accessToken = await reply.jwtSign(accessTokenPayload, {
             expiresIn: this.accessTokenExpirySeconds,
+            jti: uuidv4(),
           });
 
           this.fastifyServer.setAuthCookie(reply, refreshToken);
@@ -402,6 +405,7 @@ export class ErgoAuth {
 
           const newToken = await reply.jwtSign(decoded.refresh, {
             expiresIn: this.accessTokenExpirySeconds,
+            jti: uuidv4(),
           });
 
           return reply.send({ success: true, newToken });
