@@ -446,7 +446,7 @@ export class ErgoAuth {
           ],
         },
         preHandler: [
-          this.fastifyServer.authPreHandler,
+          this.fastifyServer.authPreHandler(),
           this.fastifyServer.logoutPreHandler,
         ],
       },
@@ -456,19 +456,17 @@ export class ErgoAuth {
 
           return reply.send({
             success: true,
-            message: `The user with ${user.userId} was loged out`,
+            message: `The user with userId ${user.userId} was loged out`,
           });
         } catch (err) {
           this.logger.debug(`Logout Failed:`, {
             error: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
-          return reply
-            .status(401)
-            .send({
-              error: 'Unauthorized , you must login first',
-              code: 'AUTH_REQUIRED',
-            });
+          return reply.status(401).send({
+            error: 'Unauthorized , you must login first',
+            code: 'AUTH_REQUIRED',
+          });
         }
       },
     );
