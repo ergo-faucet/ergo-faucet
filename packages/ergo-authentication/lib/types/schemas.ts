@@ -27,6 +27,11 @@ export const RefreshTokenResponse200 = Type.Object({
   newToken: Type.String(),
 });
 
+export const LogoutResponse200 = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+});
+
 export const RefreshTokenResponse401 = Type.Object({
   error: Type.String(),
 });

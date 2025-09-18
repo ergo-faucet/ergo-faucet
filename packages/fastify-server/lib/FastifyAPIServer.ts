@@ -194,6 +194,20 @@ export class FastifyAPIServer {
     }
   };
 
+  public logoutPreHandler = async <
+    T extends FastifyRequest,
+    U extends FastifyReply,
+  >(
+    _: T,
+    res: U,
+  ) => {
+    try {
+      res.clearCookie(this.cookieConfig.name);
+    } catch {
+      return res.status(401).send({ error: `The cookie wasn't set yet` });
+    }
+  };
+
   /**
    * Pre-handler hook that verifies captcha before executing the route handler.
    * If captcha validation fails, it sends an error response.

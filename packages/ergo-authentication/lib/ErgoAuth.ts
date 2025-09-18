@@ -15,6 +15,7 @@ import {
   ErgoAuthConfig,
   RefreshTokenResponse200,
   RefreshTokenResponse401,
+  LogoutResponse200,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import {
@@ -407,6 +408,52 @@ export class ErgoAuth {
             });
           }
           return reply.status(401).send({ error: 'Invalid or expired token' });
+        }
+      },
+    );
+  };
+
+  /**
+   * Creates the `/refresh-token` route definition.
+   * @param fastify - Fastify instance.
+   * @returns Promise<void>
+   * - `200 OK `{ success: true, newToken: string }`
+   */
+  private logoutRoute = async (
+    fastify: FastifySeverInstance,
+  ): Promise<void> => {
+    fastify.get(
+      '/logout',
+      {
+        schema: {
+          response: {
+            200: LogoutResponse200,
+            401: RefreshTokenResponse401,
+          },
+        },
+        preHandler: [
+          this.fastifyServer.authPreHandler,
+          this.fastifyServer.logoutPreHandler,
+        ],
+      },
+      async (request, reply) => {
+        try {
+          const user = request.user as userRequestPayload;
+
+          return reply.send({
+            success: true,
+            message: `The user with ${user.userId} was loged out`,
+          });
+        } catch (err) {
+          if (err instanceof Error) {
+            this.logger.debug(`Logout Failed:`, {
+              message: err.message,
+              stack: err.stack,
+            });
+          }
+          return reply
+            .status(401)
+            .send({ error: 'Unauthorized , you must login first' });
         }
       },
     );

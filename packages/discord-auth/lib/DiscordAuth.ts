@@ -308,6 +308,7 @@ export class DiscordAuth {
               this.frontBaseURL + `?authMethod=discord&authMethodStatus=false`,
             );
         }
+        this.deleteSessionData(state);
         const decodedSession = JSON.parse(
           Buffer.from(session, 'base64url').toString('utf-8'),
         ) as SessionData;

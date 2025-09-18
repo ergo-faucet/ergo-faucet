@@ -11,6 +11,7 @@ export {
   ChallengeBody,
   ChallengeErrorResponse,
   ChallengeResponse200,
+  LogoutResponse200,
 } from './schemas';
 export { AuthenticationBodyType, ChallengeBodyType } from './routeBodyType';
 export { ErgoAuthConfig } from './ergoAuthConfig';
