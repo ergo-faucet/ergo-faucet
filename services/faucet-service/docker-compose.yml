@@ -1,6 +1,6 @@
 services:
   ergo-faucet:
-    image: ghcr.io/ergo-faucet/ergo-faucet:latest
+    image: ghcr.io/ergo-faucet/ergo-faucet:${IMAGE_TAG}
     restart: unless-stopped
     ports:
       - '127.0.0.1:${FAUCET_PORT}:3000'
