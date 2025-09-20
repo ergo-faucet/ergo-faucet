@@ -2,14 +2,14 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
 import { Network } from '@fleet-sdk/common';
-import { RequestController, PackageController } from './';
+import { RequestHistoryController, PackageController } from './';
 
 class ErgoFaucetController {
   private static instance: ErgoFaucetController;
   private readonly logger: AbstractLogger;
   private readonly fastifyServer: FastifyAPIServer;
   private readonly packageController: PackageController;
-  private readonly requestController: RequestController;
+  private readonly requestHistoryController: RequestHistoryController;
   private readonly CONTROLLER_PREFIX = '/controller';
 
   /**
@@ -35,7 +35,7 @@ class ErgoFaucetController {
       this.NETWORK_TYPE,
       logger,
     );
-    this.requestController = new RequestController(
+    this.requestHistoryController = new RequestHistoryController(
       this.requsetHistoryAction,
       this.fastifyServer,
       logger,
@@ -96,7 +96,7 @@ class ErgoFaucetController {
    */
   public registerRoutes = async (prefix: string): Promise<void> => {
     await this.packageController.registerRoutes(prefix);
-    await this.requestController.registerRoutes(prefix);
+    await this.requestHistoryController.registerRoutes(prefix);
     this.logger.info(
       `ErgoFaucetController routes registered under prefix "${prefix}"`,
     );

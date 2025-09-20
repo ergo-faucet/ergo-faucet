@@ -10,7 +10,7 @@ import {
   RequsetHistoryRouteQuery,
 } from './types';
 
-class RequestController {
+class RequestHistoryController {
   private readonly logger: AbstractLogger;
   private readonly requestHistoryAction: RequestHistoryAction;
   private readonly PACKAGES_PREFIX = '/history';
@@ -91,4 +91,4 @@ class RequestController {
   };
 }
 
-export { RequestController };
+export { RequestHistoryController };

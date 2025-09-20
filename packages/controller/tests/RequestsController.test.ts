@@ -13,7 +13,7 @@ import {
   mockedRequestHistoryAction,
   mockRequestDTO,
 } from './mockUtils';
-import { RequestController } from '../lib';
+import { RequestHistoryController } from '../lib';
 
 describe('RequestController', () => {
   beforeEach(() => {
@@ -31,7 +31,7 @@ describe('RequestController', () => {
     const mockedServer = createMockedServer();
 
     beforeAll(async () => {
-      const instance = new RequestController(
+      const instance = new RequestHistoryController(
         mockedRequestHistoryAction,
         // eslint-disable-next-line
         {} as any as FastifyAPIServer,
