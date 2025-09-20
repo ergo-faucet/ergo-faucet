@@ -1,9 +1,14 @@
 import {
+  And,
   DataSource,
   Equal,
   FindOptionsOrder,
   In,
+  FindOptionsWhere,
+  ILike,
   IsNull,
+  LessThanOrEqual,
+  MoreThanOrEqual,
   Not,
   Repository,
 } from '@rosen-bridge/extended-typeorm';
@@ -27,6 +32,7 @@ import {
   PackageDTO,
   RequestLimitError,
   NotAvailableError,
+  FilterOptions,
 } from '../types';
 
 class PackageAction {
@@ -106,6 +112,7 @@ class PackageAction {
     limit: number,
     sort: 'id' | 'openAt' | 'closeAt' | 'name',
     order: 'asc' | 'desc',
+    options: FilterOptions,
     userId?: number,
   ): Promise<PackageDTO[]> => {
     this.logger.debug(
@@ -113,10 +120,29 @@ class PackageAction {
     );
 
     const orderOption: FindOptionsOrder<Package> = { [sort]: order };
+    let where: FindOptionsWhere<Package>[] = [{ status: 'show' }];
 
-    // Query the database for packages with status 'show'
-    const packages = await this.packageRepository.find({
-      where: { status: 'show' },
+    if (options.id === undefined) {
+      //   where = this.filterAssets(where, options.asset_all, options.asset_any);
+      // where = this.filterAuths(where, options.auth_all, options.auth_any);
+      where = this.filterCloseTime(
+        where,
+        options.close_before,
+        options.close_after,
+      );
+      where = this.filterOpenTime(
+        where,
+        options.open_before,
+        options.open_after,
+      );
+
+      where = this.searchPattern(where, options.pattern);
+    } else {
+      where[0].id = options.id;
+    }
+
+    const packages = await this.PackageRepository.find({
+      where,
       order: orderOption,
       skip: offset,
       take: limit,
@@ -582,6 +608,103 @@ class PackageAction {
         `Some auth methods not found for IDs: ${JSON.stringify(notFoundAuths)}`,
       );
     }
+  };
+  // TODO
+  // filterAssets = (
+  //   where: FindOptionsWhere<Package>[],
+  //   assets_all?: string[],
+  //   assets_any?: string[],
+  // ): FindOptionsWhere<Package>[] => {
+  //   if (assets_all && assets_any) {
+  //     where[0].assets = And(
+  //       ArrayContains(
+  //         assets_all.map((a) => {
+  //           return { tokenId: a } as Asset;
+  //         }),
+  //       ),
+  //       ArrayOverlap(
+  //         assets_any.map((a) => {
+  //           return { tokenId: a } as Asset;
+  //         }),
+  //       ),
+  //     );
+  //   } else if (assets_all) {
+  //     where[0].assets = ArrayContains(
+  //       assets_all.map((a) => {
+  //         return { tokenId: a } as Asset;
+  //       }),
+  //     );
+  //   } else if (assets_any) {
+  //     where[0].assets = ArrayOverlap(
+  //       assets_any.map((a) => {
+  //         return { tokenId: a } as Asset;
+  //       }),
+  //     );
+  //   }
+
+  //   return where;
+  // };
+
+  // TODO
+  // filterAuths = (
+  //   where: FindOptionsWhere<Package>[],
+  //   auth_all?: number[],
+  //   auth_any?: number[],
+  // ): FindOptionsWhere<Package>[] => {
+  //   throw new Error('Function not implemented.');
+  // };
+
+  filterCloseTime = (
+    where: FindOptionsWhere<Package>[],
+    close_before?: number,
+    close_after?: number,
+  ): FindOptionsWhere<Package>[] => {
+    if (close_before && close_after) {
+      where[0].closeAt = And(
+        LessThanOrEqual(close_before),
+        MoreThanOrEqual(close_after),
+      );
+    } else if (close_before) {
+      where[0].closeAt = LessThanOrEqual(close_before);
+    } else if (close_after) {
+      where[0].closeAt = MoreThanOrEqual(close_after);
+    }
+
+    return where;
+  };
+
+  filterOpenTime = (
+    where: FindOptionsWhere<Package>[],
+    open_before?: number,
+    open_after?: number,
+  ): FindOptionsWhere<Package>[] => {
+    if (open_before && open_after) {
+      where[0].openAt = And(
+        LessThanOrEqual(open_before),
+        MoreThanOrEqual(open_after),
+      );
+    } else if (open_before) {
+      where[0].openAt = LessThanOrEqual(open_before);
+    } else if (open_after) {
+      where[0].openAt = MoreThanOrEqual(open_after);
+    }
+
+    return where;
+  };
+
+  searchPattern = (
+    where: FindOptionsWhere<Package>[],
+    pattern?: string,
+  ): FindOptionsWhere<Package>[] => {
+    if (pattern) {
+      where[0].name = ILike(`%${pattern}%`);
+      where.push({
+        ...where[0],
+        name: undefined,
+        description: ILike(`%${pattern}%`),
+      });
+    }
+    return where;
   };
 }
 
