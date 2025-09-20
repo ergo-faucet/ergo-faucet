@@ -2,7 +2,6 @@ import {
   Entity,
   PrimaryGeneratedColumn,
   Column,
-  BigIntValueTransformer,
   OneToMany,
   Relation,
 } from '@rosen-bridge/extended-typeorm';
@@ -28,14 +27,14 @@ export class Package {
   @Column({ type: 'text', default: 'show' })
   status!: 'show' | 'hide';
 
-  @Column({ name: 'open_at', type: 'date', nullable: true })
-  openAt?: Date;
+  @Column({ name: 'open_at', type: 'int', nullable: true })
+  openAt?: number;
 
-  @Column({ name: 'close_at', type: 'date', nullable: true })
-  closeAt?: Date;
+  @Column({ name: 'close_at', type: 'int', nullable: true })
+  closeAt?: number;
 
-  @Column({ type: 'bigint', transformer: new BigIntValueTransformer() })
-  delay!: bigint;
+  @Column({ type: 'varchar', default: '0' })
+  delay!: string;
 
   @Column({ name: 'number_each_user', type: 'int' })
   numberEachUser!: number;
@@ -44,7 +43,7 @@ export class Package {
   assets!: Relation<Asset[]>;
 
   @OneToMany(() => PackageAuthMethod, (pam) => pam.package)
-  authMethods!: Relation<PackageAuthMethod[]>;
+  packageAuthMethods!: Relation<PackageAuthMethod[]>;
 
   @OneToMany(() => UserAuthStatus, (status) => status.package)
   authStatuses!: Relation<UserAuthStatus[]>;

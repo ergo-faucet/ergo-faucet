@@ -1,8 +1,8 @@
 import { Asset } from '../entities';
 
 export interface PackagePayload {
-  openAt?: string | undefined;
-  closeAt?: string | undefined;
+  openAt?: number;
+  closeAt?: number;
   name: string;
   description: string;
   type: 'normal' | 'random';

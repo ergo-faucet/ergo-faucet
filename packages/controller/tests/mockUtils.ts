@@ -5,8 +5,11 @@ import {
   PackageAuthMethod,
 } from '@ergo-faucet/database';
 import { vi } from 'vitest';
-import { PackageDTO } from '../lib/types';
-import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
+import {
+  FastifyAPIServer,
+  FastifyRequest,
+  ServerConfig,
+} from '@ergo-faucet/fastify-server';
 
 /**
  * A mocked PackageAction instance with a spyable getPackages method.
@@ -44,19 +47,22 @@ export const mockedFastifyServer: FastifyAPIServer & {
   captchaPreHandler: ReturnType<typeof vi.fn>;
   setAuthCookie: ReturnType<typeof vi.fn>;
 } = {
-  authPreHandler: vi.fn(async (request) => {
-    // Simulate JWT verification and set request.user
-    request.user = {
-      userId: 123,
-      address: 'mocked-user-address',
-      isAdmin: false,
+  authPreHandler: vi.fn((verifyAndEnforce: boolean = true) => {
+    return async (request: FastifyRequest) => {
+      if (!verifyAndEnforce) return;
+      else {
+        // Simulate JWT verification and set request.user
+        request.user = {
+          userId: 123,
+          address: 'mocked-user-address',
+          isAdmin: false,
+        };
+      }
     };
   }),
 
   register: vi.fn(async () => {}),
-  captchaPreHandler: vi.fn(async () => {
-    return;
-  }),
+  captchaPreHandler: vi.fn(async () => {}),
   setAuthCookie: vi.fn(),
   // eslint-disable-next-line
 } as any;
@@ -125,24 +131,24 @@ mockPackage = {
   description: 'A package for new users',
   type: 'normal',
   status: 'show',
-  //openAt: new Date('2025-07-01'),
-  closeAt: new Date('2025-12-31'),
-  delay: 3600n,
+  //openAt: new Date('2025-07-01').getTime()/1000,
+  closeAt: new Date('2025-12-31').getTime() / 1000,
+  delay: '3600',
   numberEachUser: 1,
   assets: [mockAsset1, mockAsset2],
-  authMethods: [mockAuthMethod1, mockAuthMethod2],
+  packageAuthMethods: [mockAuthMethod1, mockAuthMethod2],
   authStatuses: [],
   requests: [],
 };
 
-export const mockPackageDTO: PackageDTO[] = [
+export const mockPackageDTO = [
   {
     id: 101,
     name: 'Starter Pack',
     type: 'normal',
     delay: '3600',
-    //openAt: new Date('2025-07-01').toISOString(),
-    closeAt: new Date('2025-12-31').toISOString(),
+    //openAt: new Date('2025-07-01').getTime() / 1000,
+    closeAt: new Date('2025-12-31').getTime() / 1000,
     description: 'A package for new users',
     numberEachUser: 1,
     assets: [

@@ -12,11 +12,10 @@ import {
   mockedFastifyServer,
   mockConfig,
   mockedPackageAction,
-  mockPackage,
   mockPackageDTO,
   mockNodeModel,
+  mockPackage,
 } from './mockUtils';
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
 import * as ergo_utils from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
@@ -24,6 +23,7 @@ import {
   InvalidTokenPrecisionError,
   TokenNotFoundError,
 } from '@ergo-faucet/ergo-utils';
+import { FastifyAPIServer, FastifyRequest } from '@ergo-faucet/fastify-server';
 
 describe('PackageController', () => {
   beforeEach(() => {
@@ -69,9 +69,9 @@ describe('PackageController', () => {
     });
 
     // Default mock for getPackages to return a package
-    vi.spyOn(mockedPackageAction, 'getPackages').mockResolvedValue([
-      mockPackage,
-    ]);
+    vi.spyOn(mockedPackageAction, 'getPackages').mockImplementation(
+      async () => mockPackageDTO,
+    );
 
     /**
      * Test for successful GET /packages
@@ -148,11 +148,17 @@ describe('PackageController', () => {
       fastifyInstance = FastifyAPIServer.getInstance();
 
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-        async (request) => {
-          request.user = {
-            userId: 123,
-            address: 'mocked-user-address',
-            isAdmin: true,
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 123,
+                address: 'mocked-user-address',
+                isAdmin: true,
+              };
+            }
           };
         },
       );
@@ -359,11 +365,17 @@ describe('PackageController', () => {
       fastifyInstance = FastifyAPIServer.getInstance();
 
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-        async (request) => {
-          request.user = {
-            userId: 12345,
-            address: 'mocked-user-address',
-            isAdmin: true,
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: true,
+              };
+            }
           };
         },
       );
@@ -422,7 +434,6 @@ describe('PackageController', () => {
         payload,
       });
 
-      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
       expect(adminPreHandlerSpy).toHaveBeenCalled();
       expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
         12345,
@@ -466,7 +477,6 @@ describe('PackageController', () => {
         payload,
       });
 
-      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
       expect(adminPreHandlerSpy).toHaveBeenCalled();
       expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
         12345,
@@ -684,11 +694,17 @@ describe('PackageController', () => {
       fastifyInstance = FastifyAPIServer.getInstance();
 
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-        async (request) => {
-          request.user = {
-            userId: 12345,
-            address: 'mocked-user-address',
-            isAdmin: true,
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: true,
+              };
+            }
           };
         },
       );
@@ -1027,11 +1043,17 @@ describe('PackageController', () => {
       adminPreHandlerSpy = vi.spyOn(fastifyInstance, 'adminPreHandler');
 
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-        async (request) => {
-          request.user = {
-            userId: 12345,
-            address: 'mocked-user-address',
-            isAdmin: true,
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: true,
+              };
+            }
           };
         },
       );

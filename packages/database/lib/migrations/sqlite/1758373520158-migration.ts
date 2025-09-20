@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1757495124113 implements MigrationInterface {
-  name = 'Migration1757495124113';
+export class Migration1758373520158 implements MigrationInterface {
+  name = 'Migration1758373520158';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -18,7 +18,7 @@ export class Migration1757495124113 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_request_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "timestamp" date NOT NULL,
+                "timestamp" integer NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
                 "txId" text,
@@ -79,9 +79,9 @@ export class Migration1757495124113 implements MigrationInterface {
                 "description" text NOT NULL,
                 "type" text NOT NULL DEFAULT ('normal'),
                 "status" text NOT NULL DEFAULT ('show'),
-                "open_at" date,
-                "close_at" date,
-                "delay" bigint NOT NULL,
+                "open_at" integer,
+                "close_at" integer,
+                "delay" varchar NOT NULL DEFAULT ('0'),
                 "number_each_user" integer NOT NULL
             )
         `);
@@ -125,7 +125,7 @@ export class Migration1757495124113 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "temporary_user_request_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "timestamp" date NOT NULL,
+                "timestamp" integer NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
                 "txId" text,
@@ -400,7 +400,7 @@ export class Migration1757495124113 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_request_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "timestamp" date NOT NULL,
+                "timestamp" integer NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
                 "txId" text,

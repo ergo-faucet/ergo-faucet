@@ -13,7 +13,7 @@ import {
   vi,
   afterAll,
 } from 'vitest';
-import { FastifyAPIServer, FastifySeverInstance } from '../lib';
+import { FastifyAPIServer, FastifyRequest, FastifySeverInstance } from '../lib';
 import { config, mockGoogleRecaptcha } from './mockData';
 
 /**
@@ -401,21 +401,26 @@ describe('FastifyAPIServer', () => {
      */
     it('should allow admin user', async () => {
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-        async (request) => {
-          request.user = {
-            userId: 12345,
-            address: 'mocked-user-address',
-            isAdmin: true, // Simulate admin user
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: true,
+              };
+            }
           };
         },
       );
-
       await fastifyInstance.register(async (fastify) => {
         fastify.post(
           '/allow-admin',
           {
             preHandler: [
-              fastifyInstance.authPreHandler,
+              fastifyInstance.authPreHandler(),
               fastifyInstance.adminPreHandler,
             ],
           },
@@ -447,11 +452,17 @@ describe('FastifyAPIServer', () => {
      */
     it('should deny non-admin user and return 403 forbidden when isAdmin is undefined ', async () => {
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-        async (request) => {
-          request.user = {
-            userId: 12345,
-            address: 'mocked-user-address',
-            isAdmin: undefined,
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: undefined,
+              };
+            }
           };
         },
       );
@@ -461,7 +472,7 @@ describe('FastifyAPIServer', () => {
           '/deny-user',
           {
             preHandler: [
-              fastifyInstance.authPreHandler,
+              fastifyInstance.authPreHandler(),
               fastifyInstance.adminPreHandler,
             ],
           },
@@ -492,11 +503,17 @@ describe('FastifyAPIServer', () => {
      */
     it('should deny non-admin user and return 403 forbidden when isAdmin is false ', async () => {
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
-        async (request) => {
-          request.user = {
-            userId: 12345,
-            address: 'mocked-user-address',
-            isAdmin: false,
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: false,
+              };
+            }
           };
         },
       );
@@ -506,7 +523,7 @@ describe('FastifyAPIServer', () => {
           '/deny-user',
           {
             preHandler: [
-              fastifyInstance.authPreHandler,
+              fastifyInstance.authPreHandler(),
               fastifyInstance.adminPreHandler,
             ],
           },

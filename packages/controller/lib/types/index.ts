@@ -2,6 +2,9 @@ export {
   RequestPackageBody,
   AddPackageBody,
   PackagesRouteQuery,
+  AssetSchema,
+  AuthMethodSchema,
+  PackageSchema,
   GetPackagesResponse200,
   RequestPackageResponse200,
   AddPackageResponse200,
@@ -13,7 +16,6 @@ export {
   AddAuthMethodsToPackageResponse200,
   UpdatePackageParams,
 } from './schemas';
-export type { PackageDTO, AssetDTO, AuthMethodDTO } from './DTOs';
 export {
   RequestPackageBodyType,
   AddPackageBodyType,

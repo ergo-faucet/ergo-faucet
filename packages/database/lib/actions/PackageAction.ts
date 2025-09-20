@@ -19,9 +19,13 @@ import {
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   AssetPayload,
-  NotFoundError,
   PackagePayload,
+  AuthMethodDTO,
+  AuthMethodStatus,
+  NotFoundError,
+  PackageDTO,
   RequestLimitError,
+  NotAvailableError,
 } from '../types';
 
 class PackageAction {
@@ -93,6 +97,7 @@ class PackageAction {
    * @param limit - The maximum number of records to return.
    * @param sort - The field to sort by ('name' or 'release').
    * @param order - The sort order ('asc' or 'desc').
+   * @param userId - Optional user ID to fetch user-specific auth method status.
    * @returns {Promise<Package[]>} A promise that resolves to an array of Package entities.
    */
   public getPackages = async (
@@ -100,7 +105,8 @@ class PackageAction {
     limit: number,
     sort: 'id' | 'openAt' | 'closeAt' | 'name',
     order: 'asc' | 'desc',
-  ): Promise<Package[]> => {
+    userId?: number,
+  ): Promise<PackageDTO[]> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
@@ -113,9 +119,59 @@ class PackageAction {
       order: orderOption,
       skip: offset,
       take: limit,
-      relations: ['assets', 'authMethods', 'authMethods.authMethod'],
+      relations: [
+        'assets',
+        'packageAuthMethods',
+        'packageAuthMethods.authMethod',
+      ],
     });
-    return packages;
+
+    const result: PackageDTO[] = [];
+
+    for (const pkg of packages) {
+      const authMethods: AuthMethodDTO[] = [];
+      for (const pam of pkg.packageAuthMethods) {
+        let userStatus: AuthMethodStatus;
+
+        if (userId) {
+          const statusResault = await this.userAuthStatusRepository.findOne({
+            where: [
+              {
+                user: { id: userId },
+                authMethod: { id: pam.authMethod.id },
+                package: { id: pkg.id },
+              },
+              {
+                user: { id: userId },
+                authMethod: { id: pam.authMethod.id },
+                package: IsNull(),
+              },
+            ],
+          });
+          userStatus = statusResault?.status;
+        }
+
+        authMethods.push({
+          id: pam.authMethod.id,
+          name: pam.authMethod.name,
+          status: userStatus,
+        });
+      }
+      result.push({
+        id: pkg.id,
+        name: pkg.name,
+        description: pkg.description,
+        type: pkg.type,
+        openAt: pkg.openAt,
+        closeAt: pkg.closeAt,
+        delay: pkg.delay,
+        numberEachUser: pkg.numberEachUser,
+        assets: pkg.assets,
+        authMethods,
+      });
+    }
+
+    return result;
   };
 
   getPackageById = async (packageId: number): Promise<Package> => {
@@ -164,6 +220,24 @@ class PackageAction {
     });
     if (!usr) throw new NotFoundError(`There is no user with id ${userId}`);
 
+    const currentTime = Date.now() / 1000; // In seconds
+
+    if (pkg.openAt && currentTime < Number(pkg.openAt)) {
+      throw new NotAvailableError(
+        `Package ${packageId} is not open yet. 
+    Current time: ${currentTime}, 
+    opens at: ${pkg.openAt}`,
+      );
+    }
+
+    if (pkg.closeAt && currentTime > Number(pkg.closeAt)) {
+      throw new NotAvailableError(
+        `Package ${packageId} is already closed. 
+     Current time: ${currentTime}, 
+     closed at: ${pkg.closeAt}`,
+      );
+    }
+
     const userRequests = await this.userRequestRepository.find({
       where: {
         package: { id: packageId },
@@ -174,20 +248,20 @@ class PackageAction {
     });
     const requestsCount = userRequests.length;
 
-    if (userRequests) {
+    if (requestsCount) {
       const latestRequest = userRequests[0];
-      const currentTime = new Date();
       const lastRequestTime = latestRequest.timestamp;
-      const timeDifferenceMs =
-        currentTime.getTime() - lastRequestTime.getTime();
+      const timeDifference = currentTime - lastRequestTime;
 
-      if (timeDifferenceMs < pkg.delay)
-        throw new RequestLimitError('Cooldown period is still active.');
+      if (timeDifference < Number(pkg.delay))
+        throw new RequestLimitError(
+          `Cooldown period is still active for package with Id: ${packageId}.`,
+        );
     }
 
     if (requestsCount + 1 > pkg.numberEachUser) {
       throw new RequestLimitError(
-        'User has reached request limit for this package.',
+        `User has reached request limit for package with Id: ${packageId}.`,
       );
     }
     return true;
@@ -293,7 +367,7 @@ class PackageAction {
       package: pkg!,
       status: 'pending',
       user: usr!,
-      timestamp: new Date(),
+      timestamp: Math.floor(Date.now() / 1000), // In seconds
     });
 
     await this.userRequestRepository.save(userRequest);
@@ -330,13 +404,9 @@ class PackageAction {
           description: packagePayload.description,
           type: packagePayload.type,
           status: packagePayload.status,
-          openAt: packagePayload.openAt
-            ? new Date(packagePayload.openAt)
-            : undefined,
-          closeAt: packagePayload.closeAt
-            ? new Date(packagePayload.closeAt)
-            : undefined,
-          delay: BigInt(packagePayload.delay),
+          openAt: packagePayload.openAt,
+          closeAt: packagePayload.closeAt,
+          delay: packagePayload.delay,
           numberEachUser: packagePayload.numberEachUser,
         });
 

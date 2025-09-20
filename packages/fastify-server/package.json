@@ -19,19 +19,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/TechStack-BlockChain/ergo-faucet.git"
+    "url": "git+https://github.com/ergo-faucet/ergo-faucet.git"
   },
   "keywords": [
     "ergo",
     "faucet",
     "fastify-server"
   ],
-  "author": "TechStack-BlockChain",
+  "author": "ergo-faucet",
   "license": "GPL-3.0",
-  "bugs": {
-    "url": "https://github.com/TechStack-BlockChain/ergo-faucet/issues"
-  },
-  "homepage": "https://github.com/TechStack-BlockChain/ergo-faucet#readme",
   "dependencies": {
     "@ergo-faucet/common-types": "^0.1.0",
     "@ergo-faucet/google-recaptcha": "^0.1.0",
