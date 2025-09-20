@@ -10,3 +10,8 @@ export const CallBackRouteQuery = Type.Object({
   state: Type.String({ minLength: 10 }),
 });
 export type CallBackRouteQueryType = Static<typeof CallBackRouteQuery>;
+
+export const LoginRouteQuery = Type.Object({
+  state: Type.Optional(Type.String()),
+});
+export type LoginRouteQueryType = Static<typeof LoginRouteQuery>;

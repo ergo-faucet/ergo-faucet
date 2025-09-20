@@ -15,6 +15,7 @@ import {
   XUserData,
   XAuthConfig,
   SessionData,
+  LoginRouteQuery,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import { v4 as uuidv4 } from 'uuid';
@@ -102,14 +103,11 @@ export class XAuth {
     ttl: number,
   ): Promise<void> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
-    try {
-      await this.redis.set(fullKey, value);
-      if (ttl) {
-        await this.redis.expire(fullKey, ttl);
-      }
-    } catch (error) {
-      this.logger.error(`Failed to set session data for key: ${key}`, error);
-      throw error;
+    this.logger.debug(`Try to set session data for key: ${key}`);
+
+    await this.redis.set(fullKey, value);
+    if (ttl) {
+      await this.redis.expire(fullKey, ttl);
     }
   };
 
@@ -120,15 +118,13 @@ export class XAuth {
    */
   private getSessionData = async (key: string): Promise<string | undefined> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
-    try {
-      const raw = await this.redis.get(fullKey);
-      if (!raw) {
-        return undefined;
-      }
-      return raw;
-    } catch (error) {
-      this.logger.error(`Failed to get session data for key: ${key}`, error);
+    this.logger.debug(`Try to get session data for key: ${key}`);
+
+    const raw = await this.redis.get(fullKey);
+    if (!raw) {
+      return undefined;
     }
+    return raw;
   };
 
   /**
@@ -137,11 +133,8 @@ export class XAuth {
    */
   private deleteSessionData = async (key: string): Promise<void> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
-    try {
-      await this.redis.del(fullKey);
-    } catch (error) {
-      this.logger.error(`Failed to delete session data for key: ${key}`, error);
-    }
+    this.logger.debug(`Try to delete session data for key: ${key}`);
+    await this.redis.del(fullKey);
   };
 
   /**
@@ -163,6 +156,7 @@ export class XAuth {
   /**
    * Builds the X-platform OAuth2 login URL with PKCE.
    * @param frontState - State parameter from the front-end to be included in the redirect
+   * @param userId - ID of the user initiating the login
    * @returns Fully qualified X-platform login URL with all query params
    */
   private buildLoginURL = async (
@@ -170,7 +164,6 @@ export class XAuth {
     userId: number,
   ): Promise<string> => {
     const { codeVerifier, codeChallenge } = this.generatePKCECodes();
-
     const state = uuidv4();
     const value = { frontState, codeVerifier, userId };
 
@@ -180,9 +173,41 @@ export class XAuth {
 
     await this.setSessionData(state, encodedValue, this.sessionTTL);
 
-    return `${this.X_OAUTH_URL}?response_type=code&client_id=${this.clientID}&redirect_uri=${encodeURIComponent(
-      this.redirectURL,
-    )}&scope=${encodeURIComponent(this.scope)}&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: this.clientID,
+      redirect_uri: this.redirectURL,
+      scope: this.scope,
+      state,
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+    });
+
+    return `${this.X_OAUTH_URL}?${params.toString()}`;
+  };
+
+  /**
+   * Builds the front-end redirect URL with query parameters for X-platform OAuth2 login result.
+   *
+   * @param frontState - State value provided by the front-end to maintain session/context
+   * @param status - Result status of the OAuth flow ('success' or 'false')
+   * @param message - Optional message to include in the URL (e.g., success or error message)
+   * @returns Fully qualified URL string combining the frontBaseURL, frontState, and query parameters
+   */
+  private buildRedirectURL = (
+    frontState: string,
+    status: 'success' | 'false',
+    message?: string,
+  ): string => {
+    const params = new URLSearchParams({
+      authMethod: 'x-platform',
+      authMethodStatus: status,
+    });
+    if (message) {
+      params.set('message', message);
+    }
+
+    return `${this.frontBaseURL}${frontState}?${params.toString()}`;
   };
 
   /**
@@ -260,13 +285,7 @@ export class XAuth {
       {
         preHandler: this.fastifyServer.authPreHandler(),
         schema: {
-          querystring: {
-            type: 'object',
-            properties: {
-              state: { type: 'string' },
-            },
-            required: ['state'],
-          },
+          querystring: LoginRouteQuery,
           response: {
             302: { description: 'Redirect to X OAuth2 login' },
             401: ErrorResponse,
@@ -280,17 +299,12 @@ export class XAuth {
       },
       async (request, reply) => {
         try {
-          const frontState = request.query.state;
+          const frontState = request.query.state ?? '';
           const user = request.user as userRequestPayload;
-          if (!frontState) {
-            return reply
-              .status(400)
-              .send({ error: 'Missing state from front' });
-          }
           const loginURL = await this.buildLoginURL(frontState, user.userId);
-          return reply.status(302).redirect(loginURL);
+          return reply.redirect(loginURL);
         } catch (err) {
-          this.logger.debug(`Error in build login url`, {
+          this.logger.error(`Error in build login url`, {
             message: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
@@ -326,29 +340,29 @@ export class XAuth {
       },
       async (request, reply) => {
         const { code, state } = request.query;
-        if (!code || !state) {
-          return reply
-            .status(302)
-            .redirect(
-              this.frontBaseURL +
-                `?authMethod=x-platform&authMethodStatus=false`,
-            );
-        }
-        const session = await this.getSessionData(state);
-        if (!session) {
-          return reply
-            .status(302)
-            .redirect(
-              this.frontBaseURL +
-                `?authMethod=x-platform&authMethodStatus=false`,
-            );
-        }
-        await this.deleteSessionData(state);
-        const decodedSession = JSON.parse(
-          Buffer.from(session, 'base64url').toString('utf-8'),
-        ) as SessionData;
+        let decodedSession: SessionData | undefined;
 
+        if (!code || !state) {
+          return reply.redirect(
+            this.buildRedirectURL(
+              '',
+              'false',
+              'Missing code or state from X-platform callback',
+            ),
+          );
+        }
         try {
+          const session = await this.getSessionData(state);
+          if (!session) {
+            return reply.redirect(
+              this.buildRedirectURL('', 'false', 'Session expired or invalid'),
+            );
+          }
+          await this.deleteSessionData(state);
+          decodedSession = JSON.parse(
+            Buffer.from(session, 'base64url').toString('utf-8'),
+          ) as SessionData;
+
           const tokenData: XToken = await this.exchangeCodeForToken(
             code,
             decodedSession.codeVerifier,
@@ -369,13 +383,13 @@ export class XAuth {
             refreshToken,
           );
 
-          return reply
-            .status(302)
-            .redirect(
-              this.frontBaseURL +
-                decodedSession.frontState +
-                `?authMethod=x-platform&authMethodStatus=success&message=The user with name ${xUser.name} logged in successfully with X-platform`,
-            );
+          return reply.redirect(
+            this.buildRedirectURL(
+              decodedSession.frontState,
+              'success',
+              `The user with username ${xUser.username} logged in successfully with X-platform`,
+            ),
+          );
         } catch (err) {
           this.logger.error(`X-platform callback failed`, {
             message: err instanceof Error ? err.message : err,
@@ -384,9 +398,11 @@ export class XAuth {
           return reply
             .status(302)
             .redirect(
-              this.frontBaseURL +
-                decodedSession.frontState +
-                `?authMethod=x-platform&authMethodStatus=false&message=Failed to log in with X-platform`,
+              this.buildRedirectURL(
+                decodedSession?.frontState ?? '',
+                'false',
+                'Failed to log in with X-platform',
+              ),
             );
         }
       },

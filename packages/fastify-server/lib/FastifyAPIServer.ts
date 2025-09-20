@@ -209,11 +209,16 @@ export class FastifyAPIServer {
         if (payload.refresh) {
           return res
             .status(401)
-            .send({ error: "Refresh token cookies can't be used in header" });
+            .send({
+              error: "Refresh token cookies can't be used in header",
+              code: 'REFRESH_TOKEN_HEADER_FORBIDDEN',
+            });
         }
       } catch {
         if (verifyAndEnforce) {
-          return res.status(401).send({ error: 'Unauthorized' });
+          return res
+            .status(401)
+            .send({ error: 'Unauthorized', code: 'AUTH_REQUIRED' });
         }
         // if not enforcing, fail silently
       }
@@ -221,22 +226,11 @@ export class FastifyAPIServer {
   };
 
   /**
-   * Pre-handler hook that logout user with clear its refreshToken.
-   * If cookie not set fails, it sends an error response.
-   * @param res - FastifyReply (used to send early error responses and clear the cookie)
+   * Clears the refresh token cookie.
+   * @param reply - FastifyReply instance to clear the cookie
    */
-  public logoutPreHandler = async <
-    T extends FastifyRequest,
-    U extends FastifyReply,
-  >(
-    _: T,
-    res: U,
-  ) => {
-    try {
-      res.clearCookie(this.cookieConfig.name);
-    } catch {
-      return res.status(401).send({ error: `The cookie wasn't set yet` });
-    }
+  public clearCookie = (reply: FastifyReply) => {
+    reply.clearCookie(this.cookieConfig.name);
   };
 
   /**

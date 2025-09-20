@@ -270,7 +270,7 @@ export class ErgoAuth {
           const challenge = await this.createChallenge(finallyAddress);
           return reply.status(200).send({ challenge, address: finallyAddress });
         } catch (err) {
-          this.logger.debug(`Create challenge failed:`, {
+          this.logger.error(`Create challenge failed:`, {
             error: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
@@ -362,7 +362,7 @@ export class ErgoAuth {
             accessToken,
           });
         } catch (err) {
-          this.logger.debug(`Authentication failed:`, {
+          this.logger.error(`Authentication failed:`, {
             error: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
@@ -409,7 +409,7 @@ export class ErgoAuth {
 
           return reply.send({ success: true, newToken });
         } catch (err) {
-          this.logger.debug(`Token refresh failed:`, {
+          this.logger.error(`Token refresh failed:`, {
             error: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
@@ -423,10 +423,14 @@ export class ErgoAuth {
   };
 
   /**
-   * Creates the `/refresh-token` route definition.
-   * @param fastify - Fastify instance.
+   * Registers the `/logout` route.
+   *
+   * **GET `/logout`**
+   * - Requires the user to be authenticated (JWT or session).
+   * - Logs out the current user.
+   *
+   * @param fastify - Fastify instance to register the route on.
    * @returns Promise<void>
-   * - `200 OK `{ success: true, newToken: string }`
    */
   private logoutRoute = async (
     fastify: FastifySeverInstance,
@@ -438,6 +442,7 @@ export class ErgoAuth {
           response: {
             200: LogoutResponse200,
             401: ErrorResponse,
+            500: ErrorResponse,
           },
           security: [
             {
@@ -445,27 +450,26 @@ export class ErgoAuth {
             },
           ],
         },
-        preHandler: [
-          this.fastifyServer.authPreHandler(),
-          this.fastifyServer.logoutPreHandler,
-        ],
+        preHandler: this.fastifyServer.authPreHandler(),
       },
       async (request, reply) => {
         try {
           const user = request.user as userRequestPayload;
+          this.fastifyServer.clearCookie(reply);
+          this.logger.debug(`userId ${user.userId} was loged out`);
 
           return reply.send({
             success: true,
-            message: `The user with userId ${user.userId} was loged out`,
+            message: `The user was loged out`,
           });
         } catch (err) {
-          this.logger.debug(`Logout Failed:`, {
+          this.logger.error(`Logout Failed:`, {
             error: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
-          return reply.status(401).send({
-            error: 'Unauthorized , you must login first',
-            code: 'AUTH_REQUIRED',
+          return reply.status(500).send({
+            error: 'Internal server error during logout',
+            code: 'INTERNAL_LOGOUT_ERROR',
           });
         }
       },
