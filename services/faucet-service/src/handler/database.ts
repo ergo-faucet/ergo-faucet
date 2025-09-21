@@ -3,6 +3,7 @@ import {
   DiscordAction,
   GoogleAction,
   PackageAction,
+  RequestHistoryAction,
   UserAddressAction,
   XAction,
 } from '@ergo-faucet/database';
@@ -21,6 +22,7 @@ export const setupDatabase = async () => {
     UserAddressAction.initialize(dataSource, dbLogger);
     await XAction.initialize(dataSource, dbLogger);
     await GoogleAction.initialize(dataSource, dbLogger);
+    RequestHistoryAction.initialize(dataSource, dbLogger);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(

@@ -5,6 +5,7 @@ export type AuthMethodStatus =
   | 'pending'
   | 'expired'
   | undefined;
+export type RequestStaus = 'paid' | 'failed' | 'pending' | 'submitted';
 
 export interface AssetDTO {
   id: number;
@@ -31,4 +32,13 @@ export interface PackageDTO {
   numberEachUser: number;
   assets: AssetDTO[];
   authMethods: AuthMethodDTO[];
+}
+
+export interface RequestDTO {
+  packageId: number;
+  packageName: string;
+  status: RequestStaus;
+  timestamp: number;
+  destinationAddress: string;
+  txId?: string;
 }
