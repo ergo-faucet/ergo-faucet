@@ -13,7 +13,7 @@ import {
 class RequestHistoryController {
   private readonly logger: AbstractLogger;
   private readonly requestHistoryAction: RequestHistoryAction;
-  private readonly PACKAGES_PREFIX = '/history';
+  private readonly REQUEST_HISTORY_PREFIX = '/history';
   private readonly fastifyServer: FastifyAPIServer;
 
   /**
@@ -83,10 +83,10 @@ class RequestHistoryController {
   public registerRoutes = async (prefix: string): Promise<void> => {
     await this.fastifyServer.register(
       this.fetchRequestsHistoryRoute,
-      prefix + this.PACKAGES_PREFIX,
+      prefix + this.REQUEST_HISTORY_PREFIX,
     );
     this.logger.info(
-      `RequsetH routes registered under prefix "${prefix + this.PACKAGES_PREFIX}"`,
+      `RequsetH routes registered under prefix "${prefix + this.REQUEST_HISTORY_PREFIX}"`,
     );
   };
 }
