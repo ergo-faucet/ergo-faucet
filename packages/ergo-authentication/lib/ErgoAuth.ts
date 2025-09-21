@@ -409,7 +409,7 @@ export class ErgoAuth {
 
           return reply.send({ success: true, newToken });
         } catch (err) {
-          this.logger.error(`Token refresh failed:`, {
+          this.logger.debug(`Token wasn't refresh:`, {
             error: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });

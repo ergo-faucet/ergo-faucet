@@ -16,6 +16,7 @@ import {
   GoogleAuthConfig,
   SessionData,
   LoginRouteQuery,
+  LoginRouteResponse200,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import { v4 as uuidv4 } from 'uuid';
@@ -205,7 +206,7 @@ export class GoogleAuth {
     if (message) {
       params.set('message', message);
     }
-    return `${this.frontBaseURL}${frontState}?${params.toString()}`;
+    return `${this.frontBaseURL}${frontState}&${params.toString()}`;
   };
 
   /**
@@ -283,8 +284,9 @@ export class GoogleAuth {
         schema: {
           querystring: LoginRouteQuery,
           response: {
-            302: { description: 'Redirect to Google OAuth2 login' },
+            200: LoginRouteResponse200,
             401: ErrorResponse,
+            500: ErrorResponse,
           },
           security: [
             {
@@ -301,7 +303,7 @@ export class GoogleAuth {
             stateFromFront,
             user.userId,
           );
-          return reply.redirect(loginURL);
+          return reply.status(200).send({ redirectURL: loginURL });
         } catch (err) {
           this.logger.error(`Error in build login url`, {
             message: err instanceof Error ? err.message : err,

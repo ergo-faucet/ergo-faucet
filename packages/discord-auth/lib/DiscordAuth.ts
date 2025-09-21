@@ -17,6 +17,7 @@ import {
   DiscordAuthConfig,
   SessionData,
   LoginRouteQuery,
+  LoginRouteResponse200,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 export class DiscordAuth {
@@ -188,7 +189,7 @@ export class DiscordAuth {
       params.set('message', message);
     }
 
-    return `${this.frontBaseURL}${frontState}?${params.toString()}`;
+    return `${this.frontBaseURL}${frontState}&${params.toString()}`;
   };
 
   /**
@@ -258,7 +259,7 @@ export class DiscordAuth {
         schema: {
           querystring: LoginRouteQuery,
           response: {
-            302: { description: 'Redirect to Discord OAuth2 login' },
+            200: LoginRouteResponse200,
             401: ErrorResponse,
           },
           security: [
@@ -273,7 +274,7 @@ export class DiscordAuth {
           const frontState = request.query.state ?? '';
           const user = request.user as userRequestPayload;
           const loginURL = await this.buildLoginURL(frontState, user.userId);
-          return reply.redirect(loginURL);
+          return reply.status(200).send({ redirectURL: loginURL });
         } catch (err) {
           this.logger.error(`Error in build login url`, {
             message: err instanceof Error ? err.message : err,
@@ -330,7 +331,7 @@ export class DiscordAuth {
               this.buildRedirectURL('', 'false', 'Session expired or invalid'),
             );
           }
-          this.deleteSessionData(state);
+          await this.deleteSessionData(state);
           decodedSession = JSON.parse(
             Buffer.from(session, 'base64url').toString('utf-8'),
           ) as SessionData;

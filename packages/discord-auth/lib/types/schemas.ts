@@ -15,3 +15,7 @@ export const LoginRouteQuery = Type.Object({
   state: Type.Optional(Type.String()),
 });
 export type LoginRouteQueryType = Static<typeof LoginRouteQuery>;
+
+export const LoginRouteResponse200 = Type.Object({
+  redirectURL: Type.String(),
+});

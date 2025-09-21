@@ -3,6 +3,7 @@ export {
   CallBackRouteQuery,
   ErrorResponse,
   LoginRouteQuery,
+  LoginRouteResponse200,
 } from './schemas';
 
 export {
