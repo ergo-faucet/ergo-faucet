@@ -83,6 +83,7 @@ googleAuth:
 
 jobs:
   authJobInterval: 300
+  accountantJobInterval: 300
 
 ergo:
   network: 'mainnet'

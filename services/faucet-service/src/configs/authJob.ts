@@ -1,8 +1,9 @@
 import config from 'config';
 
 /**
- * Auth job configuration
+ * job configuration
  */
-export const authJobConfig = {
+export const jobConfig = {
   authJobInterval: config.get<number>('jobs.authJobInterval'),
+  accountantJobInterval: config.get<number>('jobs.accountantJobInterval'),
 };

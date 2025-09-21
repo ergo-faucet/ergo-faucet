@@ -12,8 +12,8 @@ export const accountantConfig: AccountantConfig = {
   wallet: Wallet.getInstance(),
   network:
     config.get<string>('ergo.network').toLowerCase() === 'mainnet' ? 0 : 16,
-  minFee: config.get<bigint>('ergo.minFee'),
-  minNanoErg: config.get<bigint>('ergo.minNanoErg'),
+  minFee: BigInt(config.get<number>('ergo.minFee')),
+  minNanoErg: BigInt(config.get<number>('ergo.minNanoErg')),
   tryLimit: config.get<number>('accountant.tryLimit'),
   confirmationLimit: config.get<number>('ergo.confirmationLimit'),
 };

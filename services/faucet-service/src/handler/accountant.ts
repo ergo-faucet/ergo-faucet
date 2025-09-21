@@ -7,6 +7,15 @@ export const setupAccountant = async () => {
   const accountantLogger =
     CallbackLoggerFactory.getInstance().getLogger('Accountant');
 
-  await Accountant.initialize(accountantConfig, accountantLogger);
+  const accountantAction = AccountantAction.getInstance();
+
+  const nodeModel = NodeModel.getInstance();
+
+  const wallet = Wallet.getInstance();
+
+  await Accountant.initialize(
+    { accountantAction, nodeModel, wallet, ...accountantConfig },
+    accountantLogger,
+  );
   logger.info('Accountant initialized successfully');
 };
