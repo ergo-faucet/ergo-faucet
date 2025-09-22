@@ -174,6 +174,15 @@ class PackageAction {
     return result;
   };
 
+  /**
+   * Fetches a package entity by its ID from the database.
+   *
+   * Logs the fetch operation and throws NotFoundError if the package does not exist.
+   *
+   * @param packageId - The ID of the package to fetch.
+   * @returns {Promise<Package>} The Package entity.
+   * @throws {NotFoundError} If no package is found with the given ID.
+   */
   getPackageById = async (packageId: number): Promise<Package> => {
     this.logger.debug(`Fetching package by id from database`);
 
@@ -378,21 +387,18 @@ class PackageAction {
   };
 
   /**
-   * Adds a new package to the database, including its assets and authentication methods.
+   * Adds a new package to the database.
    *
-   * @param packagePayload - The data for the new package, including name, description, type, status, open/close dates, delay, numberEachUser, assets, and authMethods.
+   * @param packagePayload - The data for the new package, including name, description, type, status, open/close dates, delay and numberEachUser.
    * @returns {Promise<number>} The ID of the newly created package.
    */
   public addPackage = async (
     packagePayload: PackagePayload,
   ): Promise<number> => {
     this.logger.debug(
-      `Adding new package with data: ${JSON.stringify(
-        packagePayload,
-        (_, value) => (typeof value === 'bigint' ? value.toString() : value),
-        2,
-      )}`,
+      `Adding new package with data: ${JSON.stringify(packagePayload)}`,
     );
+
     return await this.dataSource.transaction(
       async (transactionalEntityManager) => {
         const packageRepository =

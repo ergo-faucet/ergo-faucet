@@ -9,7 +9,6 @@ import {
 } from 'vitest';
 import { PackageController } from '../lib';
 import {
-  mockedFastifyServer,
   mockConfig,
   mockedPackageAction,
   mockPackageDTO,
@@ -24,6 +23,12 @@ import {
   TokenNotFoundError,
 } from '@ergo-faucet/ergo-utils';
 import { FastifyAPIServer, FastifyRequest } from '@ergo-faucet/fastify-server';
+import * as utils from '../lib/utils';
+import {
+  mockAssets,
+  mockProccessedAssets,
+  requestPackagePayload,
+} from './testData';
 
 describe('PackageController', () => {
   beforeEach(() => {
@@ -208,11 +213,7 @@ describe('PackageController', () => {
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
-        payload: {
-          packageId: 1,
-          destAddress: 'test-address',
-          captchaToken: 'token',
-        },
+        payload: requestPackagePayload,
       });
 
       expect(
@@ -246,11 +247,7 @@ describe('PackageController', () => {
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
-        payload: {
-          packageId: 1,
-          destAddress: 'test-address',
-          captchaToken: 'token',
-        },
+        payload: requestPackagePayload,
       });
 
       expect(result.statusCode).toEqual(403);
@@ -276,11 +273,7 @@ describe('PackageController', () => {
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
-        payload: {
-          packageId: 1,
-          destAddress: 'test-address',
-          captchaToken: 'token',
-        },
+        payload: requestPackagePayload,
       });
 
       expect(result.statusCode).toEqual(404);
@@ -306,11 +299,7 @@ describe('PackageController', () => {
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
-        payload: {
-          packageId: 1,
-          destAddress: 'test-address',
-          captchaToken: 'token',
-        },
+        payload: requestPackagePayload,
       });
 
       expect(result.statusCode).toEqual(403);
@@ -337,11 +326,7 @@ describe('PackageController', () => {
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/request',
-        payload: {
-          packageId: 1,
-          destAddress: 'test-address',
-          captchaToken: 'token',
-        },
+        payload: requestPackagePayload,
       });
 
       expect(result.statusCode).toEqual(500);
@@ -550,137 +535,6 @@ describe('PackageController', () => {
     });
   });
 
-  describe('processAssets', () => {
-    let packageController: PackageController;
-
-    beforeEach(() => {
-      vi.clearAllMocks();
-      packageController = new PackageController({
-        packageAction: mockedPackageAction,
-        fastifyServer: mockedFastifyServer,
-        networkType: Network.Testnet,
-        nodeModel: mockNodeModel,
-      });
-    });
-
-    /**
-     * Test for successful processing of assets with ERG token
-     * @target PackageController.processAssets
-     * @scenario
-     * - Process assets with ERG token
-     * @expected
-     * - Correctly converts ERG amount and returns processed assets
-     */
-    it('should successfully process ERG token', async () => {
-      const assets = [
-        { tokenId: 'ERG', amount: '1.5', usageDescription: 'Test ERG' },
-      ];
-
-      const result = await packageController.processAssets(assets);
-
-      expect(result).toEqual([
-        {
-          tokenId: 'ERG',
-          assetName: 'ERG',
-          amount: '1500000000',
-          decimals: 9,
-          usageDescription: 'Test ERG',
-        },
-      ]);
-    });
-
-    /**
-     * Test for successful processing of non-ERG token
-     * @target PackageController.processAssets
-     * @scenario
-     * - Process assets with non-ERG token and valid decimals
-     * @expected
-     * - Correctly converts amount based on token decimals
-     */
-    it('should successfully process non-ERG token', async () => {
-      mockNodeModel.getTokenById.mockResolvedValue({
-        id: 'TOKEN1',
-        boxId: 'mock-box-id',
-        emissionAmount: 1234,
-        name: 'TOKEN1',
-        description: 'no description',
-        decimals: 2,
-      });
-      const assets = [
-        { tokenId: 'TOKEN1', amount: '100.25', usageDescription: 'Test token' },
-      ];
-
-      const result = await packageController.processAssets(assets);
-
-      expect(mockNodeModel.getTokenById).toHaveBeenCalledWith('TOKEN1');
-
-      expect(result).toEqual([
-        {
-          tokenId: 'TOKEN1',
-          assetName: 'TOKEN1',
-          amount: '10025',
-          decimals: 2,
-          usageDescription: 'Test token',
-        },
-      ]);
-    });
-
-    /**
-     * Test for TokenNotFoundError in processAssets
-     * @target PackageController.processAssets
-     * @scenario
-     * - Process assets with invalid token ID
-     * @expected
-     * - Throws TokenNotFoundError
-     */
-    it('should throw TokenNotFoundError for invalid token', async () => {
-      mockNodeModel.getTokenById.mockRejectedValue(
-        new TokenNotFoundError('Token not found'),
-      );
-      const assets = [
-        {
-          tokenId: 'INVALID_TOKEN',
-          amount: '100',
-          usageDescription: 'Test token',
-        },
-      ];
-
-      await expect(packageController.processAssets(assets)).rejects.toThrow(
-        TokenNotFoundError,
-      );
-    });
-
-    /**
-     * Test for InvalidTokenPrecisionError in processAssets
-     * @target PackageController.processAssets
-     * @scenario
-     * - Process assets with amount exceeding token precision
-     * @expected
-     * - Throws InvalidTokenPrecisionError
-     */
-    it('should throw InvalidTokenPrecisionError for invalid precision', async () => {
-      mockNodeModel.getTokenById.mockResolvedValue({
-        id: 'TOKEN1',
-        boxId: 'mock-box-id',
-        emissionAmount: 1234,
-        name: 'TOKEN1',
-        description: 'mock-description',
-        decimals: 2,
-      });
-      const assets = [
-        {
-          tokenId: 'TOKEN1',
-          amount: '100.123',
-          usageDescription: 'Test token',
-        },
-      ];
-
-      await expect(packageController.processAssets(assets)).rejects.toThrow(
-        InvalidTokenPrecisionError,
-      );
-    });
-  });
-
   describe('POST /packages/:packageId/assets', () => {
     let fastifyInstance: FastifyAPIServer;
     let packageController: PackageController;
@@ -741,33 +595,16 @@ describe('PackageController', () => {
      * - returns 200 with addedAssets array
      */
     it('should successfully add assets to package', async () => {
-      const assets = [
-        { tokenId: 'ERG', amount: '1', usageDescription: 'Test ERG' },
-        { tokenId: 'TOKEN1', amount: '1.0', usageDescription: 'Test token' },
-      ];
+      const assets = [mockAssets[0], mockAssets[1]];
 
       const proccessedAssets = [
-        {
-          tokenId: 'ERG',
-          assetName: 'ERG',
-          amount: '1000000000',
-          decimals: 9,
-          usageDescription: 'Test ERG',
-        },
-        {
-          tokenId: 'TOKEN1',
-          assetName: 'TOKEN1',
-          amount: '10000',
-          decimals: 2,
-          usageDescription: 'Test token',
-        },
+        mockProccessedAssets[0],
+        mockProccessedAssets[1],
       ];
 
       mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
       mockedPackageAction.getPackageById.mockResolvedValue(mockPackage);
-      vi.spyOn(packageController, 'processAssets').mockResolvedValue(
-        proccessedAssets,
-      );
+      vi.spyOn(utils, 'processAssets').mockResolvedValue(proccessedAssets);
       mockedPackageAction.addAssets.mockResolvedValue([1, 2]);
 
       const result = await fastifyInstance['fastify'].inject({
@@ -780,7 +617,7 @@ describe('PackageController', () => {
         12345,
       );
       expect(mockedPackageAction.getPackageById).toHaveBeenCalledWith(1);
-      expect(packageController.processAssets).toHaveBeenCalledWith(assets);
+      expect(utils.processAssets).toHaveBeenCalledWith(assets, mockNodeModel);
       expect(mockedPackageAction.addAssets).toHaveBeenCalledWith(
         proccessedAssets,
         mockPackage,
@@ -922,7 +759,7 @@ describe('PackageController', () => {
     it('should return 400 for token not found', async () => {
       mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
       mockedPackageAction.getPackageById.mockResolvedValue(mockPackage);
-      vi.spyOn(packageController, 'processAssets').mockRejectedValue(
+      vi.spyOn(utils, 'processAssets').mockRejectedValue(
         new TokenNotFoundError('Token with id INVALID_TOKEN not found'),
       );
 
@@ -932,9 +769,10 @@ describe('PackageController', () => {
         payload: [{ tokenId: 'INVALID_TOKEN', amount: '1' }],
       });
 
-      expect(packageController.processAssets).toHaveBeenCalledWith([
-        { tokenId: 'INVALID_TOKEN', amount: '1' },
-      ]);
+      expect(utils.processAssets).toHaveBeenCalledWith(
+        [{ tokenId: 'INVALID_TOKEN', amount: '1' }],
+        mockNodeModel,
+      );
       expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
         error: 'Token Not Found error : Token with id INVALID_TOKEN not found',
@@ -953,7 +791,7 @@ describe('PackageController', () => {
     it('should return 400 for invalid token precision', async () => {
       mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
       mockedPackageAction.getPackageById.mockResolvedValue(mockPackage);
-      vi.spyOn(packageController, 'processAssets').mockRejectedValue(
+      vi.spyOn(utils, 'processAssets').mockRejectedValue(
         new InvalidTokenPrecisionError(
           'Amount has too many decimal places. Token supports up to 2 decimal places, but received 3.',
         ),
@@ -965,9 +803,10 @@ describe('PackageController', () => {
         payload: [{ tokenId: 'TOKEN1', amount: 1.234 }],
       });
 
-      expect(packageController.processAssets).toHaveBeenCalledWith([
-        { tokenId: 'TOKEN1', amount: '1.234' },
-      ]);
+      expect(utils.processAssets).toHaveBeenCalledWith(
+        [{ tokenId: 'TOKEN1', amount: '1.234' }],
+        mockNodeModel,
+      );
       expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
         error:
@@ -987,7 +826,7 @@ describe('PackageController', () => {
     it('should return 500 on internal server error during addAssets', async () => {
       mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
       mockedPackageAction.getPackageById.mockResolvedValue(mockPackage);
-      vi.spyOn(packageController, 'processAssets').mockResolvedValue([
+      vi.spyOn(utils, 'processAssets').mockResolvedValue([
         {
           tokenId: 'ERG',
           assetName: 'ERG',

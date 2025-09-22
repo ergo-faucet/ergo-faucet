@@ -8,7 +8,6 @@ import {
   PackageAction,
   RequestLimitError,
   NotFoundError,
-  AssetPayload,
   NotAvailableError,
 } from '@ergo-faucet/database';
 import {
@@ -22,7 +21,6 @@ import {
   AddPackageResponse200,
   AddPackageBody,
   PackageControllerConfig,
-  UserProvidedAsset,
   AddAssetsToPackageBodyType,
   AddAuthMethodsToPackageBodyType,
   AddAssetsToPackageBody,
@@ -35,12 +33,12 @@ import { userRequestPayload } from '@ergo-faucet/common-types';
 import {
   isValidErgoAddress,
   NodeModel,
-  validateAmountPrecision,
   TokenNotFoundError,
   InvalidTokenPrecisionError,
 } from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
 import { Static } from '@sinclair/typebox';
+import { processAssets } from './utils';
 
 class PackageController {
   private readonly logger: AbstractLogger;
@@ -347,7 +345,7 @@ class PackageController {
           const pkg = await this.packageAction.getPackageById(packageId);
 
           // Process assets
-          const assets = await this.processAssets(request.body);
+          const assets = await processAssets(request.body, this.nodeModel);
 
           // Add assets to package
           const addedAssets = await this.packageAction.addAssets(assets, pkg);
@@ -490,56 +488,6 @@ class PackageController {
         }
       },
     );
-  };
-
-  /**
-   * Processes and normalizes asset data for a new package.
-   * Converts user-provided asset amounts to the correct precision based on token decimals.
-   * Handles both native ERG and custom tokens.
-   *
-   * @param assets - Array of asset objects with tokenId, amount, and usageDescription.
-   * @returns {Promise<AssetPayload[]>}
-   */
-  processAssets = async (
-    assets: Static<typeof UserProvidedAsset>[],
-  ): Promise<AssetPayload[]> => {
-    const tokens: AssetPayload[] = [];
-    for (let i = 0; i < assets.length; i++) {
-      const { tokenId, amount: value, usageDescription } = assets[i];
-
-      // Special case for native ERG token
-      if (tokenId === 'ERG') {
-        tokens.push({
-          tokenId,
-          assetName: 'ERG',
-          amount: (Number(value) * 1e9).toString(),
-          decimals: 9,
-          usageDescription: usageDescription
-            ? usageDescription
-            : 'no description',
-        });
-        continue;
-      }
-
-      // Fetch token decimals
-      const { decimals, description, name } =
-        await this.nodeModel.getTokenById(tokenId);
-
-      // Validate the amount's precision against the token's decimals
-      validateAmountPrecision(Number(value), decimals);
-
-      // convert user provided amount to nodeAPI requested amount and save it to the list
-      const amount = Number(value) * Math.pow(10, decimals);
-      tokens.push({
-        tokenId,
-        assetName: name,
-        amount: amount.toString(),
-        decimals: decimals,
-        usageDescription: usageDescription ? usageDescription : description,
-      });
-    }
-
-    return tokens;
   };
 
   /**
