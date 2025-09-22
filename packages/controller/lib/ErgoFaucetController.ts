@@ -1,20 +1,24 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-import { PackageController } from './PackageController';
-import { PackageAction } from '@ergo-faucet/database';
+import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
 import { Network } from '@fleet-sdk/common';
 import { NodeModel } from '@ergo-faucet/ergo-utils';
+import { RequestHistoryController, PackageController } from './';
 
 class ErgoFaucetController {
   private static instance: ErgoFaucetController;
   private readonly logger: AbstractLogger;
   private readonly fastifyServer: FastifyAPIServer;
   private readonly packageController: PackageController;
+  private readonly requestHistoryController: RequestHistoryController;
   private readonly CONTROLLER_PREFIX = '/controller';
 
   /**
    * Private constructor to enforce singleton pattern.
    * @param fastifyServer - The FastifyAPIServer instance.
+   * @param packageAction - Instance of PackageAction for DB operations.
+   * @param networkType - The network type (e.g., mainnet, testnet).
+   * @param requsetHistoryAction - Instance of RequestHistoryAction for DB operations.
    * @param logger - Optional logger implementing AbstractLogger.
    */
   private constructor(
@@ -22,6 +26,7 @@ class ErgoFaucetController {
     private readonly packageAction: PackageAction,
     private readonly NETWORK_TYPE: Network,
     private readonly nodeModel: NodeModel,
+    private readonly requsetHistoryAction: RequestHistoryAction,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
@@ -33,6 +38,12 @@ class ErgoFaucetController {
       nodeModel: this.nodeModel,
       logger,
     });
+
+    this.requestHistoryController = new RequestHistoryController(
+      this.requsetHistoryAction,
+      this.fastifyServer,
+      logger,
+    );
   }
 
   /**
@@ -53,6 +64,9 @@ class ErgoFaucetController {
    * Initializes the ErgoFaucetController singleton with the given Fastify server,
    * PackageController, and optional logger. Throws an error if already initialized.
    * @param fastifyServer - The FastifyAPIServer instance.
+   * @param packageAction - Instance of PackageAction for DB operations.
+   * @param networkType - The network type (e.g., mainnet, testnet).
+   * @param requsetHistoryAction - Instance of RequestHistoryAction for DB operations.
    * @param logger - Optional logger implementing AbstractLogger.
    */
   public static initialize = async (
@@ -60,6 +74,7 @@ class ErgoFaucetController {
     packageAction: PackageAction,
     networkType: Network,
     nodeModel: NodeModel,
+    requsetHistoryAction: RequestHistoryAction,
     logger?: AbstractLogger,
   ) => {
     if (this.instance) {
@@ -72,6 +87,7 @@ class ErgoFaucetController {
       packageAction,
       networkType,
       nodeModel,
+      requsetHistoryAction,
       logger,
     );
     await this.instance.registerRoutes(this.instance.CONTROLLER_PREFIX);
@@ -86,6 +102,7 @@ class ErgoFaucetController {
    */
   public registerRoutes = async (prefix: string): Promise<void> => {
     await this.packageController.registerRoutes(prefix);
+    await this.requestHistoryController.registerRoutes(prefix);
     this.logger.info(
       `ErgoFaucetController routes registered under prefix "${prefix}"`,
     );

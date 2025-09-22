@@ -9,7 +9,7 @@ import {
 } from 'vitest';
 import { PackageController } from '../lib';
 import {
-  mockConfig,
+  mockFastifyConfig,
   mockedPackageAction,
   mockPackageDTO,
   mockNodeModel,
@@ -46,7 +46,7 @@ describe('PackageController', () => {
     beforeAll(async () => {
       // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
-      await FastifyAPIServer.initialize(mockConfig);
+      await FastifyAPIServer.initialize(mockFastifyConfig);
       fastifyInstance = FastifyAPIServer.getInstance();
 
       packageController = new PackageController({
@@ -149,7 +149,7 @@ describe('PackageController', () => {
     beforeAll(async () => {
       // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
-      await FastifyAPIServer.initialize(mockConfig);
+      await FastifyAPIServer.initialize(mockFastifyConfig);
       fastifyInstance = FastifyAPIServer.getInstance();
 
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
@@ -346,7 +346,7 @@ describe('PackageController', () => {
     beforeAll(async () => {
       // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
-      await FastifyAPIServer.initialize(mockConfig);
+      await FastifyAPIServer.initialize(mockFastifyConfig);
       fastifyInstance = FastifyAPIServer.getInstance();
 
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
@@ -544,7 +544,7 @@ describe('PackageController', () => {
     beforeAll(async () => {
       // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
-      await FastifyAPIServer.initialize(mockConfig);
+      await FastifyAPIServer.initialize(mockFastifyConfig);
       fastifyInstance = FastifyAPIServer.getInstance();
 
       vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
@@ -868,7 +868,7 @@ describe('PackageController', () => {
     beforeAll(async () => {
       // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
-      await FastifyAPIServer.initialize(mockConfig);
+      await FastifyAPIServer.initialize(mockFastifyConfig);
       fastifyInstance = FastifyAPIServer.getInstance();
 
       packageController = new PackageController({

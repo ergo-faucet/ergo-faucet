@@ -19,6 +19,7 @@ export {
   XAction,
   GoogleAction,
   AccountantAction,
+  RequestHistoryAction,
 } from './actions';
 export {
   Asset,

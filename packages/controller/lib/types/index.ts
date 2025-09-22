@@ -15,6 +15,8 @@ export {
   AddAssetsToPackageResponse200,
   AddAuthMethodsToPackageResponse200,
   UpdatePackageParams,
+  RequsetHistoryRouteQuery,
+  GetRequestHistoryResponse200,
 } from './schemas';
 export {
   RequestPackageBodyType,
