@@ -1,6 +1,8 @@
 import { Accountant } from '@ergo-faucet/accountant';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 import { accountantConfig } from '@configs';
+import { AccountantAction } from '@ergo-faucet/database';
+import { NodeModel, Wallet } from '@ergo-faucet/ergo-utils';
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
 export const setupAccountant = async () => {
