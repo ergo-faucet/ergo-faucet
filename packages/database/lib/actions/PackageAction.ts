@@ -497,11 +497,9 @@ class PackageAction {
           transactionalEntityManager.getRepository(PackageAuthMethod);
 
         // Sort and remove duplicates based on id, keeping the first occurrence
-        authMethods = authMethods
-          .sort((a, b) => a.id - b.id)
-          .filter(
-            (item, index, arr) => index === 0 || item.id !== arr[index - 1].id,
-          );
+        authMethods = Array.from(
+          new Map(authMethods.map((m) => [m.id, m])).values(),
+        ).sort((a, b) => a.id - b.id);
 
         const auths = await authMethodRepository.find({
           where: { id: In(authMethods.map((am) => am!.id)) },
