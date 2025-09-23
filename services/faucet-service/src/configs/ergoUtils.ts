@@ -6,7 +6,7 @@ import config from 'config';
 export const ergoUtilsConfig = {
   network:
     config.get<string>('ergo.network').toLowerCase() === 'mainnet' ? 0 : 16,
-  nodeUrl: config.get<string>('ergo.nodeUrl'),
-  mnemonic: config.get<string>('wallet.mnemonic'),
-  timeout: config.get<number>('network.timeout'),
+  nodeUrl: config.get<string>('ergo.node.URL'),
+  mnemonic: config.get<string>('ergo.mnemonic'),
+  timeout: config.get<number>('ergo.node.timeout'),
 };
