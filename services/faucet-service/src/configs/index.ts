@@ -10,4 +10,4 @@ export { googleAuthConfig } from './googleAuth';
 export { jobConfig } from './authJob';
 export { controllerConfig } from './controller';
 export { accountantConfig } from './accountant';
-export { ergoUtilsConfig } from './ergoUtils';
+export { ergoConfig } from './ergo';
