@@ -67,7 +67,7 @@ class AccountantAction {
     );
     const requests = await this.userRequestRepository.find({
       where: [{ status: 'pending' }, { status: 'submitted' }],
-      order: { id: 'asc' }, // From oldest to newest request
+      order: { createdAt: 'asc' }, // From oldest to newest request
       relations: ['package', 'package.assets'],
     });
     this.logger.info(`Fetched ${requests.length} unpaid user requests.`);

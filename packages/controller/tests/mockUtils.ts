@@ -68,6 +68,8 @@ const mockAsset1: Asset = {
   assetName: 'token-abc-123',
   amount: '1000',
   usageDescription: 'Initial reward',
+  createdAt: new Date('2024-01-15T10:00:00.000Z'),
+  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
 };
 
 const mockAsset2: Asset = {
@@ -77,6 +79,8 @@ const mockAsset2: Asset = {
   assetName: 'token-def-456',
   amount: '500',
   usageDescription: 'Bonus item',
+  createdAt: new Date('2024-01-15T10:00:00.000Z'),
+  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
 };
 
 const mockAuthMethod1: PackageAuthMethod = {
@@ -87,9 +91,13 @@ const mockAuthMethod1: PackageAuthMethod = {
     config: '{"botToken": "123456:ABC-DEF"}',
     packageAuthMethods: [],
     userAuthStatuses: [],
+    createdAt: new Date('2024-01-15T10:00:00.000Z'),
+    modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
   },
   order: 1,
   package: mockPackage,
+  createdAt: new Date('2024-01-15T10:00:00.000Z'),
+  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
 };
 
 const mockAuthMethod2: PackageAuthMethod = {
@@ -100,9 +108,13 @@ const mockAuthMethod2: PackageAuthMethod = {
     config: '{"smtpServer": "smtp.example.com"}',
     packageAuthMethods: [],
     userAuthStatuses: [],
+    createdAt: new Date('2024-01-15T10:00:00.000Z'),
+    modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
   },
   order: 2,
   package: mockPackage,
+  createdAt: new Date('2024-01-15T10:00:00.000Z'),
+  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
 };
 
 mockPackage = {
@@ -119,6 +131,8 @@ mockPackage = {
   packageAuthMethods: [mockAuthMethod1, mockAuthMethod2],
   authStatuses: [],
   requests: [],
+  createdAt: new Date('2024-01-15T10:00:00.000Z'),
+  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
 };
 
 export const mockPackageDTO = [

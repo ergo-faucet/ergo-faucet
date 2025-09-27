@@ -94,7 +94,7 @@ class PackageAction {
   public getPackages = async (
     offset: number,
     limit: number,
-    sort: 'id' | 'openAt' | 'closeAt' | 'name',
+    sort: 'id' | 'openAt' | 'closeAt' | 'name' | 'createdAt' | 'modifiedAt',
     order: 'asc' | 'desc',
     userId?: number,
   ): Promise<PackageDTO[]> => {

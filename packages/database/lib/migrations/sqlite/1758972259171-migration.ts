@@ -3,105 +3,17 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1758209125093 implements MigrationInterface {
-  name = 'Migration1758209125093';
+export class Migration1758972259171 implements MigrationInterface {
+  name = 'Migration1758972259171';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.query(`
-            CREATE TABLE "user_address_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "value" varchar NOT NULL,
-                "userId" integer,
-                CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value")
-            )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "user_request_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "timestamp" integer NOT NULL,
-                "destinationAddress" varchar NOT NULL,
-                "status" text NOT NULL,
-                "txId" text,
-                "signed_tx" text,
-                "creationHeight" integer,
-                "numberOfTries" integer NOT NULL DEFAULT (0),
-                "userId" integer,
-                "packageId" integer
-            )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "user_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "discord_id" varchar,
-                "x_id" varchar,
-                "google_id" varchar,
-                "name" varchar,
-                "metadata" text,
-                "lastLogin" bigint,
-                CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
-                CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
-                CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id")
-            )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "user_auth_status_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "verifiedAt" date NOT NULL,
-                "status" text NOT NULL,
-                "expiresAt" date,
-                "metadata" text,
-                "userId" integer NOT NULL,
-                "authMethodId" integer NOT NULL,
-                "packageId" integer
-            )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "auth_method_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "name" varchar NOT NULL,
-                "config" text NOT NULL
-            )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "package_auth_method_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "order" integer NOT NULL,
-                "packageId" integer,
-                "authMethodId" integer,
-                CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order")
-            )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "package_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "name" varchar NOT NULL,
-                "description" text NOT NULL,
-                "type" text NOT NULL DEFAULT ('normal'),
-                "status" text NOT NULL DEFAULT ('show'),
-                "open_at" integer,
-                "close_at" integer,
-                "delay" varchar NOT NULL DEFAULT ('0'),
-                "number_each_user" integer NOT NULL
-            )
-        `);
-    await queryRunner.query(`
-            CREATE TABLE "asset_entity" (
-                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "tokenId" varchar NOT NULL,
-                "asset_name" varchar NOT NULL,
-                "amount" varchar NOT NULL,
-                "usageDescription" text NOT NULL,
-                "packageId" integer
-            )
-        `);
-    await queryRunner.query(`
-            CREATE INDEX "IDX_941e620c721dbd2ec1a03bdef3" ON "asset_entity" ("tokenId")
-        `);
     await queryRunner.query(`
             CREATE TABLE "temporary_user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
                 "userId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
                 CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value"),
                 CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
@@ -132,8 +44,10 @@ export class Migration1758209125093 implements MigrationInterface {
                 "numberOfTries" integer NOT NULL DEFAULT (0),
                 "userId" integer,
                 "packageId" integer,
-                CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_d1a8058eb7a3869b932f1905afd" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "FK_d1a8058eb7a3869b932f1905afd" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -169,6 +83,48 @@ export class Migration1758209125093 implements MigrationInterface {
                 RENAME TO "user_request_entity"
         `);
     await queryRunner.query(`
+            CREATE TABLE "temporary_user_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "discord_id" varchar,
+                "x_id" varchar,
+                "google_id" varchar,
+                "name" varchar,
+                "metadata" text,
+                "lastLogin" bigint,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),
+                CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
+                CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id")
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "temporary_user_entity"(
+                    "id",
+                    "discord_id",
+                    "x_id",
+                    "google_id",
+                    "name",
+                    "metadata",
+                    "lastLogin"
+                )
+            SELECT "id",
+                "discord_id",
+                "x_id",
+                "google_id",
+                "name",
+                "metadata",
+                "lastLogin"
+            FROM "user_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "user_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "temporary_user_entity"
+                RENAME TO "user_entity"
+        `);
+    await queryRunner.query(`
             CREATE TABLE "temporary_user_auth_status_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "verifiedAt" date NOT NULL,
@@ -178,9 +134,11 @@ export class Migration1758209125093 implements MigrationInterface {
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer,
-                CONSTRAINT "FK_359a7061b1cce4191f212893715" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "FK_66bd1b1ac02bcbbf13ca3964109" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION,
                 CONSTRAINT "FK_1706f917d940b8559937eb33f8e" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_66bd1b1ac02bcbbf13ca3964109" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
+                CONSTRAINT "FK_359a7061b1cce4191f212893715" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -212,14 +170,39 @@ export class Migration1758209125093 implements MigrationInterface {
                 RENAME TO "user_auth_status_entity"
         `);
     await queryRunner.query(`
+            CREATE TABLE "temporary_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "name" varchar NOT NULL,
+                "config" text NOT NULL,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now'))
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "temporary_auth_method_entity"("id", "name", "config")
+            SELECT "id",
+                "name",
+                "config"
+            FROM "auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "auth_method_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "temporary_auth_method_entity"
+                RENAME TO "auth_method_entity"
+        `);
+    await queryRunner.query(`
             CREATE TABLE "temporary_package_auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "order" integer NOT NULL,
                 "packageId" integer,
                 "authMethodId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
-                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
-                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -238,6 +221,51 @@ export class Migration1758209125093 implements MigrationInterface {
                 RENAME TO "package_auth_method_entity"
         `);
     await queryRunner.query(`
+            CREATE TABLE "temporary_package_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "name" varchar NOT NULL,
+                "description" text NOT NULL,
+                "type" text NOT NULL DEFAULT ('normal'),
+                "status" text NOT NULL DEFAULT ('show'),
+                "open_at" integer,
+                "close_at" integer,
+                "delay" varchar NOT NULL DEFAULT ('0'),
+                "number_each_user" integer NOT NULL,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now'))
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "temporary_package_entity"(
+                    "id",
+                    "name",
+                    "description",
+                    "type",
+                    "status",
+                    "open_at",
+                    "close_at",
+                    "delay",
+                    "number_each_user"
+                )
+            SELECT "id",
+                "name",
+                "description",
+                "type",
+                "status",
+                "open_at",
+                "close_at",
+                "delay",
+                "number_each_user"
+            FROM "package_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "package_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "temporary_package_entity"
+                RENAME TO "package_entity"
+        `);
+    await queryRunner.query(`
             DROP INDEX "IDX_941e620c721dbd2ec1a03bdef3"
         `);
     await queryRunner.query(`
@@ -248,6 +276,8 @@ export class Migration1758209125093 implements MigrationInterface {
                 "amount" varchar NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
                 CONSTRAINT "FK_dc2ee4d919892ecaad131a176e5" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
             )
         `);
@@ -295,7 +325,8 @@ export class Migration1758209125093 implements MigrationInterface {
                 "asset_name" varchar NOT NULL,
                 "amount" varchar NOT NULL,
                 "usageDescription" text NOT NULL,
-                "packageId" integer
+                "packageId" integer,
+                CONSTRAINT "FK_dc2ee4d919892ecaad131a176e5" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -322,6 +353,49 @@ export class Migration1758209125093 implements MigrationInterface {
             CREATE INDEX "IDX_941e620c721dbd2ec1a03bdef3" ON "asset_entity" ("tokenId")
         `);
     await queryRunner.query(`
+            ALTER TABLE "package_entity"
+                RENAME TO "temporary_package_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "package_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "name" varchar NOT NULL,
+                "description" text NOT NULL,
+                "type" text NOT NULL DEFAULT ('normal'),
+                "status" text NOT NULL DEFAULT ('show'),
+                "open_at" integer,
+                "close_at" integer,
+                "delay" varchar NOT NULL DEFAULT ('0'),
+                "number_each_user" integer NOT NULL
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "package_entity"(
+                    "id",
+                    "name",
+                    "description",
+                    "type",
+                    "status",
+                    "open_at",
+                    "close_at",
+                    "delay",
+                    "number_each_user"
+                )
+            SELECT "id",
+                "name",
+                "description",
+                "type",
+                "status",
+                "open_at",
+                "close_at",
+                "delay",
+                "number_each_user"
+            FROM "temporary_package_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "temporary_package_entity"
+        `);
+    await queryRunner.query(`
             ALTER TABLE "package_auth_method_entity"
                 RENAME TO "temporary_package_auth_method_entity"
         `);
@@ -331,7 +405,9 @@ export class Migration1758209125093 implements MigrationInterface {
                 "order" integer NOT NULL,
                 "packageId" integer,
                 "authMethodId" integer,
-                CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order")
+                CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -346,6 +422,27 @@ export class Migration1758209125093 implements MigrationInterface {
             DROP TABLE "temporary_package_auth_method_entity"
         `);
     await queryRunner.query(`
+            ALTER TABLE "auth_method_entity"
+                RENAME TO "temporary_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "name" varchar NOT NULL,
+                "config" text NOT NULL
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "auth_method_entity"("id", "name", "config")
+            SELECT "id",
+                "name",
+                "config"
+            FROM "temporary_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "temporary_auth_method_entity"
+        `);
+    await queryRunner.query(`
             ALTER TABLE "user_auth_status_entity"
                 RENAME TO "temporary_user_auth_status_entity"
         `);
@@ -358,7 +455,10 @@ export class Migration1758209125093 implements MigrationInterface {
                 "metadata" text,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
-                "packageId" integer
+                "packageId" integer,
+                CONSTRAINT "FK_66bd1b1ac02bcbbf13ca3964109" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION,
+                CONSTRAINT "FK_1706f917d940b8559937eb33f8e" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_359a7061b1cce4191f212893715" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -386,6 +486,46 @@ export class Migration1758209125093 implements MigrationInterface {
             DROP TABLE "temporary_user_auth_status_entity"
         `);
     await queryRunner.query(`
+            ALTER TABLE "user_entity"
+                RENAME TO "temporary_user_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "user_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "discord_id" varchar,
+                "x_id" varchar,
+                "google_id" varchar,
+                "name" varchar,
+                "metadata" text,
+                "lastLogin" bigint,
+                CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),
+                CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
+                CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id")
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "user_entity"(
+                    "id",
+                    "discord_id",
+                    "x_id",
+                    "google_id",
+                    "name",
+                    "metadata",
+                    "lastLogin"
+                )
+            SELECT "id",
+                "discord_id",
+                "x_id",
+                "google_id",
+                "name",
+                "metadata",
+                "lastLogin"
+            FROM "temporary_user_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "temporary_user_entity"
+        `);
+    await queryRunner.query(`
             ALTER TABLE "user_request_entity"
                 RENAME TO "temporary_user_request_entity"
         `);
@@ -400,7 +540,9 @@ export class Migration1758209125093 implements MigrationInterface {
                 "creationHeight" integer,
                 "numberOfTries" integer NOT NULL DEFAULT (0),
                 "userId" integer,
-                "packageId" integer
+                "packageId" integer,
+                CONSTRAINT "FK_d1a8058eb7a3869b932f1905afd" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -440,7 +582,8 @@ export class Migration1758209125093 implements MigrationInterface {
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
                 "userId" integer,
-                CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value")
+                CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value"),
+                CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
@@ -452,33 +595,6 @@ export class Migration1758209125093 implements MigrationInterface {
         `);
     await queryRunner.query(`
             DROP TABLE "temporary_user_address_entity"
-        `);
-    await queryRunner.query(`
-            DROP INDEX "IDX_941e620c721dbd2ec1a03bdef3"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "asset_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "package_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "package_auth_method_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "auth_method_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "user_auth_status_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "user_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "user_request_entity"
-        `);
-    await queryRunner.query(`
-            DROP TABLE "user_address_entity"
         `);
   }
 }

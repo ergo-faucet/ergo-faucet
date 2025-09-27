@@ -1,9 +1,11 @@
 import {
   Column,
+  CreateDateColumn,
   Entity,
   OneToMany,
   PrimaryGeneratedColumn,
   Relation,
+  UpdateDateColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { UserAddress } from './UserAddress';
 import { UserAuthStatus } from './UserAuthStatus';
@@ -68,4 +70,10 @@ export class User {
 
   @Column({ type: 'bigint', nullable: true })
   lastLogin!: number | null;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'modified_at' })
+  modifiedAt!: Date;
 }

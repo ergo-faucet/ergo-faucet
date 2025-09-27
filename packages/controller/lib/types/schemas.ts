@@ -9,6 +9,8 @@ export const PackagesRouteQuery = Type.Object({
       Type.Literal('closeAt'),
       Type.Literal('openAt'),
       Type.Literal('name'),
+      Type.Literal('createdAt'),
+      Type.Literal('modifiedAt'),
     ],
     {
       default: 'id',
@@ -73,9 +75,17 @@ export const RequestPackageResponse200 = Type.Object({
 export const RequsetHistoryRouteQuery = Type.Object({
   offset: Type.Number({ minimum: 0, default: 0 }),
   limit: Type.Number({ minimum: 0, maximum: 100, default: 25 }),
-  sort: Type.Union([Type.Literal('timestamp'), Type.Literal('status')], {
-    default: 'timestamp',
-  }),
+  sort: Type.Union(
+    [
+      Type.Literal('timestamp'),
+      Type.Literal('status'),
+      Type.Literal('createdAt'),
+      Type.Literal('modifiedAt'),
+    ],
+    {
+      default: 'createdAt',
+    },
+  ),
   order: Type.Union([Type.Literal('desc'), Type.Literal('asc')], {
     default: 'desc',
   }),

@@ -3,14 +3,16 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1758209265964 implements MigrationInterface {
-  name = 'Migration1758209265964';
+export class Migration1758972274997 implements MigrationInterface {
+  name = 'Migration1758972274997';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
             CREATE TABLE "user_address_entity" (
                 "id" SERIAL NOT NULL,
                 "value" character varying NOT NULL,
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "userId" integer,
                 CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value"),
                 CONSTRAINT "PK_0b981d423406bfb13aa34c7dfd8" PRIMARY KEY ("id")
@@ -26,6 +28,8 @@ export class Migration1758209265964 implements MigrationInterface {
                 "signed_tx" text,
                 "creationHeight" integer,
                 "numberOfTries" integer NOT NULL DEFAULT '0',
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "userId" integer,
                 "packageId" integer,
                 CONSTRAINT "PK_1a06e346f47b05bcfc45ef748f9" PRIMARY KEY ("id")
@@ -40,6 +44,8 @@ export class Migration1758209265964 implements MigrationInterface {
                 "name" character varying,
                 "metadata" text,
                 "lastLogin" bigint,
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
                 CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
                 CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),
@@ -53,6 +59,8 @@ export class Migration1758209265964 implements MigrationInterface {
                 "status" text NOT NULL,
                 "expiresAt" date,
                 "metadata" text,
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer,
@@ -64,6 +72,8 @@ export class Migration1758209265964 implements MigrationInterface {
                 "id" SERIAL NOT NULL,
                 "name" character varying NOT NULL,
                 "config" text NOT NULL,
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 CONSTRAINT "PK_7b41d2d1aef333041229308da22" PRIMARY KEY ("id")
             )
         `);
@@ -71,6 +81,8 @@ export class Migration1758209265964 implements MigrationInterface {
             CREATE TABLE "package_auth_method_entity" (
                 "id" SERIAL NOT NULL,
                 "order" integer NOT NULL,
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
@@ -88,6 +100,8 @@ export class Migration1758209265964 implements MigrationInterface {
                 "close_at" integer,
                 "delay" character varying NOT NULL DEFAULT '0',
                 "number_each_user" integer NOT NULL,
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 CONSTRAINT "PK_4a054211f29714c2bdbbccd9fea" PRIMARY KEY ("id")
             )
         `);
@@ -98,6 +112,8 @@ export class Migration1758209265964 implements MigrationInterface {
                 "asset_name" character varying NOT NULL,
                 "amount" character varying NOT NULL,
                 "usageDescription" text NOT NULL,
+                "created_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "packageId" integer,
                 CONSTRAINT "PK_038b7b28b83db2205747ef9912e" PRIMARY KEY ("id")
             )

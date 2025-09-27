@@ -4,6 +4,8 @@ import {
   Column,
   OneToMany,
   Relation,
+  CreateDateColumn,
+  UpdateDateColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { PackageAuthMethod } from './PackageAuthMethod';
 import { UserAuthStatus } from './UserAuthStatus';
@@ -24,4 +26,10 @@ export class AuthMethod {
 
   @OneToMany(() => UserAuthStatus, (status) => status.authMethod)
   userAuthStatuses!: Relation<UserAuthStatus[]>;
+
+  @CreateDateColumn({ name: 'created_at' })
+  createdAt!: Date;
+
+  @UpdateDateColumn({ name: 'modified_at' })
+  modifiedAt!: Date;
 }
