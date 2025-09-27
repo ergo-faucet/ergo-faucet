@@ -197,18 +197,17 @@ export class XAuth {
    */
   private buildRedirectURL = (
     frontState: string,
-    status: 'success' | 'false',
+    status: 'success' | 'failed',
     message?: string,
   ): string => {
-    const params = new URLSearchParams({
-      authMethod: 'x-platform',
-      authMethodStatus: status,
-    });
+    const [path, query] = frontState.split('?');
+    const params = new URLSearchParams(query);
+    params.set('authMethod', 'x-platform');
+    params.set('authMethodStatus', status);
     if (message) {
       params.set('message', message);
     }
-
-    return `${this.frontBaseURL}${frontState}&${params.toString()}`;
+    return `${this.frontBaseURL + path}?${params.toString()}`;
   };
 
   /**
@@ -348,7 +347,7 @@ export class XAuth {
           return reply.redirect(
             this.buildRedirectURL(
               '',
-              'false',
+              'failed',
               'Missing code or state from X-platform callback',
             ),
           );
@@ -357,7 +356,7 @@ export class XAuth {
           const session = await this.getSessionData(state);
           if (!session) {
             return reply.redirect(
-              this.buildRedirectURL('', 'false', 'Session expired or invalid'),
+              this.buildRedirectURL('', 'failed', 'Session expired or invalid'),
             );
           }
           await this.deleteSessionData(state);
@@ -402,7 +401,7 @@ export class XAuth {
             .redirect(
               this.buildRedirectURL(
                 decodedSession?.frontState ?? '',
-                'false',
+                'failed',
                 'Failed to log in with X-platform',
               ),
             );

@@ -170,26 +170,24 @@ export class DiscordAuth {
   /**
    * Builds the front-end redirect URL with query parameters for Discord OAuth2 login result.
    *
-   * @param frontState - State value provided by the front-end to maintain session/context
    * @param status - Result status of the OAuth flow ('success' or 'false')
+   * @param frontState - Optional state value provided by the front-end to maintain session/context
    * @param message - Optional message to include in the URL (e.g., success or error message)
    * @returns Fully qualified URL string combining the frontBaseURL, frontState, and query parameters
    */
   private buildRedirectURL = (
     frontState: string,
-    status: 'success' | 'false',
+    status: 'success' | 'failed',
     message?: string,
   ): string => {
-    const params = new URLSearchParams({
-      authMethod: 'discord',
-      authMethodStatus: status,
-    });
-
+    const [path, query] = frontState.split('?');
+    const params = new URLSearchParams(query);
+    params.set('authMethod', 'discord');
+    params.set('authMethodStatus', status);
     if (message) {
       params.set('message', message);
     }
-
-    return `${this.frontBaseURL}${frontState}&${params.toString()}`;
+    return `${this.frontBaseURL + path}?${params.toString()}`;
   };
 
   /**
@@ -318,7 +316,7 @@ export class DiscordAuth {
           return reply.redirect(
             this.buildRedirectURL(
               '',
-              'false',
+              'failed',
               'Missing code or state from Discord callback',
             ),
           );
@@ -328,7 +326,7 @@ export class DiscordAuth {
           const session = await this.getSessionData(state);
           if (!session) {
             return reply.redirect(
-              this.buildRedirectURL('', 'false', 'Session expired or invalid'),
+              this.buildRedirectURL('', 'failed', 'Session expired or invalid'),
             );
           }
           await this.deleteSessionData(state);
@@ -370,7 +368,7 @@ export class DiscordAuth {
           return reply.redirect(
             this.buildRedirectURL(
               decodedSession?.frontState ?? '',
-              'false',
+              'failed',
               'Failed to log in with Discord',
             ),
           );

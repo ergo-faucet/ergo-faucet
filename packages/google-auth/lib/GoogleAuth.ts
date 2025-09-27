@@ -104,7 +104,7 @@ export class GoogleAuth {
     ttl: number,
   ): Promise<void> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Failed to set session data for key: ${key}`);
+    this.logger.debug(`Try to set session data for key: ${key}`);
     await this.redis.set(fullKey, value);
     if (ttl) {
       await this.redis.expire(fullKey, ttl);
@@ -190,23 +190,23 @@ export class GoogleAuth {
    * Builds the front-end redirect URL with query parameters for Google OAuth2 login result.
    *
    * @param frontState - State value provided by the front-end to maintain session/context
-   * @param status - Result status of the OAuth flow ('success' or 'false')
+   * @param status - Result status of the OAuth flow ('success' or 'failed')
    * @param message - Optional message to include in the URL (e.g., success or error message)
    * @returns Fully qualified URL string combining the frontBaseURL, frontState, and query parameters
    */
   private buildRedirectURL = (
     frontState: string,
-    status: 'success' | 'false',
+    status: 'success' | 'failed',
     message?: string,
   ): string => {
-    const params = new URLSearchParams({
-      authMethod: 'google',
-      authMethodStatus: status,
-    });
+    const [path, query] = frontState.split('?');
+    const params = new URLSearchParams(query);
+    params.set('authMethod', 'google');
+    params.set('authMethodStatus', status);
     if (message) {
       params.set('message', message);
     }
-    return `${this.frontBaseURL}${frontState}&${params.toString()}`;
+    return `${this.frontBaseURL + path}?${params.toString()}`;
   };
 
   /**
@@ -346,7 +346,7 @@ export class GoogleAuth {
           return reply.redirect(
             this.buildRedirectURL(
               '',
-              'false',
+              'failed',
               'Missing code or state from Google callback',
             ),
           );
@@ -356,7 +356,7 @@ export class GoogleAuth {
           const session = await this.getSessionData(state);
           if (!session) {
             return reply.redirect(
-              this.buildRedirectURL('', 'false', 'Session expired or invalid'),
+              this.buildRedirectURL('', 'failed', 'Session expired or invalid'),
             );
           }
 
@@ -400,7 +400,7 @@ export class GoogleAuth {
           return reply.redirect(
             this.buildRedirectURL(
               decodedSession?.frontState ?? '',
-              'false',
+              'failed',
               'Failed to log in with Google',
             ),
           );
