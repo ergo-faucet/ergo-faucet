@@ -67,6 +67,8 @@ export const mockUserRequest: UserRequest = {
   txId: null,
   creationHeight: 100,
   numberOfTries: 0,
+  createdAt: new Date('2024-01-15T10:00:00.000Z'),
+  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
 };
 
 export { mockNodeModel, mockWallet, mockAccountantAction, mockLogger };
