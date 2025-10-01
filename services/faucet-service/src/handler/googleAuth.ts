@@ -23,6 +23,7 @@ export const setupGoogleAuth = async () => {
       expiresTime: googleAuthConfig.expiresTime,
       sessionTTL: googleAuthConfig.sessionTTL,
       redis: redisConfig,
+      frontBaseURL: googleAuthConfig.frontBaseURL,
     },
     googleLogger,
   );

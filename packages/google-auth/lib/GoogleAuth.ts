@@ -10,14 +10,17 @@ import { GoogleAction } from '@ergo-faucet/database';
 import {
   CallBackRouteQuery,
   CallBackRouteQueryType,
-  CallBackRouteResponse200,
   GoogleToken,
   ErrorResponse,
   GoogleUserData,
   GoogleAuthConfig,
   SessionData,
+  LoginRouteQuery,
+  LoginRouteResponse200,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
+import { v4 as uuidv4 } from 'uuid';
+
 export class GoogleAuth {
   private static instance: GoogleAuth;
   private readonly logger: AbstractLogger;
@@ -30,6 +33,7 @@ export class GoogleAuth {
   private readonly expiresTime: number;
   private readonly redis: Redis;
   private readonly sessionTTL: number;
+  private readonly frontBaseURL: string;
   private readonly SESSION_PREFIX = 'googleAuth:session:';
   private readonly GOOGLE_AUTH_PREFIX = '/auth/google';
   private readonly GOOGLE_OAUTH_URL =
@@ -56,6 +60,7 @@ export class GoogleAuth {
     this.expiresTime = config.expiresTime;
     this.redis = new Redis(config.redis);
     this.sessionTTL = config.sessionTTL;
+    this.frontBaseURL = config.frontBaseURL;
   }
 
   /**
@@ -90,58 +95,46 @@ export class GoogleAuth {
   /**
    * Sets session data in Redis with TTL.
    * @param key - Session key
-   * @param value - Session data
+   * @param value - string data
    * @param ttl - Time to live in seconds
    */
-  private async setSessionData(
+  private setSessionData = async (
     key: string,
-    value: SessionData,
+    value: string,
     ttl: number,
-  ): Promise<void> {
+  ): Promise<void> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
-    try {
-      await this.redis.set(fullKey, JSON.stringify(value));
-      if (ttl) {
-        await this.redis.expire(fullKey, ttl);
-      }
-    } catch (error) {
-      this.logger.error(`Failed to set session data for key: ${key}`, error);
-      throw error;
+    this.logger.debug(`Try to set session data for key: ${key}`);
+    await this.redis.set(fullKey, value);
+    if (ttl) {
+      await this.redis.expire(fullKey, ttl);
     }
-  }
+  };
 
   /**
    * Gets session data from Redis.
    * @param key - Session key
    * @returns Session data or null if not found
    */
-  private async getSessionData(key: string): Promise<SessionData | null> {
+  private getSessionData = async (key: string): Promise<string | undefined> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
-    try {
-      const raw = await this.redis.get(fullKey);
-      if (!raw) {
-        return null;
-      }
-      return JSON.parse(raw) as SessionData;
-    } catch (error) {
-      this.logger.error(`Failed to get session data for key: ${key}`, error);
-      throw error;
+    this.logger.debug(`Try to get session data for key: ${key}`);
+    const raw = await this.redis.get(fullKey);
+    if (!raw) {
+      return undefined;
     }
-  }
+    return raw;
+  };
 
   /**
    * Deletes session data from Redis.
    * @param key - Session key
    */
-  private async deleteSessionData(key: string): Promise<void> {
+  private deleteSessionData = async (key: string): Promise<void> => {
     const fullKey = `${this.SESSION_PREFIX}${key}`;
-    try {
-      await this.redis.del(fullKey);
-    } catch (error) {
-      this.logger.error(`Failed to delete session data for key: ${key}`, error);
-      throw error;
-    }
-  }
+    this.logger.debug(`Try to delete session data for key: ${key}`);
+    await this.redis.del(fullKey);
+  };
 
   /**
    * Generates PKCE codes (code verifier and challenge)
@@ -161,17 +154,59 @@ export class GoogleAuth {
 
   /**
    * Builds the Google OAuth2 login URL with PKCE.
+   * @param frontState - State parameter from the frontend
+   * @param userId - ID of the user initiating the login
    * @returns Fully qualified Google login URL with all query params
    */
-  private buildLoginURL = async (): Promise<string> => {
+  private buildLoginURL = async (
+    frontState: string,
+    userId: number,
+  ): Promise<string> => {
     const { codeVerifier, codeChallenge } = this.generatePKCECodes();
-    const state = crypto.randomBytes(16).toString('hex');
+    const state = uuidv4();
+    const value = { frontState, codeVerifier, userId };
 
-    await this.setSessionData(state, { codeVerifier }, this.sessionTTL);
+    const encodedValue = Buffer.from(JSON.stringify(value), 'utf-8').toString(
+      'base64url',
+    );
+    await this.setSessionData(state, encodedValue, this.sessionTTL);
 
-    return `${this.GOOGLE_OAUTH_URL}?response_type=code&client_id=${this.clientId}&redirect_uri=${encodeURIComponent(
-      this.redirectURL,
-    )}&scope=${encodeURIComponent(this.scope)}&state=${state}&access_type=offline&prompt=consent&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+    const params = new URLSearchParams({
+      response_type: 'code',
+      client_id: this.clientId,
+      redirect_uri: this.redirectURL,
+      scope: this.scope,
+      state,
+      access_type: 'offline',
+      prompt: 'consent',
+      code_challenge: codeChallenge,
+      code_challenge_method: 'S256',
+    });
+
+    return `${this.GOOGLE_OAUTH_URL}?${params.toString()}`;
+  };
+
+  /**
+   * Builds the front-end redirect URL with query parameters for Google OAuth2 login result.
+   *
+   * @param frontState - State value provided by the front-end to maintain session/context
+   * @param status - Result status of the OAuth flow ('success' or 'failed')
+   * @param message - Optional message to include in the URL (e.g., success or error message)
+   * @returns Fully qualified URL string combining the frontBaseURL, frontState, and query parameters
+   */
+  private buildRedirectURL = (
+    frontState: string,
+    status: 'success' | 'failed',
+    message?: string,
+  ): string => {
+    const [path, query] = frontState.split('?');
+    const params = new URLSearchParams(query);
+    params.set('authMethod', 'google');
+    params.set('authMethodStatus', status);
+    if (message) {
+      params.set('message', message);
+    }
+    return `${this.frontBaseURL + path}?${params.toString()}`;
   };
 
   /**
@@ -242,49 +277,14 @@ export class GoogleAuth {
    * @param fastify - Fastify instance
    */
   private loginRoute = async (fastify: FastifySeverInstance) => {
-    fastify.get(
+    fastify.get<{ Querystring: { state?: string } }>(
       '/login',
       {
         preHandler: this.fastifyServer.authPreHandler(),
         schema: {
+          querystring: LoginRouteQuery,
           response: {
-            302: { description: 'Redirect to Google OAuth2 login' },
-            401: ErrorResponse,
-          },
-          security: [
-            {
-              bearerAuth: [],
-            },
-          ],
-        },
-      },
-      async (_, reply) => {
-        const loginURL = await this.buildLoginURL();
-        return reply.status(302).redirect(loginURL);
-      },
-    );
-  };
-
-  /**
-   * Registers the `/callback` route:
-   *
-   * **GET `/google/callback`**
-   * - Requires JWT auth
-   * - Expects `code` and `state` query params
-   * - Exchanges code for tokens, fetches Google user, links account to the user
-   *
-   * @param fastify - Fastify instance
-   */
-  private callbackRoute = async (fastify: FastifySeverInstance) => {
-    fastify.get<{ Querystring: CallBackRouteQueryType }>(
-      '/callback',
-      {
-        preHandler: this.fastifyServer.authPreHandler(),
-        schema: {
-          querystring: CallBackRouteQuery,
-          response: {
-            200: CallBackRouteResponse200,
-            400: ErrorResponse,
+            200: LoginRouteResponse200,
             401: ErrorResponse,
             500: ErrorResponse,
           },
@@ -296,27 +296,78 @@ export class GoogleAuth {
         },
       },
       async (request, reply) => {
+        try {
+          const stateFromFront = request.query.state ?? '';
+          const user = request.user as userRequestPayload;
+          const loginURL = await this.buildLoginURL(
+            stateFromFront,
+            user.userId,
+          );
+          return reply.status(200).send({ redirectURL: loginURL });
+        } catch (err) {
+          this.logger.error(`Error in build login url`, {
+            message: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          reply.status(500).send({
+            error: 'Internal server error occured',
+            code: 'internal-error',
+          });
+        }
+      },
+    );
+  };
+
+  /**
+   * Registers the `/callback` route:
+   *
+   * **GET `/google/callback`**
+   * - Expects `code` and `state` query params
+   * - Exchanges code for tokens, fetches Google user, links account to the user
+   *
+   * @param fastify - Fastify instance
+   */
+  private callbackRoute = async (fastify: FastifySeverInstance) => {
+    fastify.get<{ Querystring: CallBackRouteQueryType }>(
+      '/callback',
+      {
+        schema: {
+          querystring: CallBackRouteQuery,
+          response: {
+            302: { description: 'Redirect to front-end with result' },
+          },
+        },
+      },
+      async (request, reply) => {
         const { code, state } = request.query;
-        const user = request.user as userRequestPayload;
+        let decodedSession: SessionData | undefined;
 
-        if (!code || !state || !user.userId) {
-          return reply
-            .status(400)
-            .send({ error: 'Missing code, state, or userId' });
+        if (!code || !state) {
+          return reply.redirect(
+            this.buildRedirectURL(
+              '',
+              'failed',
+              'Missing code or state from Google callback',
+            ),
+          );
         }
-
-        const session = await this.getSessionData(state);
-        if (!session) {
-          return reply.status(400).send({ error: 'Invalid or expired state' });
-        }
-
-        const { codeVerifier } = session;
-        await this.deleteSessionData(state);
 
         try {
+          const session = await this.getSessionData(state);
+          if (!session) {
+            return reply.redirect(
+              this.buildRedirectURL('', 'failed', 'Session expired or invalid'),
+            );
+          }
+
+          decodedSession = JSON.parse(
+            Buffer.from(session, 'base64url').toString('utf-8'),
+          ) as SessionData;
+          await this.deleteSessionData(state);
+
           const tokenData: GoogleToken = await this.exchangeCodeForToken(
             code,
-            codeVerifier,
+            decodedSession.codeVerifier,
           );
           const accessToken = tokenData.accessToken;
           const refreshToken = tokenData.refreshToken;
@@ -325,7 +376,7 @@ export class GoogleAuth {
             await this.fetchGoogleUser(accessToken);
 
           await this.googleAction.linkGoogleAccount(
-            Number(user.userId),
+            Number(decodedSession.userId),
             googleUser.userId,
             googleUser.name,
             googleUser.email,
@@ -334,20 +385,25 @@ export class GoogleAuth {
             refreshToken,
           );
 
-          return reply.status(200).send({
-            success: true,
-            message: `The user with id ${user.userId} logged in successfully with Google`,
-          });
+          return reply.redirect(
+            this.buildRedirectURL(
+              decodedSession.frontState,
+              'success',
+              `The user with name ${googleUser.name} logged in successfully with Google`,
+            ),
+          );
         } catch (err) {
-          if (err instanceof Error) {
-            this.logger.error(`Google callback failed`, {
-              message: err.message,
-              stack: err.stack,
-            });
-          }
-          return reply
-            .status(500)
-            .send({ error: 'Google authentication failed' });
+          this.logger.error(`Google callback failed`, {
+            message: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          return reply.redirect(
+            this.buildRedirectURL(
+              decodedSession?.frontState ?? '',
+              'failed',
+              'Failed to log in with Google',
+            ),
+          );
         }
       },
     );

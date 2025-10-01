@@ -64,6 +64,7 @@ discord:
   redirectURL: ''
   scope: 'identify email'
   expiresTime: 7200
+  sessionTTL: 3600
 
 x-platform:
   clientID: ''
@@ -89,3 +90,6 @@ ergo:
   nodeURL: ''
   minNanoErg: 10000000
   minFee: 1000000
+
+URLs:
+  frontCallbackURL: ''
