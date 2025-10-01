@@ -40,4 +40,7 @@ export class Asset {
 
   @Column({ type: 'int' })
   modifiedAt!: number;
+  
+  @Column({ type: 'int', default: 10, nullable: true })
+  weight!: number;
 }
