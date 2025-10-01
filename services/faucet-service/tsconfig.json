@@ -16,6 +16,8 @@
     { "path": "../../packages/discord-auth" },
     { "path": "../../packages/controller" },
     { "path": "../../packages/x-auth" },
-    { "path": "../../packages/google-auth" }
+    { "path": "../../packages/google-auth" },
+    { "path": "../../packages/accountant" },
+    { "path": "../../packages/ergo-utils" }
   ]
 }

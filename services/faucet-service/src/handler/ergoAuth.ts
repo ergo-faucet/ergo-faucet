@@ -1,5 +1,5 @@
 import { ErgoAuth } from '@ergo-faucet/ergo-authentication';
-import { ergoAuthConfig, redisConfig } from '@configs';
+import { ergoAuthConfig, redisConfig, ergoConfig } from '@configs';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { UserAddressAction } from '@ergo-faucet/database';
 import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
@@ -20,7 +20,7 @@ export const setupErgoAuth = async () => {
       challengeExpirySeconds: ergoAuthConfig.challengeExpirySeconds,
       refreshTokenExpirySeconds: ergoAuthConfig.refreshTokenExpirySeconds,
       accessTokenExpirySeconds: ergoAuthConfig.accessTokenExpirySeconds,
-      networkType: ergoAuthConfig.networkType,
+      networkType: ergoConfig.network,
     },
     ergoAuthLogger,
   );

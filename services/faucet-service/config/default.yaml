@@ -56,7 +56,6 @@ ergoAuth:
   challengeExpirySeconds: 300
   refreshTokenExpirySeconds: 2592000
   accessTokenExpirySeconds: 3600
-  networkAddress: 'mainnet'
 
 discord:
   clientID: ''
@@ -84,12 +83,21 @@ googleAuth:
 
 jobs:
   authJobInterval: 300
+  accountantJobInterval: 300
 
 ergo:
   network: 'mainnet'
-  nodeURL: ''
+  mnemonic: ''
   minNanoErg: 10000000
   minFee: 1000000
+  node:
+    URL: ''
+    timeout: 5000
+
+accountant:
+  tryLimit: 3
+  confirmationLimit: 40
+
 
 URLs:
   frontCallbackURL: ''
