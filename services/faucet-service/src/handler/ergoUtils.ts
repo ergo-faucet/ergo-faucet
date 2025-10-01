@@ -12,14 +12,12 @@ export const setupErgoUtils = async () => {
     ergoConfig.timeout,
     ergoUtilsLogger,
   );
-  logger.info('NodeModel initialized successfully');
 
   await Wallet.initialize(
     ergoConfig.mnemonic,
     ergoConfig.network,
     ergoUtilsLogger,
   );
-  logger.info('Wallet initialized successfully');
 
   logger.info('ErgoUtils initialized successfully');
 };

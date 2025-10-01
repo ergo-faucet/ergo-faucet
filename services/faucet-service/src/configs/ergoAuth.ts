@@ -11,6 +11,4 @@ export const ergoAuthConfig = {
   accessTokenExpirySeconds: config.get<number>(
     'ergoAuth.accessTokenExpirySeconds',
   ),
-  networkType:
-    config.get<string>('ergo.network').toLowerCase() === 'mainnet' ? 0 : 16,
 };
