@@ -63,6 +63,7 @@ discord:
   redirectURL: ''
   scope: 'identify email'
   expiresTime: 7200
+  sessionTTL: 3600
 
 x-platform:
   clientID: ''
@@ -96,3 +97,7 @@ ergo:
 accountant:
   tryLimit: 3
   confirmationLimit: 40
+
+
+URLs:
+  frontCallbackURL: ''

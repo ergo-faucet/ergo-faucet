@@ -9,4 +9,5 @@ export const googleAuthConfig = {
   scope: config.get<string>('googleAuth.scope'),
   expiresTime: config.get<number>('googleAuth.expiresTime'),
   sessionTTL: config.get<number>('googleAuth.sessionTTL'),
+  frontBaseURL: config.get<string>('URLs.frontCallbackURL'),
 };

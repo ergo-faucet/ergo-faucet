@@ -22,6 +22,7 @@ export const setupXAuth = async () => {
       scope: xAuthConfig.scope,
       expiresTime: xAuthConfig.expiresTime,
       sessionTTL: xAuthConfig.sessionTTL,
+      frontBaseURL: xAuthConfig.frontBaseURL,
     },
     xAuthLogger,
   );

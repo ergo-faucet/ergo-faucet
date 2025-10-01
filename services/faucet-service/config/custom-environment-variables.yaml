@@ -33,3 +33,7 @@ ergo:
   mnemonic: WALLET_MNEMONIC
   node:
     URL: NODE_URL
+
+
+URLs:
+  frontCallbackURL: FRONT_CALLBACK_URL

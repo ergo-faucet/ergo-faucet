@@ -5,16 +5,15 @@ import {
   AuthenticationBody,
   AuthenticationBodyType,
   AuthenticationResponse200,
-  AuthenticationResponseError,
   ChallengeBody,
   ChallengeBodyType,
-  ChallengeErrorResponse,
   ChallengeRecord,
   ChallengeResponse200,
   ChallengeVerificationResult,
   ErgoAuthConfig,
   RefreshTokenResponse200,
-  RefreshTokenResponse401,
+  LogoutResponse200,
+  ErrorResponse,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import {
@@ -231,8 +230,8 @@ export class ErgoAuth {
           body: ChallengeBody,
           response: {
             200: ChallengeResponse200,
-            400: ChallengeErrorResponse,
-            500: ChallengeErrorResponse,
+            400: ErrorResponse,
+            500: ErrorResponse,
           },
         },
         preHandler: async (req, res) => {
@@ -271,7 +270,7 @@ export class ErgoAuth {
           const challenge = await this.createChallenge(finallyAddress);
           return reply.status(200).send({ challenge, address: finallyAddress });
         } catch (err) {
-          this.logger.debug(`Create challenge failed:`, {
+          this.logger.error(`Create challenge failed:`, {
             error: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
@@ -300,9 +299,9 @@ export class ErgoAuth {
           body: AuthenticationBody,
           response: {
             200: AuthenticationResponse200,
-            400: AuthenticationResponseError,
-            401: AuthenticationResponseError,
-            500: AuthenticationResponseError,
+            400: ErrorResponse,
+            401: ErrorResponse,
+            500: ErrorResponse,
           },
         },
         preHandler: [
@@ -363,7 +362,7 @@ export class ErgoAuth {
             accessToken,
           });
         } catch (err) {
-          this.logger.debug(`Authentication failed:`, {
+          this.logger.error(`Authentication failed:`, {
             error: err instanceof Error ? err.message : err,
             stack: err instanceof Error ? err.stack : undefined,
           });
@@ -391,7 +390,7 @@ export class ErgoAuth {
         schema: {
           response: {
             200: RefreshTokenResponse200,
-            401: RefreshTokenResponse401,
+            401: ErrorResponse,
           },
         },
       },
@@ -410,13 +409,68 @@ export class ErgoAuth {
 
           return reply.send({ success: true, newToken });
         } catch (err) {
-          if (err instanceof Error) {
-            this.logger.debug(`Token refresh failed:`, {
-              message: err.message,
-              stack: err.stack,
-            });
-          }
-          return reply.status(401).send({ error: 'Invalid or expired token' });
+          this.logger.debug(`Token wasn't refresh:`, {
+            error: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+
+          return reply
+            .status(401)
+            .send({ error: 'Invalid or expired token', code: 'INVALID_TOKEN' });
+        }
+      },
+    );
+  };
+
+  /**
+   * Registers the `/logout` route.
+   *
+   * **GET `/logout`**
+   * - Requires the user to be authenticated (JWT or session).
+   * - Logs out the current user.
+   *
+   * @param fastify - Fastify instance to register the route on.
+   * @returns Promise<void>
+   */
+  private logoutRoute = async (
+    fastify: FastifySeverInstance,
+  ): Promise<void> => {
+    fastify.get(
+      '/logout',
+      {
+        schema: {
+          response: {
+            200: LogoutResponse200,
+            401: ErrorResponse,
+            500: ErrorResponse,
+          },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
+        },
+        preHandler: this.fastifyServer.authPreHandler(),
+      },
+      async (request, reply) => {
+        try {
+          const user = request.user as userRequestPayload;
+          this.fastifyServer.clearCookie(reply);
+          this.logger.debug(`userId ${user.userId} was loged out`);
+
+          return reply.send({
+            success: true,
+            message: `The user was loged out`,
+          });
+        } catch (err) {
+          this.logger.error(`Logout Failed:`, {
+            error: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          return reply.status(500).send({
+            error: 'Internal server error during logout',
+            code: 'INTERNAL_LOGOUT_ERROR',
+          });
         }
       },
     );
@@ -433,6 +487,7 @@ export class ErgoAuth {
     await this.fastifyServer.register(this.challengeRoute, prefix);
     await this.fastifyServer.register(this.authenticationRoute, prefix);
     await this.fastifyServer.register(this.refreshTokenRoute, prefix);
+    await this.fastifyServer.register(this.logoutRoute, prefix);
     this.logger.info(`Routes registered under prefix "${prefix}"`);
   };
 }

@@ -37,6 +37,7 @@
     "@rosen-bridge/abstract-logger": "^2.0.1",
     "@sinclair/typebox": "^0.34.38",
     "axios": "^1.11.0",
-    "ioredis": "^5.7.0"
+    "ioredis": "^5.7.0",
+    "uuid": "^13.0.0"
   }
 }

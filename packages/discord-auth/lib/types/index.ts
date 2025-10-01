@@ -1,10 +1,11 @@
 export {
   CallBackRouteQueryType,
   CallBackRouteQuery,
-  CallBackRouteResponse200,
   ErrorResponse,
+  LoginRouteQuery,
+  LoginRouteResponse200,
 } from './schemas';
 
-export { userDiscordData, discordToken } from './discordData';
+export { userDiscordData, discordToken, SessionData } from './discordData';
 
 export { DiscordAuthConfig } from './discordAuthConfig';
