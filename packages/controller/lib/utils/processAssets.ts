@@ -59,6 +59,7 @@ export const processAssets = async (
         usageDescription: usageDescription
           ? usageDescription
           : 'no description',
+          weight:
       });
       continue;
     }
