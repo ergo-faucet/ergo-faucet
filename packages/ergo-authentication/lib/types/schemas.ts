@@ -17,18 +17,19 @@ export const AuthenticationResponse200 = Type.Object({
   accessToken: Type.String(),
 });
 
-export const AuthenticationResponseError = Type.Object({
-  error: Type.String(),
-  code: Type.String(),
-});
-
 export const RefreshTokenResponse200 = Type.Object({
   success: Type.Boolean(),
   newToken: Type.String(),
 });
 
-export const RefreshTokenResponse401 = Type.Object({
+export const LogoutResponse200 = Type.Object({
+  success: Type.Boolean(),
+  message: Type.String(),
+});
+
+export const ErrorResponse = Type.Object({
   error: Type.String(),
+  code: Type.String(),
 });
 
 export const ChallengeBody = Type.Object({
@@ -43,9 +44,4 @@ export const ChallengeBody = Type.Object({
 export const ChallengeResponse200 = Type.Object({
   challenge: Type.String(),
   address: Type.String(),
-});
-
-export const ChallengeErrorResponse = Type.Object({
-  error: Type.String(),
-  code: Type.Optional(Type.String()),
 });

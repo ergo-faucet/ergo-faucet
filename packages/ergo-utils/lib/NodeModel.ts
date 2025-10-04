@@ -26,6 +26,7 @@ export class NodeModel {
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
+
     this.axiosInstance = axios.create({
       baseURL: `${nodeUrl}`,
       timeout,
@@ -152,12 +153,6 @@ export class NodeModel {
     return this.axiosInstance
       .get(`/blockchain/transaction/byId/${transactionId}`)
       .then((response) => {
-        if (response.status === 404) {
-          this.logger.debug(
-            `There is no mined transaction with id: ${transactionId}`,
-          );
-          return -1;
-        }
         const inclusionHeight = response.data.inclusionHeight;
         this.logger.debug(
           `Fetched inclusionHeight for transaction ${transactionId}: ${inclusionHeight}`,
@@ -166,6 +161,12 @@ export class NodeModel {
       })
       .catch((error) => {
         if (axios.isAxiosError(error)) {
+          if (error.response?.status === 404) {
+            this.logger.debug(
+              `There is no mined transaction with id: ${transactionId}`,
+            );
+            return -1;
+          }
           this.logger.error(`Axios error.`, {
             message: error.message,
             stack: error.stack,
@@ -248,7 +249,11 @@ export class NodeModel {
             message: error.message,
             stack: error.stack,
           });
-        } else this.logger.error(error);
+        } else
+          this.logger.error('Error during selecing box for transaction', {
+            message: error.message,
+            stack: error.stack,
+          });
       });
   };
 
@@ -268,14 +273,15 @@ export class NodeModel {
     }
 
     this.logger.debug(`Checking mempool status for txId: ${txId}`);
+    let status = false;
     await this.axiosInstance
-      .get(`/transactions/unconfirmed/${txId}`)
+      .get(`/transactions/unconfirmed/byTransactionId/${txId}`)
       .then((response) => {
-        if (response.status === 200) return true;
+        if (response.status === 200) status = true;
       })
       .catch((error) => {
         if (axios.isAxiosError(error)) {
-          this.logger.error(`Axios error.`, {
+          this.logger.error(`Axios error.: ${error.response}`, {
             message: error.message,
             stack: error.stack,
           });
@@ -285,7 +291,8 @@ export class NodeModel {
           error: ${error.message}
           stack: ${error.stack}`);
       });
-    return false;
+
+    return status;
   };
 
   /**

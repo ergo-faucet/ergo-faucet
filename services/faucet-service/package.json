@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "@ergo-faucet/controller": "^0.1.0",
+    "@ergo-faucet/accountant": "^0.1.0",
     "@ergo-faucet/database": "^0.1.0",
     "@ergo-faucet/discord-auth": "^0.1.0",
     "@ergo-faucet/ergo-authentication": "^0.1.0",

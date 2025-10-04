@@ -1,8 +1,9 @@
 export {
   CallBackRouteQueryType,
   CallBackRouteQuery,
-  CallBackRouteResponse200,
   ErrorResponse,
+  LoginRouteQuery,
+  LoginRouteResponse200,
 } from './schemas';
 
 export {

@@ -178,9 +178,9 @@ describe('ErgoAuth', () => {
    * @expected
    * - should register exactly 3 routes (/challenge, /auth, /refresh-token)
    */
-  it('should register 3 routes', async () => {
+  it('should register 4 routes', async () => {
     await ergoAuth.registerRoutes('/ergo-auth');
-    expect(mockFastifyServer.register).toHaveBeenCalledTimes(3);
+    expect(mockFastifyServer.register).toHaveBeenCalledTimes(4);
   });
 
   /**

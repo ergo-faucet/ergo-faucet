@@ -210,15 +210,28 @@ export class FastifyAPIServer {
         if (payload.refresh) {
           return res
             .status(401)
-            .send({ error: "Refresh token cookies can't be used in header" });
+            .send({
+              error: "Refresh token cookies can't be used in header",
+              code: 'REFRESH_TOKEN_HEADER_FORBIDDEN',
+            });
         }
       } catch {
         if (verifyAndEnforce) {
-          return res.status(401).send({ error: 'Unauthorized' });
+          return res
+            .status(401)
+            .send({ error: 'Unauthorized', code: 'AUTH_REQUIRED' });
         }
         // if not enforcing, fail silently
       }
     };
+  };
+
+  /**
+   * Clears the refresh token cookie.
+   * @param reply - FastifyReply instance to clear the cookie
+   */
+  public clearCookie = (reply: FastifyReply) => {
+    reply.clearCookie(this.cookieConfig.name);
   };
 
   /**

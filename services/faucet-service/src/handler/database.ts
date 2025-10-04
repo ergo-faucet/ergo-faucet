@@ -1,4 +1,5 @@
 import {
+  AccountantAction,
   DataSourceHandler,
   DiscordAction,
   GoogleAction,
@@ -23,6 +24,7 @@ export const setupDatabase = async () => {
     await XAction.initialize(dataSource, dbLogger);
     await GoogleAction.initialize(dataSource, dbLogger);
     RequestHistoryAction.initialize(dataSource, dbLogger);
+    await AccountantAction.initialize(dataSource, dbLogger);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(

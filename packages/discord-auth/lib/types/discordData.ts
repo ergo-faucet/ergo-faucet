@@ -11,3 +11,8 @@ export interface discordToken {
   refreshToken: string;
   expiresInSecond: number;
 }
+
+export interface SessionData {
+  userId: number;
+  frontState: string;
+}

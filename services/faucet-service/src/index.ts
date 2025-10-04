@@ -10,8 +10,10 @@ import {
   setupXAuth,
   setupController,
   startServerService,
+  setupAccountant,
+  setupErgoUtils,
 } from './handler';
-import { scheduleExpiringJob } from './jobs';
+import { scheduleExpiringJob, schedulePayingJob } from './jobs';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
@@ -26,9 +28,12 @@ const main = async () => {
     await setupDiscordAuth();
     await setupXAuth();
     await setupGoogleAuth();
+    await setupErgoUtils();
+    await setupAccountant();
     logger.info('All packages was initialized successfuly');
     await startServerService();
     await scheduleExpiringJob();
+    await schedulePayingJob();
   } catch (err) {
     logger.debug('Error in initialize the packages', err);
   }

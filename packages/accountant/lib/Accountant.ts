@@ -231,6 +231,8 @@ class Accountant {
         this.logger.debug(
           `Transaction resubmitted for request ID: ${request.id}. Transaction ID: ${transactionId}`,
         );
+      } else {
+        this.logger.debug(`Transaction is in mempool`);
       }
     } catch (error) {
       if (error instanceof DoubleSpendError) {

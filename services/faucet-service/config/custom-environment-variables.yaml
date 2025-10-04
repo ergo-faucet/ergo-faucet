@@ -30,4 +30,10 @@ googleAuth:
   redirectURL: GOOGLE_REDIRECT_URL
 
 ergo:
-  nodeURL: NODE_URL
+  mnemonic: WALLET_MNEMONIC
+  node:
+    URL: NODE_URL
+
+
+URLs:
+  frontCallbackURL: FRONT_CALLBACK_URL
