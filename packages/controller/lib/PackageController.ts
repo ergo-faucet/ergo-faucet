@@ -138,6 +138,11 @@ class PackageController {
             403: ErrorResponse,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
 
