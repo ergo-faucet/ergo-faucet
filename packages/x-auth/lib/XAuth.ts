@@ -1,12 +1,7 @@
-import Redis from 'ioredis';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import {
-  FastifyAPIServer,
-  FastifySeverInstance,
-} from '@ergo-faucet/fastify-server';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
+import { FastifySeverInstance } from '@ergo-faucet/fastify-server';
 import { XAction } from '@ergo-faucet/database';
 import axios from 'axios';
-import crypto from 'crypto';
 import {
   CallBackRouteQuery,
   CallBackRouteQueryType,
@@ -20,21 +15,9 @@ import {
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import { v4 as uuidv4 } from 'uuid';
-
-export class XAuth {
+import { AbstractOAuth } from '@ergo-faucet/abstract-oauth';
+export class XAuth extends AbstractOAuth {
   private static instance: XAuth;
-  private readonly logger: AbstractLogger;
-  private readonly fastifyServer: FastifyAPIServer;
-  private readonly xAction: XAction;
-  private readonly clientID: string;
-  private readonly clientSecret: string;
-  private readonly redirectURL: string;
-  private readonly scope: string;
-  private readonly expiresTime: number;
-  private readonly redis: Redis;
-  private readonly sessionTTL: number;
-  private readonly frontBaseURL: string;
-  private readonly SESSION_PREFIX = 'xauth:session:';
   private readonly X_AUTH_PREFIX = '/auth/x-platform';
   private readonly X_OAUTH_URL = 'https://x.com/i/oauth2/authorize';
   private readonly X_TOKEN_URL = 'https://api.x.com/2/oauth2/token';
@@ -48,17 +31,7 @@ export class XAuth {
    * @param logger - Optional logger instance (defaults to DummyLogger)
    */
   private constructor(config: XAuthConfig, logger?: AbstractLogger) {
-    this.logger = logger ?? new DummyLogger();
-    this.fastifyServer = config.fastifyServer;
-    this.xAction = config.xAction;
-    this.clientID = config.clientID;
-    this.clientSecret = config.clientSecret;
-    this.redirectURL = config.redirectURL;
-    this.scope = config.scope;
-    this.expiresTime = config.expiresTime;
-    this.redis = new Redis(config.redis);
-    this.sessionTTL = config.sessionTTL;
-    this.frontBaseURL = config.frontBaseURL;
+    super(config, 'xauth:session:', logger);
   }
 
   /**
@@ -93,68 +66,6 @@ export class XAuth {
   };
 
   /**
-   * Sets session data in Redis with TTL.
-   * @param key - Session key
-   * @param value - string data
-   * @param ttl - Time to live in seconds
-   */
-  private setSessionData = async (
-    key: string,
-    value: string,
-    ttl: number,
-  ): Promise<void> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to set session data for key: ${key}`);
-
-    await this.redis.set(fullKey, value);
-    if (ttl) {
-      await this.redis.expire(fullKey, ttl);
-    }
-  };
-
-  /**
-   * Gets session data from Redis.
-   * @param key - Session key
-   * @returns Session data or null if not found
-   */
-  private getSessionData = async (key: string): Promise<string | undefined> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to get session data for key: ${key}`);
-
-    const raw = await this.redis.get(fullKey);
-    if (!raw) {
-      return undefined;
-    }
-    return raw;
-  };
-
-  /**
-   * Deletes session data from Redis.
-   * @param key - Session key
-   */
-  private deleteSessionData = async (key: string): Promise<void> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to delete session data for key: ${key}`);
-    await this.redis.del(fullKey);
-  };
-
-  /**
-   * Generates PKCE codes (code verifier and challenge)
-   * @returns Object containing codeVerifier and codeChallenge
-   */
-  private generatePKCECodes = (): {
-    codeVerifier: string;
-    codeChallenge: string;
-  } => {
-    const codeVerifier = crypto.randomBytes(32).toString('base64url');
-    const codeChallenge = crypto
-      .createHash('sha256')
-      .update(codeVerifier)
-      .digest('base64url');
-    return { codeVerifier, codeChallenge };
-  };
-
-  /**
    * Builds the X-platform OAuth2 login URL with PKCE.
    * @param frontState - State parameter from the front-end to be included in the redirect
    * @param userId - ID of the user initiating the login
@@ -185,29 +96,6 @@ export class XAuth {
     });
 
     return `${this.X_OAUTH_URL}?${params.toString()}`;
-  };
-
-  /**
-   * Builds the front-end redirect URL with query parameters for X-platform OAuth2 login result.
-   *
-   * @param frontState - State value provided by the front-end to maintain session/context
-   * @param status - Result status of the OAuth flow ('success' or 'false')
-   * @param message - Optional message to include in the URL (e.g., success or error message)
-   * @returns Fully qualified URL string combining the frontBaseURL, frontState, and query parameters
-   */
-  private buildRedirectURL = (
-    frontState: string,
-    status: 'success' | 'failed',
-    message?: string,
-  ): string => {
-    const [path, query] = frontState.split('?');
-    const params = new URLSearchParams(query);
-    params.set('authMethod', 'x-platform');
-    params.set('authMethodStatus', status);
-    if (message) {
-      params.set('message', message);
-    }
-    return `${this.frontBaseURL + path}?${params.toString()}`;
   };
 
   /**
@@ -346,6 +234,7 @@ export class XAuth {
         if (!code || !state) {
           return reply.redirect(
             this.buildRedirectURL(
+              'x-platform',
               '',
               'failed',
               'Missing code or state from X-platform callback',
@@ -356,7 +245,12 @@ export class XAuth {
           const session = await this.getSessionData(state);
           if (!session) {
             return reply.redirect(
-              this.buildRedirectURL('', 'failed', 'Session expired or invalid'),
+              this.buildRedirectURL(
+                'x-platform',
+                '',
+                'failed',
+                'Session expired or invalid',
+              ),
             );
           }
           await this.deleteSessionData(state);
@@ -373,19 +267,21 @@ export class XAuth {
 
           const xUser: XUserData = await this.fetchXUser(accessToken);
 
-          await this.xAction.linkXAccount(
-            Number(decodedSession.userId),
-            xUser.userId,
-            xUser.username,
-            xUser.name,
-            xUser.join_date,
-            this.expiresTime,
-            accessToken,
-            refreshToken,
-          );
+          if (this.action instanceof XAction)
+            await this.action.linkXAccount(
+              Number(decodedSession.userId),
+              xUser.userId,
+              xUser.username,
+              xUser.name,
+              xUser.join_date,
+              this.expiresTime,
+              accessToken,
+              refreshToken,
+            );
 
           return reply.redirect(
             this.buildRedirectURL(
+              'x-platform',
               decodedSession.frontState,
               'success',
               `The user with username ${xUser.username} logged in successfully with X-platform`,
@@ -400,6 +296,7 @@ export class XAuth {
             .status(302)
             .redirect(
               this.buildRedirectURL(
+                'x-platform',
                 decodedSession?.frontState ?? '',
                 'failed',
                 'Failed to log in with X-platform',

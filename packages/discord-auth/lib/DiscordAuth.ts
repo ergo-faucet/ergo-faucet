@@ -1,12 +1,7 @@
 import axios from 'axios';
-import Redis from 'ioredis';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 import { v4 as uuidv4 } from 'uuid';
-
-import {
-  FastifyAPIServer,
-  FastifySeverInstance,
-} from '@ergo-faucet/fastify-server';
+import { FastifySeverInstance } from '@ergo-faucet/fastify-server';
 import { DiscordAction } from '@ergo-faucet/database';
 import {
   CallBackRouteQuery,
@@ -20,23 +15,9 @@ import {
   LoginRouteResponse200,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
-export class DiscordAuth {
+import { AbstractOAuth } from '@ergo-faucet/abstract-oauth';
+export class DiscordAuth extends AbstractOAuth {
   private static instance: DiscordAuth;
-  private readonly logger: AbstractLogger;
-  private readonly fastifyServer: FastifyAPIServer;
-  private readonly discordAction: DiscordAction;
-
-  private readonly clientID: string;
-  private readonly clientSecret: string;
-  private readonly redirectURL: string;
-  private readonly scope: string;
-  private readonly expiresTime: number;
-
-  private readonly redis: Redis;
-  private readonly sessionTTL: number;
-  private readonly frontBaseURL: string;
-  private readonly SESSION_PREFIX = 'discordAuth:session:';
-
   private readonly DISCORD_EPOCH = 1420070400000;
   private readonly GRANT_TYPE = 'authorization_code';
   private readonly Discord_AUTH_PREFIX = '/auth/discord';
@@ -51,17 +32,7 @@ export class DiscordAuth {
    * @param logger - Optional logger instance (defaults to DummyLogger)
    */
   private constructor(config: DiscordAuthConfig, logger?: AbstractLogger) {
-    this.logger = logger ?? new DummyLogger();
-    this.fastifyServer = config.fastifyServer;
-    this.discordAction = config.discordAction;
-    this.clientID = config.clientID;
-    this.clientSecret = config.clientSecret;
-    this.redirectURL = config.redirectURL;
-    this.scope = config.scope;
-    this.expiresTime = config.expiresTime;
-    this.redis = new Redis(config.redis);
-    this.sessionTTL = config.sessionTTL;
-    this.frontBaseURL = config.frontBaseURL;
+    super(config, 'discordAuth:session:', logger);
   }
 
   /**
@@ -95,50 +66,6 @@ export class DiscordAuth {
   };
 
   /**
-   * Sets session data in Redis with TTL.
-   * @param key - Session key
-   * @param value - string data
-   * @param ttl - Time to live in seconds
-   */
-  private setSessionData = async (
-    key: string,
-    value: string,
-    ttl: number,
-  ): Promise<void> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to set session data for key: ${key}`);
-    await this.redis.set(fullKey, value);
-    if (ttl) {
-      await this.redis.expire(fullKey, ttl);
-    }
-  };
-
-  /**
-   * Gets session data from Redis.
-   * @param key - Session key
-   * @returns Session data or null if not found
-   */
-  private getSessionData = async (key: string): Promise<string | undefined> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to get session data for key: ${key}`);
-    const raw = await this.redis.get(fullKey);
-    if (!raw) {
-      return undefined;
-    }
-    return raw;
-  };
-
-  /**
-   * Deletes session data from Redis.
-   * @param key - Session key
-   */
-  private deleteSessionData = async (key: string): Promise<void> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to delete session data for key: ${key}`);
-    await this.redis.del(fullKey);
-  };
-
-  /**
    * Builds the Discord OAuth2 login URL.
    * @param frontState - State parameter from the front-end to be included in the session
    * @param userId - ID of the user initiating the login
@@ -165,29 +92,6 @@ export class DiscordAuth {
     });
 
     return `${this.DISCORD_OAUTH_URL}/authorize?${params.toString()}`;
-  };
-
-  /**
-   * Builds the front-end redirect URL with query parameters for Discord OAuth2 login result.
-   *
-   * @param status - Result status of the OAuth flow ('success' or 'false')
-   * @param frontState - Optional state value provided by the front-end to maintain session/context
-   * @param message - Optional message to include in the URL (e.g., success or error message)
-   * @returns Fully qualified URL string combining the frontBaseURL, frontState, and query parameters
-   */
-  private buildRedirectURL = (
-    frontState: string,
-    status: 'success' | 'failed',
-    message?: string,
-  ): string => {
-    const [path, query] = frontState.split('?');
-    const params = new URLSearchParams(query);
-    params.set('authMethod', 'discord');
-    params.set('authMethodStatus', status);
-    if (message) {
-      params.set('message', message);
-    }
-    return `${this.frontBaseURL + path}?${params.toString()}`;
   };
 
   /**
@@ -315,6 +219,7 @@ export class DiscordAuth {
         if (!code || !state) {
           return reply.redirect(
             this.buildRedirectURL(
+              'discord',
               '',
               'failed',
               'Missing code or state from Discord callback',
@@ -326,7 +231,12 @@ export class DiscordAuth {
           const session = await this.getSessionData(state);
           if (!session) {
             return reply.redirect(
-              this.buildRedirectURL('', 'failed', 'Session expired or invalid'),
+              this.buildRedirectURL(
+                'discord',
+                '',
+                'failed',
+                'Session expired or invalid',
+              ),
             );
           }
           await this.deleteSessionData(state);
@@ -341,20 +251,22 @@ export class DiscordAuth {
           const discordUser: userDiscordData =
             await this.fetchDiscordUser(accessToken);
 
-          await this.discordAction.linkDiscordAccount(
-            Number(decodedSession.userId),
-            discordUser.userId,
-            discordUser.username,
-            discordUser.join_date,
-            this.expiresTime,
-            accessToken,
-            refreshToken,
-            discordUser.email,
-            discordUser.global_name,
-          );
+          if (this.action instanceof DiscordAction)
+            await this.action.linkDiscordAccount(
+              Number(decodedSession.userId),
+              discordUser.userId,
+              discordUser.username,
+              discordUser.join_date,
+              this.expiresTime,
+              accessToken,
+              refreshToken,
+              discordUser.email,
+              discordUser.global_name,
+            );
 
           return reply.redirect(
             this.buildRedirectURL(
+              'discord',
               decodedSession.frontState,
               'success',
               `The user with username ${discordUser.username} logged in successfully with Discord`,
@@ -367,6 +279,7 @@ export class DiscordAuth {
           });
           return reply.redirect(
             this.buildRedirectURL(
+              'discord',
               decodedSession?.frontState ?? '',
               'failed',
               'Failed to log in with Discord',

@@ -1,10 +1,10 @@
-import { DiscordAction } from '@ergo-faucet/database';
+import { DiscordAction, GoogleAction, XAction } from '@ergo-faucet/database';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { RedisOptions } from 'ioredis';
 
-export interface DiscordAuthConfig {
+export interface AuthConfig {
   fastifyServer: FastifyAPIServer;
-  action: DiscordAction;
+  action: XAction | GoogleAction | DiscordAction;
   clientID: string;
   clientSecret: string;
   redirectURL: string;

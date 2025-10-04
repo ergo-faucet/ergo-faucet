@@ -1,11 +1,6 @@
-import Redis from 'ioredis';
 import axios from 'axios';
-import crypto from 'crypto';
-import {
-  FastifyAPIServer,
-  FastifySeverInstance,
-} from '@ergo-faucet/fastify-server';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { FastifySeverInstance } from '@ergo-faucet/fastify-server';
+import { AbstractLogger } from '@rosen-bridge/abstract-logger';
 import { GoogleAction } from '@ergo-faucet/database';
 import {
   CallBackRouteQuery,
@@ -20,21 +15,10 @@ import {
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import { v4 as uuidv4 } from 'uuid';
+import { AbstractOAuth } from '@ergo-faucet/abstract-oauth';
 
-export class GoogleAuth {
+export class GoogleAuth extends AbstractOAuth {
   private static instance: GoogleAuth;
-  private readonly logger: AbstractLogger;
-  private readonly fastifyServer: FastifyAPIServer;
-  private readonly googleAction: GoogleAction;
-  private readonly clientId: string;
-  private readonly clientSecret: string;
-  private readonly redirectURL: string;
-  private readonly scope: string;
-  private readonly expiresTime: number;
-  private readonly redis: Redis;
-  private readonly sessionTTL: number;
-  private readonly frontBaseURL: string;
-  private readonly SESSION_PREFIX = 'googleAuth:session:';
   private readonly GOOGLE_AUTH_PREFIX = '/auth/google';
   private readonly GOOGLE_OAUTH_URL =
     'https://accounts.google.com/o/oauth2/v2/auth';
@@ -50,17 +34,7 @@ export class GoogleAuth {
    * @param logger - Optional logger instance (defaults to DummyLogger)
    */
   private constructor(config: GoogleAuthConfig, logger?: AbstractLogger) {
-    this.logger = logger ?? new DummyLogger();
-    this.fastifyServer = config.fastifyServer;
-    this.googleAction = config.googleAction;
-    this.clientId = config.clientID;
-    this.clientSecret = config.clientSecret;
-    this.redirectURL = config.redirectURL;
-    this.scope = config.scope;
-    this.expiresTime = config.expiresTime;
-    this.redis = new Redis(config.redis);
-    this.sessionTTL = config.sessionTTL;
-    this.frontBaseURL = config.frontBaseURL;
+    super(config, 'googleAuth:session:', logger);
   }
 
   /**
@@ -93,66 +67,6 @@ export class GoogleAuth {
   };
 
   /**
-   * Sets session data in Redis with TTL.
-   * @param key - Session key
-   * @param value - string data
-   * @param ttl - Time to live in seconds
-   */
-  private setSessionData = async (
-    key: string,
-    value: string,
-    ttl: number,
-  ): Promise<void> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to set session data for key: ${key}`);
-    await this.redis.set(fullKey, value);
-    if (ttl) {
-      await this.redis.expire(fullKey, ttl);
-    }
-  };
-
-  /**
-   * Gets session data from Redis.
-   * @param key - Session key
-   * @returns Session data or null if not found
-   */
-  private getSessionData = async (key: string): Promise<string | undefined> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to get session data for key: ${key}`);
-    const raw = await this.redis.get(fullKey);
-    if (!raw) {
-      return undefined;
-    }
-    return raw;
-  };
-
-  /**
-   * Deletes session data from Redis.
-   * @param key - Session key
-   */
-  private deleteSessionData = async (key: string): Promise<void> => {
-    const fullKey = `${this.SESSION_PREFIX}${key}`;
-    this.logger.debug(`Try to delete session data for key: ${key}`);
-    await this.redis.del(fullKey);
-  };
-
-  /**
-   * Generates PKCE codes (code verifier and challenge)
-   * @returns Object containing codeVerifier and codeChallenge
-   */
-  private generatePKCECodes = (): {
-    codeVerifier: string;
-    codeChallenge: string;
-  } => {
-    const codeVerifier = crypto.randomBytes(32).toString('base64url');
-    const codeChallenge = crypto
-      .createHash('sha256')
-      .update(codeVerifier)
-      .digest('base64url');
-    return { codeVerifier, codeChallenge };
-  };
-
-  /**
    * Builds the Google OAuth2 login URL with PKCE.
    * @param frontState - State parameter from the frontend
    * @param userId - ID of the user initiating the login
@@ -173,7 +87,7 @@ export class GoogleAuth {
 
     const params = new URLSearchParams({
       response_type: 'code',
-      client_id: this.clientId,
+      client_id: this.clientID,
       redirect_uri: this.redirectURL,
       scope: this.scope,
       state,
@@ -184,29 +98,6 @@ export class GoogleAuth {
     });
 
     return `${this.GOOGLE_OAUTH_URL}?${params.toString()}`;
-  };
-
-  /**
-   * Builds the front-end redirect URL with query parameters for Google OAuth2 login result.
-   *
-   * @param frontState - State value provided by the front-end to maintain session/context
-   * @param status - Result status of the OAuth flow ('success' or 'failed')
-   * @param message - Optional message to include in the URL (e.g., success or error message)
-   * @returns Fully qualified URL string combining the frontBaseURL, frontState, and query parameters
-   */
-  private buildRedirectURL = (
-    frontState: string,
-    status: 'success' | 'failed',
-    message?: string,
-  ): string => {
-    const [path, query] = frontState.split('?');
-    const params = new URLSearchParams(query);
-    params.set('authMethod', 'google');
-    params.set('authMethodStatus', status);
-    if (message) {
-      params.set('message', message);
-    }
-    return `${this.frontBaseURL + path}?${params.toString()}`;
   };
 
   /**
@@ -244,7 +135,7 @@ export class GoogleAuth {
     codeVerifier: string,
   ): Promise<GoogleToken> => {
     const params = new URLSearchParams({
-      client_id: this.clientId,
+      client_id: this.clientID,
       client_secret: this.clientSecret,
       redirect_uri: this.redirectURL,
       grant_type: this.GRANT_TYPE,
@@ -345,6 +236,7 @@ export class GoogleAuth {
         if (!code || !state) {
           return reply.redirect(
             this.buildRedirectURL(
+              'google',
               '',
               'failed',
               'Missing code or state from Google callback',
@@ -356,7 +248,12 @@ export class GoogleAuth {
           const session = await this.getSessionData(state);
           if (!session) {
             return reply.redirect(
-              this.buildRedirectURL('', 'failed', 'Session expired or invalid'),
+              this.buildRedirectURL(
+                'google',
+                '',
+                'failed',
+                'Session expired or invalid',
+              ),
             );
           }
 
@@ -375,18 +272,20 @@ export class GoogleAuth {
           const googleUser: GoogleUserData =
             await this.fetchGoogleUser(accessToken);
 
-          await this.googleAction.linkGoogleAccount(
-            Number(decodedSession.userId),
-            googleUser.userId,
-            googleUser.name,
-            googleUser.email,
-            this.expiresTime,
-            accessToken,
-            refreshToken,
-          );
+          if (this.action instanceof GoogleAction)
+            await this.action.linkGoogleAccount(
+              Number(decodedSession.userId),
+              googleUser.userId,
+              googleUser.name,
+              googleUser.email,
+              this.expiresTime,
+              accessToken,
+              refreshToken,
+            );
 
           return reply.redirect(
             this.buildRedirectURL(
+              'google',
               decodedSession.frontState,
               'success',
               `The user with name ${googleUser.name} logged in successfully with Google`,
@@ -399,6 +298,7 @@ export class GoogleAuth {
           });
           return reply.redirect(
             this.buildRedirectURL(
+              'google',
               decodedSession?.frontState ?? '',
               'failed',
               'Failed to log in with Google',

@@ -23,7 +23,7 @@ export interface SessionData {
 
 export interface XAuthConfig {
   fastifyServer: FastifyAPIServer;
-  xAction: XAction;
+  action: XAction;
   clientID: string;
   clientSecret: string;
   redirectURL: string;

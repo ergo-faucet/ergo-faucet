@@ -22,7 +22,7 @@ export interface SessionData {
 
 export interface GoogleAuthConfig {
   fastifyServer: FastifyAPIServer;
-  googleAction: GoogleAction;
+  action: GoogleAction;
   frontBaseURL: string;
   clientID: string;
   clientSecret: string;
