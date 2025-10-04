@@ -14,7 +14,7 @@ export const setupXAuth = async () => {
   await XAuth.initialize(
     {
       fastifyServer: fastify,
-      xAction: xAction,
+      action: xAction,
       redis: redisConfig,
       clientID: xAuthConfig.clientID,
       clientSecret: xAuthConfig.clientSecret,

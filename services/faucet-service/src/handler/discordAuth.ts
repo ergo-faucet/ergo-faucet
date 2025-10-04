@@ -15,7 +15,7 @@ export const setupDiscordAuth = async () => {
   await DiscordAuth.initialize(
     {
       fastifyServer: fastify,
-      discordAction: discordAction,
+      action: discordAction,
       clientID: discordConfig.clientID,
       clientSecret: discordConfig.clientSecret,
       redirectURL: discordConfig.redirectURL,

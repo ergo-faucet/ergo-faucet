@@ -15,7 +15,7 @@ export const setupGoogleAuth = async () => {
   await GoogleAuth.initialize(
     {
       fastifyServer: fastify,
-      googleAction: googleAction,
+      action: googleAction,
       clientID: googleAuthConfig.clientId,
       clientSecret: googleAuthConfig.clientSecret,
       redirectURL: googleAuthConfig.redirectUrl,
