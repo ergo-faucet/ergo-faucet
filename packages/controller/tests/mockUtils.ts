@@ -172,6 +172,7 @@ export const mockedRequestHistoryAction: RequestHistoryAction & {
 
 export const mockRequestDTO = [
   {
+    requestId: 1,
     packageId: 101,
     packageName: 'Starter Pack',
     status: 'submitted',
