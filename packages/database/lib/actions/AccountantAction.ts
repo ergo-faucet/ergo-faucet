@@ -88,7 +88,7 @@ class AccountantAction {
     userRequestId: number,
     status: 'pending' | 'submitted' | 'paid' | 'failed',
     numberOfTries: number,
-    txSerialized?: string | null,
+    txSerialized?: string,
     txId?: string | null,
   ): Promise<void> => {
     this.logger.debug(

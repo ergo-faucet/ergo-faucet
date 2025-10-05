@@ -261,7 +261,7 @@ describe('Accountant', () => {
         request.id,
         'paid',
         request.numberOfTries,
-        request.txSerialized,
+        undefined,
         request.txId,
       );
     });
