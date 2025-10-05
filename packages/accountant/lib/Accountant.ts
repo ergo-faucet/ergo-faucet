@@ -215,6 +215,8 @@ class Accountant {
             request.id,
             'paid',
             request.numberOfTries,
+            request.txSerialized,
+            request.txId,
           );
         }
         return;

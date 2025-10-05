@@ -88,8 +88,8 @@ class AccountantAction {
     userRequestId: number,
     status: 'pending' | 'submitted' | 'paid' | 'failed',
     numberOfTries: number,
-    txSerialized?: string,
-    txId?: string,
+    txSerialized?: string | null,
+    txId?: string | null,
   ): Promise<void> => {
     this.logger.debug(
       `Updating payment info for user request ID: ${userRequestId}.`,

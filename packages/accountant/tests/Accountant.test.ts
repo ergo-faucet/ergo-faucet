@@ -257,7 +257,13 @@ describe('Accountant', () => {
       expect(mockNodeModel.getCurrentBlockchainHeight).toHaveBeenCalled();
       expect(
         mockAccountantAction.updateUserRequestPaymentInfo,
-      ).toHaveBeenCalledWith(request.id, 'paid', request.numberOfTries);
+      ).toHaveBeenCalledWith(
+        request.id,
+        'paid',
+        request.numberOfTries,
+        request.txSerialized,
+        request.txId,
+      );
     });
 
     /**
