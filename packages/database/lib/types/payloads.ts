@@ -12,3 +12,5 @@ export interface PackagePayload {
 }
 
 export type AssetPayload = Omit<Asset, 'id' | 'package'>;
+
+export type AuthMethodPayload = { id: number; order?: number };

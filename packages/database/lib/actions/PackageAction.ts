@@ -20,6 +20,7 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   AssetPayload,
   PackagePayload,
+  AuthMethodPayload,
   AuthMethodDTO,
   AuthMethodStatus,
   NotFoundError,
@@ -481,7 +482,7 @@ class PackageAction {
    * @returns {Promise<void>}
    */
   public addPackageAuthMethods = async (
-    authMethods: { id: number; order?: number }[],
+    authMethods: AuthMethodPayload[],
     pkg: Package,
   ): Promise<number[]> => {
     this.logger.debug(
@@ -497,9 +498,12 @@ class PackageAction {
           transactionalEntityManager.getRepository(PackageAuthMethod);
 
         // Sort and remove duplicates based on id, keeping the first occurrence
-        authMethods = Array.from(
-          new Map(authMethods.map((m) => [m.id, m])).values(),
-        ).sort((a, b) => a.id - b.id);
+        const authMap = new Map<number, (typeof authMethods)[number]>();
+        authMethods.forEach((m) => authMap.set(m.id, m));
+        authMethods = authMap
+          .values()
+          .toArray()
+          .sort((a, b) => a.id - b.id);
 
         const auths = await authMethodRepository.find({
           where: { id: In(authMethods.map((am) => am!.id)) },

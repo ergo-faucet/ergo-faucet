@@ -67,7 +67,7 @@ export const processAssets = async (
       await nodeModel.getTokenById(tokenId);
 
     // Validate the amount's precision against the token's decimals
-    validateAmountPrecision(Number(value), decimals);
+    validateAmountPrecision(value, decimals);
 
     // convert user provided amount to nodeAPI requested amount and save it to the list
     const amount = toBigIntAmount(value, decimals).toString();

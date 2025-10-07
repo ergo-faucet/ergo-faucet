@@ -1,5 +1,9 @@
 export { DatabaseConfig } from './dataSourceTypes';
-export type { PackagePayload, AssetPayload } from './payloads';
+export type {
+  PackagePayload,
+  AssetPayload,
+  AuthMethodPayload,
+} from './payloads';
 
 export type {
   PackageDTO,
