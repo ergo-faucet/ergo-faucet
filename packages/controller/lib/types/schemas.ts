@@ -122,6 +122,7 @@ export const RequsetHistoryRouteQuery = Type.Object({
 });
 
 const RequestHistorySchema = Type.Object({
+  requestId: Type.Number({ minimum: 0 }),
   packageId: Type.Number({ minimum: 0 }),
   packageName: Type.String(),
   status: Type.Union([

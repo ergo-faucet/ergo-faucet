@@ -36,6 +36,7 @@ export interface PackageDTO {
 }
 
 export interface RequestDTO {
+  requestId: number;
   packageId: number;
   packageName: string;
   status: RequestStaus;

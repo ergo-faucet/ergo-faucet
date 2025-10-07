@@ -92,6 +92,7 @@ class RequestHistoryAction {
 
     return requests.map(
       (r: UserRequest): RequestDTO => ({
+        requestId: r.id,
         packageId: r.package.id,
         packageName: r.package.name,
         status: r.status,
