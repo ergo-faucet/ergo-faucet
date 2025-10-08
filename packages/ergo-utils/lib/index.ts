@@ -7,5 +7,6 @@ export {
   errorResponse,
   tokenByIdResponse,
   tokenByIdResponseSuccess,
+  TokenNotFoundError,
 } from './types';
 export { isValidErgoAddress, validateAmountPrecision } from './utils';

@@ -12,6 +12,7 @@ export interface AssetDTO {
   tokenId: string;
   assetName: string;
   amount: string;
+  decimals: number;
   usageDescription: string;
 }
 

@@ -338,6 +338,7 @@ export class ErgoAuth {
             userId: user.id,
             address: address,
             name: user.name,
+            isAdmin: user.isAdmin,
           };
 
           const refreshTokenPayload = {

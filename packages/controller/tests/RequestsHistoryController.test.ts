@@ -9,7 +9,7 @@ import {
 } from 'vitest';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import {
-  createMockedServer,
+  mockFastifyConfig,
   mockedRequestHistoryAction,
   mockRequestDTO,
 } from './mockUtils';
@@ -28,7 +28,10 @@ describe('RequestController', () => {
   });
 
   describe('GET /request-history', async () => {
-    const mockedServer = createMockedServer();
+    // eslint-disable-next-line
+    (FastifyAPIServer as any).instance = undefined;
+    await FastifyAPIServer.initialize(mockFastifyConfig);
+    const fastifyInstance = FastifyAPIServer.getInstance();
 
     beforeAll(async () => {
       const instance = new RequestHistoryController(
@@ -36,14 +39,17 @@ describe('RequestController', () => {
         // eslint-disable-next-line
         {} as any as FastifyAPIServer,
       );
-      await mockedServer.register(instance.fetchRequestsHistoryRoute, {
-        prefix: '/request-history',
-      });
+      await fastifyInstance['fastify'].register(
+        instance.fetchRequestsHistoryRoute,
+        {
+          prefix: '/request-history',
+        },
+      );
     });
 
     afterAll(async () => {
       vi.restoreAllMocks();
-      await mockedServer.close();
+      await fastifyInstance['fastify'].close();
     });
 
     /**
@@ -55,7 +61,7 @@ describe('RequestController', () => {
      * - returns 200 and the expected Request DTOs
      */
     it('should return request history successfully', async () => {
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'GET',
         url: '/request-history?offset=0&limit=100&sort=timestamp&order=desc',
       });
@@ -73,7 +79,7 @@ describe('RequestController', () => {
      * - returns 400
      */
     it('should return Bad Request on invalid query params', async () => {
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'GET',
         url: '/request-history?limit=200', // limit > 100
       });
@@ -99,7 +105,7 @@ describe('RequestController', () => {
         'getRequestHistory',
       ).mockRejectedValue(new Error('Database error'));
 
-      const result = await mockedServer.inject({
+      const result = await fastifyInstance['fastify'].inject({
         method: 'GET',
         url: '/request-history?offset=0&limit=10&sort=timestamp&order=desc',
       });

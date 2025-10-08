@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1758209125093 implements MigrationInterface {
-  name = 'Migration1758209125093';
+export class Migration1758541414828 implements MigrationInterface {
+  name = 'Migration1758541414828';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -38,6 +38,7 @@ export class Migration1758209125093 implements MigrationInterface {
                 "name" varchar,
                 "metadata" text,
                 "lastLogin" bigint,
+                "isAdmin" boolean NOT NULL DEFAULT (0),
                 CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
                 CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
                 CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id")
@@ -65,7 +66,7 @@ export class Migration1758209125093 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "package_auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "order" integer NOT NULL,
+                "order" integer,
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order")
@@ -90,6 +91,7 @@ export class Migration1758209125093 implements MigrationInterface {
                 "tokenId" varchar NOT NULL,
                 "asset_name" varchar NOT NULL,
                 "amount" varchar NOT NULL,
+                "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer
             )
@@ -214,7 +216,7 @@ export class Migration1758209125093 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "temporary_package_auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "order" integer NOT NULL,
+                "order" integer,
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
@@ -246,6 +248,7 @@ export class Migration1758209125093 implements MigrationInterface {
                 "tokenId" varchar NOT NULL,
                 "asset_name" varchar NOT NULL,
                 "amount" varchar NOT NULL,
+                "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer,
                 CONSTRAINT "FK_dc2ee4d919892ecaad131a176e5" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
@@ -257,6 +260,7 @@ export class Migration1758209125093 implements MigrationInterface {
                     "tokenId",
                     "asset_name",
                     "amount",
+                    "decimals",
                     "usageDescription",
                     "packageId"
                 )
@@ -264,6 +268,7 @@ export class Migration1758209125093 implements MigrationInterface {
                 "tokenId",
                 "asset_name",
                 "amount",
+                "decimals",
                 "usageDescription",
                 "packageId"
             FROM "asset_entity"
@@ -294,6 +299,7 @@ export class Migration1758209125093 implements MigrationInterface {
                 "tokenId" varchar NOT NULL,
                 "asset_name" varchar NOT NULL,
                 "amount" varchar NOT NULL,
+                "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer
             )
@@ -304,6 +310,7 @@ export class Migration1758209125093 implements MigrationInterface {
                     "tokenId",
                     "asset_name",
                     "amount",
+                    "decimals",
                     "usageDescription",
                     "packageId"
                 )
@@ -311,6 +318,7 @@ export class Migration1758209125093 implements MigrationInterface {
                 "tokenId",
                 "asset_name",
                 "amount",
+                "decimals",
                 "usageDescription",
                 "packageId"
             FROM "temporary_asset_entity"
@@ -328,7 +336,7 @@ export class Migration1758209125093 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "package_auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "order" integer NOT NULL,
+                "order" integer,
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order")

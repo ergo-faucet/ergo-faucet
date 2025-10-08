@@ -1,4 +1,4 @@
-import fastify, { FastifyReply, FastifyRequest } from 'fastify';
+import fastify, { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
@@ -11,6 +11,7 @@ import {
   RecaptchaClientError,
   RecaptchaServerError,
 } from '@ergo-faucet/google-recaptcha';
+import { userRequestPayload } from '@ergo-faucet/common-types';
 
 /**
  * Fastify-based API server implementation.
@@ -288,6 +289,49 @@ export class FastifyAPIServer {
       }
     }
   };
+
+  /**
+   * Pre-handler for admin-only routes.
+   * Verifies that the user is an admin and has valid admin privileges.
+   * Responds with 403 if the user is not authorized
+   *
+   * @param req - Fastify request object containing user payload.
+   * @param res - Fastify reply object for sending responses.
+   * @returns {Promise<void>}
+   */
+  public adminPreHandler = async <
+    T extends FastifyRequest,
+    U extends FastifyReply,
+  >(
+    req: T,
+    res: U,
+  ) => {
+    // Extract user payload from request
+    const user = req.user as userRequestPayload;
+
+    // Check if user has admin flag
+    if (!user.isAdmin) {
+      this.logger.debug(`User ${user.userId} is not marked as admin.`);
+      return res.status(403).send({ error: 'Forbidden' });
+    }
+  };
+
+  public errorHandler = (
+    error: FastifyError,
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ) => {
+    if (error.validation) {
+      this.logger.debug('Validation error occurred', {
+        details: error.validation,
+      });
+      return reply.status(400).send({
+        code: 'Bad Request',
+        error: error.message,
+      });
+    }
+  };
+
   /**
    * Closes the already running server
    * @returns Promise that resolves when the server is closed
