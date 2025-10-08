@@ -126,6 +126,7 @@ export class FastifyAPIServer {
     });
 
     this.instance.logger.info(`FastifyAPIServer initialized successfully.`);
+    await this.instance.register(this.instance.infoRoute, '/info');
   };
 
   /**
@@ -169,6 +170,34 @@ export class FastifyAPIServer {
   };
 
   /**
+   * /info route
+   * @returns the OpenAPI service info metadata (title, description, version)
+   */
+  public infoRoute = async (fastify: FastifySeverInstance) => {
+    fastify.get('', {
+      schema: {
+        summary: 'Get service information',
+        description: 'Returns the current service metadata from OpenAPI config',
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              service: { type: 'string' },
+              version: { type: 'string' },
+            },
+          },
+        },
+      },
+      handler: async (_, reply) => {
+        const info = this.swagger.openapi?.info;
+        return reply.send({
+          service: info?.title,
+          version: info?.version,
+        });
+      },
+    });
+  };
+  /**
    * Sets an authentication cookie in the response.
    * @param reply - The Fastify reply object to set the cookie on.
    * @param token - The JWT token to set in the cookie.
@@ -208,12 +237,10 @@ export class FastifyAPIServer {
         const payload = await req.jwtVerify<{ refresh?: object }>();
 
         if (payload.refresh) {
-          return res
-            .status(401)
-            .send({
-              error: "Refresh token cookies can't be used in header",
-              code: 'REFRESH_TOKEN_HEADER_FORBIDDEN',
-            });
+          return res.status(401).send({
+            error: "Refresh token cookies can't be used in header",
+            code: 'REFRESH_TOKEN_HEADER_FORBIDDEN',
+          });
         }
       } catch {
         if (verifyAndEnforce) {
