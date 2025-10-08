@@ -435,7 +435,7 @@ class PackageAction {
    *
    * @param assets - Array of asset objects to add (tokenId, amount, decimals, usageDescription).
    * @param pkg - The Package entity to associate assets with.
-   * @returns {Promise<void>}
+   * @returns {Promise<number>} A Promise that resolves to an array of the newly inserted `Asset` IDs.
    */
   public addAssets = async (
     assets: AssetPayload[],
@@ -479,7 +479,7 @@ class PackageAction {
    *
    * @param authMethods - Array of auth method objects ({ id, order }) to add.
    * @param pkg - The Package entity to associate auth methods with.
-   * @returns {Promise<void>}
+   * @returns {Promise<number>} A Promise that resolves to an array of the newly inserted `PackageAuthMethod` IDs.
    */
   public addPackageAuthMethods = async (
     authMethods: AuthMethodPayload[],
@@ -562,7 +562,7 @@ class PackageAction {
    *
    * @param authMethods - Array of authentication method IDs to validate.
    * @throws {NotFoundError} If any of the provided IDs are not found.
-   * @returns {Promise<number>} A Promise that resolves to an array of the newly inserted `PackageAuthMethod` IDs.
+   * @returns {Promise<void>}
    */
   validateAuthMethods = async (authMethods: number[]) => {
     // Find AuthMethods by IDs
