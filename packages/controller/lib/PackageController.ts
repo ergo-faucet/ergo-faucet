@@ -258,6 +258,11 @@ class PackageController {
             400: ErrorResponse,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
 
@@ -327,6 +332,11 @@ class PackageController {
             400: ErrorResponse,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
@@ -423,6 +433,11 @@ class PackageController {
             400: ErrorResponse,
             500: ErrorResponse,
           },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
