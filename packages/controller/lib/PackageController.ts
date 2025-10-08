@@ -265,7 +265,7 @@ class PackageController {
         try {
           const user = request.user as userRequestPayload;
 
-          // Validate admin privileges in database
+          //   Validate admin privileges in database
           const isValid = await this.packageAction.validateAdminRequest(
             user.userId,
           );
@@ -336,7 +336,7 @@ class PackageController {
         const user = request.user as userRequestPayload;
 
         try {
-          // Validate admin privileges in database
+          // // Validate admin privileges in database
           const isValid = await this.packageAction.validateAdminRequest(
             user.userId,
           );
@@ -446,7 +446,7 @@ class PackageController {
           const pkg = await this.packageAction.getPackageById(packageId);
 
           // Validate auth methods
-          this.packageAction.validateAuthMethods(
+          await this.packageAction.validateAuthMethods(
             authMethods.map((am) => am.id),
           );
 

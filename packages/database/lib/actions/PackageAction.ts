@@ -498,12 +498,9 @@ class PackageAction {
           transactionalEntityManager.getRepository(PackageAuthMethod);
 
         // Sort and remove duplicates based on id, keeping the first occurrence
-        const authMap = new Map<number, (typeof authMethods)[number]>();
+        const authMap = new Map<number, AuthMethodPayload>();
         authMethods.forEach((m) => authMap.set(m.id, m));
-        authMethods = authMap
-          .values()
-          .toArray()
-          .sort((a, b) => a.id - b.id);
+        authMethods = Array.from(authMap.values()).sort((a, b) => a.id - b.id);
 
         const auths = await authMethodRepository.find({
           where: { id: In(authMethods.map((am) => am!.id)) },
@@ -565,7 +562,7 @@ class PackageAction {
    *
    * @param authMethods - Array of authentication method IDs to validate.
    * @throws {NotFoundError} If any of the provided IDs are not found.
-   * @returns {Promise<void>}
+   * @returns {Promise<number>} A Promise that resolves to an array of the newly inserted `PackageAuthMethod` IDs.
    */
   validateAuthMethods = async (authMethods: number[]) => {
     // Find AuthMethods by IDs

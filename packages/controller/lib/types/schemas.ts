@@ -22,7 +22,7 @@ export const PackagesRouteQuery = Type.Object({
 export const AssetSchema = Type.Object({
   tokenId: Type.String(),
   assetName: Type.String(),
-  amount: Type.String(),
+  amount: Type.String({ pattern: '^[0-9]+(\\.[0-9]+)?$' }),
   decimals: Type.Number({ minimum: 0 }),
   usageDescription: Type.Optional(Type.String()),
 });
@@ -52,7 +52,7 @@ export const PackageSchema = Type.Object({
   type: Type.Union([Type.Literal('normal'), Type.Literal('random')]),
   openAt: Type.Optional(Type.Number()),
   closeAt: Type.Optional(Type.Number()),
-  delay: Type.String(),
+  delay: Type.String({ pattern: '^[0-9]+$' }),
   numberEachUser: Type.Number({ minimum: 0 }),
   assets: Type.Array(AssetSchema),
   authMethods: Type.Array(AuthMethodSchema),

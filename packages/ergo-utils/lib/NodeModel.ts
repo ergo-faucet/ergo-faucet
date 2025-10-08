@@ -355,10 +355,6 @@ export class NodeModel {
     return await this.axiosInstance
       .get<tokenByIdResponseSuccess>(`/blockchain/token/byId/${tokenId}`)
       .then((res) => {
-        if (res.status === 400 || res.status === 404) {
-          this.logger.debug(`Token with id ${tokenId} not found.`);
-          throw new TokenNotFoundError(`Token with id ${tokenId} not found`);
-        }
         this.logger.debug(
           `Successfully fetched token data. ${JSON.stringify(res.data)}`,
         );
@@ -366,6 +362,10 @@ export class NodeModel {
       })
       .catch((error) => {
         if (axios.isAxiosError(error)) {
+          if (error.status === 400 || error.status === 404) {
+            this.logger.debug(`Token with id ${tokenId} not found.`);
+            throw new TokenNotFoundError(`Token with id ${tokenId} not found`);
+          }
           this.logger.error(`Axios error.`, {
             error,
             message: error.message,
