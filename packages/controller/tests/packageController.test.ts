@@ -771,11 +771,11 @@ describe('PackageController', () => {
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/1/assets',
-        payload: [{ tokenId: 'INVALID_TOKEN', amount: '1' }],
+        payload: [{ tokenId: 'INVALID_TOKEN', amount: '1', weight: 10 }],
       });
 
       expect(utils.processAssets).toHaveBeenCalledWith(
-        [{ tokenId: 'INVALID_TOKEN', amount: '1' }],
+        [{ tokenId: 'INVALID_TOKEN', amount: '1', weight: 10 }],
         mockNodeModel,
       );
       expect(result.statusCode).toEqual(400);
@@ -809,7 +809,7 @@ describe('PackageController', () => {
       });
 
       expect(utils.processAssets).toHaveBeenCalledWith(
-        [{ tokenId: 'TOKEN1', amount: '1.234' }],
+        [{ tokenId: 'TOKEN1', amount: '1.234', weight: 10 }],
         mockNodeModel,
       );
       expect(result.statusCode).toEqual(400);
@@ -838,6 +838,7 @@ describe('PackageController', () => {
           amount: '1000000000',
           decimals: 9,
           usageDescription: 'Test',
+          weight: 10,
         },
       ]);
       mockedPackageAction.addAssets.mockRejectedValue(

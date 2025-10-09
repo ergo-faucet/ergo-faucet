@@ -50,6 +50,7 @@ export const AssetSchema = Type.Object({
   amount: Type.String({ pattern: '^[0-9]+(\\.[0-9]+)?$' }),
   decimals: Type.Number({ minimum: 0 }),
   usageDescription: Type.Optional(Type.String()),
+  weight: Type.Number({ default: 10, minimum: 0, maximum: 100 }),
 });
 
 export const UserProvidedAsset = Type.Omit(AssetSchema, [

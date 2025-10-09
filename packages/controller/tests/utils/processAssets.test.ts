@@ -65,7 +65,12 @@ describe('utils', () => {
      */
     it('should successfully process ERG token', async () => {
       const assets = [
-        { tokenId: 'ERG', amount: '1.5', usageDescription: 'Test ERG' },
+        {
+          tokenId: 'ERG',
+          amount: '1.5',
+          usageDescription: 'Test ERG',
+          weight: 10,
+        },
       ];
 
       const result = await processAssets(assets, mockNodeModel);
@@ -77,6 +82,7 @@ describe('utils', () => {
           amount: '1500000000',
           decimals: 9,
           usageDescription: 'Test ERG',
+          weight: 10,
         },
       ]);
     });
@@ -99,7 +105,12 @@ describe('utils', () => {
         decimals: 2,
       });
       const assets = [
-        { tokenId: 'TOKEN1', amount: '100.25', usageDescription: 'Test token' },
+        {
+          tokenId: 'TOKEN1',
+          amount: '100.25',
+          usageDescription: 'Test token',
+          weight: 10,
+        },
       ];
 
       const result = await processAssets(assets, mockNodeModel);
@@ -113,6 +124,7 @@ describe('utils', () => {
           amount: '10025',
           decimals: 2,
           usageDescription: 'Test token',
+          weight: 10,
         },
       ]);
     });
@@ -134,6 +146,7 @@ describe('utils', () => {
           tokenId: 'INVALID_TOKEN',
           amount: '100',
           usageDescription: 'Test token',
+          weight: 10,
         },
       ];
 
@@ -164,6 +177,7 @@ describe('utils', () => {
           tokenId: 'TOKEN1',
           amount: '100.123',
           usageDescription: 'Test token',
+          weight: 10,
         },
       ];
 

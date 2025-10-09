@@ -43,7 +43,7 @@ export const processAssets = async (
 ): Promise<AssetPayload[]> => {
   const tokens: AssetPayload[] = [];
   for (let i = 0; i < assets.length; i++) {
-    const { tokenId, amount: value, usageDescription } = assets[i];
+    const { tokenId, amount: value, usageDescription, weight } = assets[i];
 
     // Special case for native ERG token
     if (tokenId === 'ERG') {
@@ -59,7 +59,7 @@ export const processAssets = async (
         usageDescription: usageDescription
           ? usageDescription
           : 'no description',
-          weight:
+        weight,
       });
       continue;
     }
@@ -79,6 +79,7 @@ export const processAssets = async (
       amount,
       decimals: decimals,
       usageDescription: usageDescription ? usageDescription : description,
+      weight,
     });
   }
 

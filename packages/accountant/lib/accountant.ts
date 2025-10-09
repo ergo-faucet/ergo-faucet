@@ -21,7 +21,7 @@ import {
 } from '@fleet-sdk/core';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
-import Chooser from 'random-seed-weighted-chooser';
+import { chooseWeighted } from './utils';
 
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
@@ -54,7 +54,6 @@ class Accountant {
     this.confirmationLimit = config.confirmationLimit;
     this.nodeModel = config.nodeModel;
     this.wallet = config.wallet;
-
     this.logger.debug(`Accountant initialized with network: ${this.network}`);
   }
 
@@ -274,10 +273,15 @@ class Accountant {
     let selectedAssets;
     switch (request.package.type) {
       case 'normal': {
+        this.logger.debug(`Processing request for a normal package...`);
         selectedAssets = request.package.assets;
         break;
       }
       case 'random':
+        this.logger.debug(`Processing request for a random package...`);
+        this.logger.debug(
+          `Selecting assets for request with id: ${request.id}`,
+        );
         selectedAssets = this.selectRandomAssets(
           request.package.assets,
           request.package.maxPayout!,
@@ -285,26 +289,30 @@ class Accountant {
         break;
     }
 
-    // Assume we have maximum one ERG asset in normal packages
-    const ergAsset = selectedAssets.find((a) => a.tokenId === 'ERG');
-    request.package.assets = request.package.assets.filter(
-      (a) => a.tokenId != 'ERG',
+    // Find ERG assets amount
+    const ergAssets = selectedAssets.filter((a) => a.tokenId === 'ERG');
+
+    const amount = ergAssets.reduce(
+      (total: bigint, erg: Asset) => total + BigInt(erg.amount),
+      0n,
     );
+    const outputBoxAmount = ergAssets.length ? amount : this.minNanoErg;
 
-    const outputBoxAmount = ergAsset ? ergAsset.amount : this.minNanoErg;
+    const nonErgAssets = selectedAssets.filter((a) => a.tokenId !== 'ERG');
 
-    const tokens: OneOrMore<TokenAmount<Amount>> = request.package.assets.map(
+    const tokens: OneOrMore<TokenAmount<Amount>> = nonErgAssets.map(
       (asset) => ({
         tokenId: asset.tokenId,
         amount: ensureBigInt(asset.amount),
       }),
     );
 
-    const targetTokens: TokenTargetAmount<bigint>[] =
-      request.package.assets.map((asset) => ({
+    const targetTokens: TokenTargetAmount<bigint>[] = nonErgAssets.map(
+      (asset) => ({
         tokenId: asset.tokenId,
         amount: BigInt(asset.amount),
-      }));
+      }),
+    );
 
     // Select input boxes
     this.logger.debug(`Selecting input boxes for request ID: ${request.id}`);
@@ -360,14 +368,14 @@ class Accountant {
     // Select assets with weight 100 automatically
     const always = assetToChoose.filter((a) => a.weight === 100);
     selected.push(...always);
-    remain -= always.length;
+    remain = Math.max(0, max_payout - always.length);
 
     // Remove "always" assets from assetToChoose
     assetToChoose = assetToChoose.filter((a) => a.weight !== 100);
 
     // Randomly select until remain is 0 or no assets left
     while (remain > 0 && assetToChoose.length > 0) {
-      const picked = Chooser.chooseWeightedObject(assetToChoose) as Asset;
+      const picked = chooseWeighted(assetToChoose);
       if (picked) {
         selected.push(picked);
 
@@ -376,7 +384,7 @@ class Accountant {
       }
       remain--;
     }
-
+    this.logger.debug(`Assets selected to pay: ${JSON.stringify(selected)}`);
     return selected;
   };
 }

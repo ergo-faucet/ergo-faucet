@@ -342,4 +342,95 @@ describe('Accountant', () => {
       ).not.toHaveBeenCalled();
     });
   });
+
+  describe('selectRandomAssets', () => {
+    let randomSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      randomSpy = vi.spyOn(Math, 'random');
+    });
+
+    afterEach(() => {
+      randomSpy.mockRestore();
+    });
+
+    it('should select all assets with weight 100 and randomly select others up to max_payout', () => {
+      const assets: Asset[] = [
+        { id: 1, tokenId: 't1', amount: '10', weight: 100 } as Asset,
+        { id: 2, tokenId: 't2', amount: '20', weight: 100 } as Asset,
+        { id: 3, tokenId: 't3', amount: '30', weight: 50 } as Asset,
+        { id: 4, tokenId: 't4', amount: '40', weight: 30 } as Asset,
+        { id: 5, tokenId: 't5', amount: '50', weight: 20 } as Asset,
+      ];
+      const max_payout = 4;
+
+      // Mock random to select asset 3 (id:3) first: r = 0.1 * 100 = 10 < 50 -> pick 3
+      // Then select asset 5 (id:5): r = 0.7 * 50 = 35 > 30, 35-30=5 <20 -> pick 5
+      randomSpy.mockReturnValueOnce(0.1);
+      randomSpy.mockReturnValueOnce(0.7);
+
+      const selected = accountant.selectRandomAssets(assets, max_payout);
+
+      expect(selected).toHaveLength(4);
+      expect(selected.map((a) => a.id)).toEqual(
+        expect.arrayContaining([1, 2, 3, 5]),
+      );
+      expect(randomSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('should select all always assets even if exceeding max_payout', () => {
+      const assets: Asset[] = [
+        { id: 1, tokenId: 't1', amount: '10', weight: 100 } as Asset,
+        { id: 2, tokenId: 't2', amount: '20', weight: 100 } as Asset,
+        { id: 3, tokenId: 't3', amount: '30', weight: 50 } as Asset,
+      ];
+      const max_payout = 1;
+
+      // No random calls since remain=0
+      const selected = accountant.selectRandomAssets(assets, max_payout);
+
+      expect(selected).toHaveLength(2);
+      expect(selected.map((a) => a.id)).toEqual([1, 2]);
+      expect(randomSpy).not.toHaveBeenCalled();
+    });
+
+    it('should select up to max_payout random assets when no always assets', () => {
+      const assets: Asset[] = [
+        { id: 1, tokenId: 't1', amount: '10', weight: 40 } as Asset,
+        { id: 2, tokenId: 't2', amount: '20', weight: 60 } as Asset,
+        { id: 3, tokenId: 't3', amount: '30', weight: 0 } as Asset, // weight 0, should be skipped
+      ];
+      const max_payout = 1;
+
+      // Total weight 100 (40+60), r=0.3*100=30 <40 -> pick 1
+      randomSpy.mockReturnValueOnce(0.3);
+
+      const selected = accountant.selectRandomAssets(assets, max_payout);
+
+      expect(selected).toHaveLength(1);
+      expect(selected[0].id).toBe(1);
+      expect(randomSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return empty array if no assets', () => {
+      const selected = accountant.selectRandomAssets([], 5);
+      expect(selected).toHaveLength(0);
+    });
+
+    it('should skip assets with zero weight in random selection', () => {
+      const assets: Asset[] = [
+        { id: 1, tokenId: 't1', amount: '10', weight: 100 } as Asset,
+        { id: 2, tokenId: 't2', amount: '20', weight: 0 } as Asset,
+        { id: 3, tokenId: 't3', amount: '30', weight: 0 } as Asset,
+      ];
+      const max_payout = 3;
+
+      // Only always selected, random total weight=0, no pick
+      const selected = accountant.selectRandomAssets(assets, max_payout);
+
+      expect(selected).toHaveLength(1);
+      expect(selected[0].id).toBe(1);
+      expect(randomSpy).not.toHaveBeenCalledOnce(); // Since total=0, chooseWeighted returns undefined
+    });
+  });
 });
