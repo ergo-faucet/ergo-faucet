@@ -182,7 +182,6 @@ export class FastifyAPIServer {
           200: {
             type: 'object',
             properties: {
-              service: { type: 'string' },
               version: { type: 'string' },
             },
           },
@@ -190,8 +189,7 @@ export class FastifyAPIServer {
       },
       handler: async (_, reply) => {
         const info = this.swagger.openapi?.info;
-        return reply.send({
-          service: info?.title,
+        return reply.status(200).send({
           version: info?.version,
         });
       },
