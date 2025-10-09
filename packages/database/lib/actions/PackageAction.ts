@@ -120,7 +120,8 @@ class PackageAction {
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
 
-    let qb = this.PackageRepository.createQueryBuilder('pkg')
+    let qb = this.packageRepository
+      .createQueryBuilder('pkg')
       .leftJoinAndSelect('pkg.assets', 'asset')
       .leftJoinAndSelect('pkg.packageAuthMethods', 'pam')
       .leftJoinAndSelect('pam.authMethod', 'authMethod');
