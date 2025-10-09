@@ -12,6 +12,8 @@ import {
   Not,
   Repository,
   SelectQueryBuilder,
+  ArrayContains,
+  ArrayOverlap,
 } from '@rosen-bridge/extended-typeorm';
 import {
   Package,
@@ -129,7 +131,8 @@ class PackageAction {
 
     const orderOption: FindOptionsOrder<Package> = { [sort]: order };
     if (options.id === undefined) {
-      qb = this.filterAssets(qb, options.asset_all, options.asset_any);
+      //qb =
+      this.filterAssets(where, options.asset_all, options.asset_any);
       this.filterAuths(qb, options.auth_all, options.auth_any);
       this.filterCloseTime(where, options.close_before, options.close_after);
       this.filterOpenTime(where, options.open_before, options.open_after);
@@ -139,14 +142,29 @@ class PackageAction {
       where[0].id = options.id;
     }
 
-    const packages = await qb
-      .setFindOptions({
-        where,
-        order: orderOption,
-        skip: offset,
-        take: limit,
-      })
-      .getMany();
+    // const packages = await qb
+    //   .setFindOptions({
+    //     where,
+    //     order: orderOption,
+    //     skip: offset,
+    //     take: limit,
+    //   })
+    //   .getMany();
+
+    const folan = {
+      where,
+      order: orderOption,
+      skip: offset,
+      take: limit,
+      relations: [
+        'assets',
+        'packageAuthMethods',
+        'packageAuthMethods.authMethod',
+      ],
+    };
+    console.log(JSON.stringify(folan, null, 2));
+
+    const packages = await this.packageRepository.find(folan);
 
     const result: PackageDTO[] = [];
 
@@ -613,7 +631,7 @@ class PackageAction {
    * @param assets_any - List of token IDs where a package must contain **at least one**.
    * @returns A modified query builder with asset filtering applied.
    */
-  filterAssets = (
+  filterAssetsWithQB = (
     qb: SelectQueryBuilder<Package>,
     assets_all?: string[],
     assets_any?: string[],
@@ -748,6 +766,46 @@ class PackageAction {
       where[0].openAt = LessThanOrEqual(open_before);
     } else if (open_after) {
       where[0].openAt = MoreThanOrEqual(open_after);
+    }
+
+    return where;
+  };
+
+
+
+  filterAssets = (
+    where: FindOptionsWhere<Package>[],
+    assets_all?: string[],
+    assets_any?: string[],
+  ): FindOptionsWhere<Package>[] => {
+    const baseCondition = { ...where[0] };
+
+    // Handle assets_any
+    if (assets_any?.length) {
+      baseCondition.assets = { tokenId: In(assets_any) };
+    }
+
+    // Handle assets_all
+    if (assets_all?.length) {
+      // Build an array of individual asset conditions
+      const allAssetConditions = assets_all.map((tokenId) => ({
+        assets: { tokenId: Equal(tokenId) },
+      }));
+
+      // Combine all conditions (assets_any and assets_all) into a single where clause.
+      // Ensure the spread is applied to the array (parentheses) so the ternary isn't parsed incorrectly.
+      const conditions: any = [
+        ...(baseCondition.assets ? [baseCondition.assets] : []),
+        ...allAssetConditions.map((cond) => cond.assets),
+      ];
+
+      where[0] = {
+        ...baseCondition,
+        assets: conditions,
+      };
+    } else {
+      // If no assets_all, keep only the assets_any condition
+      where[0] = baseCondition;
     }
 
     return where;
