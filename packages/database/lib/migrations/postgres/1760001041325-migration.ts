@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1758972274997 implements MigrationInterface {
-  name = 'Migration1758972274997';
+export class Migration1760001041325 implements MigrationInterface {
+  name = 'Migration1760001041325';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -46,6 +46,7 @@ export class Migration1758972274997 implements MigrationInterface {
                 "lastLogin" bigint,
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
+                "isAdmin" boolean NOT NULL DEFAULT false,
                 CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
                 CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
                 CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),
@@ -80,7 +81,7 @@ export class Migration1758972274997 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "package_auth_method_entity" (
                 "id" SERIAL NOT NULL,
-                "order" integer NOT NULL,
+                "order" integer,
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "modified_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "packageId" integer,
@@ -111,6 +112,7 @@ export class Migration1758972274997 implements MigrationInterface {
                 "tokenId" character varying NOT NULL,
                 "asset_name" character varying NOT NULL,
                 "amount" character varying NOT NULL,
+                "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
                 "created_at" TIMESTAMP NOT NULL DEFAULT now(),
                 "modified_at" TIMESTAMP NOT NULL DEFAULT now(),

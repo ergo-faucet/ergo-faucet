@@ -2,6 +2,7 @@ import {
   DataSource,
   Equal,
   FindOptionsOrder,
+  In,
   IsNull,
   Not,
   Repository,
@@ -12,9 +13,14 @@ import {
   UserAuthStatus,
   UserRequest,
   User,
+  Asset,
+  AuthMethod,
 } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
+  AssetPayload,
+  PackagePayload,
+  AuthMethodPayload,
   AuthMethodDTO,
   AuthMethodStatus,
   NotFoundError,
@@ -28,11 +34,12 @@ class PackageAction {
 
   private logger: AbstractLogger;
   private dataSource: DataSource;
-  private PackageRepository: Repository<Package>;
+  private packageRepository: Repository<Package>;
   private packageAuthMethodRepository: Repository<PackageAuthMethod>;
   private userAuthStatusRepository: Repository<UserAuthStatus>;
   private userRequestRepository: Repository<UserRequest>;
   private userRepository: Repository<User>;
+  private authMethodRepository: Repository<AuthMethod>;
 
   /**
    * Protected constructor to enforce singleton pattern.
@@ -42,13 +49,16 @@ class PackageAction {
   protected constructor(dataSource: DataSource, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.dataSource = dataSource;
-    this.PackageRepository = this.dataSource.getRepository(Package);
+
+    this.packageRepository = this.dataSource.getRepository(Package);
     this.packageAuthMethodRepository =
       this.dataSource.getRepository(PackageAuthMethod);
     this.userAuthStatusRepository =
       this.dataSource.getRepository(UserAuthStatus);
     this.userRequestRepository = this.dataSource.getRepository(UserRequest);
+
     this.userRepository = this.dataSource.getRepository(User);
+    this.authMethodRepository = this.dataSource.getRepository(AuthMethod);
   }
 
   /**
@@ -104,7 +114,8 @@ class PackageAction {
 
     const orderOption: FindOptionsOrder<Package> = { [sort]: order };
 
-    const packages = await this.PackageRepository.find({
+    // Query the database for packages with status 'show'
+    const packages = await this.packageRepository.find({
       where: { status: 'show' },
       order: orderOption,
       skip: offset,
@@ -165,6 +176,31 @@ class PackageAction {
   };
 
   /**
+   * Fetches a package entity by its ID from the database.
+   *
+   * Logs the fetch operation and throws NotFoundError if the package does not exist.
+   *
+   * @param packageId - The ID of the package to fetch.
+   * @returns {Promise<Package>} The Package entity.
+   * @throws {NotFoundError} If no package is found with the given ID.
+   */
+  getPackageById = async (packageId: number): Promise<Package> => {
+    this.logger.debug(`Fetching package by id from database`);
+
+    const pkg = await this.packageRepository.findOne({
+      where: { id: packageId },
+    });
+
+    if (!pkg) {
+      this.logger.debug(`There is no package with id ${packageId}`);
+      throw new NotFoundError(`There is no package with id ${packageId}`);
+    }
+
+    this.logger.debug(`Package with id ${packageId} fetched successfully`);
+    return pkg;
+  };
+
+  /**
    * Checks if a package is available for a given user.
    *
    * - Verifies that the package exists and is visible.
@@ -181,7 +217,7 @@ class PackageAction {
     userId: number,
     packageId: number,
   ): Promise<boolean> => {
-    const pkg = await this.PackageRepository.findOne({
+    const pkg = await this.packageRepository.findOne({
       where: { id: packageId, status: 'show' },
     });
     if (!pkg)
@@ -329,7 +365,7 @@ class PackageAction {
     packageId: number,
     destAddress: string,
   ): Promise<number> => {
-    const pkg = await this.PackageRepository.findOne({
+    const pkg = await this.packageRepository.findOne({
       where: { id: packageId },
     });
     const usr = await this.userRepository.findOne({
@@ -349,6 +385,203 @@ class PackageAction {
       `Added UserRequest for user ID ${userId} and package ID ${packageId} to the database`,
     );
     return userRequest.id;
+  };
+
+  /**
+   * Adds a new package to the database.
+   *
+   * @param packagePayload - The data for the new package, including name, description, type, status, open/close dates, delay and numberEachUser.
+   * @returns {Promise<number>} The ID of the newly created package.
+   */
+  public addPackage = async (
+    packagePayload: PackagePayload,
+  ): Promise<number> => {
+    this.logger.debug(
+      `Adding new package with data: ${JSON.stringify(packagePayload)}`,
+    );
+
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const packageRepository =
+          transactionalEntityManager.getRepository(Package);
+
+        // Create a new Package entity
+        const newPackage = packageRepository.create({
+          name: packagePayload.name,
+          description: packagePayload.description,
+          type: packagePayload.type,
+          status: packagePayload.status,
+          openAt: packagePayload.openAt,
+          closeAt: packagePayload.closeAt,
+          delay: packagePayload.delay,
+          numberEachUser: packagePayload.numberEachUser,
+        });
+
+        // Save the package to the database
+        const savedPackage = await packageRepository.save(newPackage);
+        this.logger.debug(`New package saved with ID ${savedPackage.id}`);
+
+        return savedPackage.id;
+      },
+    );
+  };
+
+  /**
+   * Adds asset records to the database for a given package within a transaction.
+   *
+   * - Creates Asset entities for each asset in the provided array.
+   * - Associates each asset with the specified package.
+   * - Saves all assets atomic.
+   *
+   * @param assets - Array of asset objects to add (tokenId, amount, decimals, usageDescription).
+   * @param pkg - The Package entity to associate assets with.
+   * @returns {Promise<number>} A Promise that resolves to an array of the newly inserted `Asset` IDs.
+   */
+  public addAssets = async (
+    assets: AssetPayload[],
+    pkg: Package,
+  ): Promise<number[]> => {
+    this.logger.debug(
+      `Adding assets to package ID ${pkg.id}: ${JSON.stringify(assets)}`,
+    );
+
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const assetRepository = transactionalEntityManager.getRepository(Asset);
+        // Create Asset entities
+        const newAssets = assetRepository.create(
+          assets.map((asset) => ({
+            tokenId: asset.tokenId,
+            assetName: asset.assetName,
+            amount: asset.amount,
+            decimals: asset.decimals,
+            usageDescription: asset.usageDescription,
+            package: pkg, // Associate with the saved package
+          })),
+        );
+
+        // Save given assets to the database
+        const addedAssets = await assetRepository.insert(newAssets);
+        this.logger.debug(`Assets for package ID ${pkg.id} added successfully`);
+
+        return addedAssets.identifiers.map((a) => a.id as number);
+      },
+    );
+  };
+
+  /**
+   * Adds authentication methods to a package within a transaction.
+   *
+   * - Sorts and deduplicates the provided authMethods array.
+   * - Fetches AuthMethod entities by ID and creates PackageAuthMethod entities.
+   * - Associates each auth method with the specified package and order.
+   * - Saves all PackageAuthMethod entities atomic.
+   *
+   * @param authMethods - Array of auth method objects ({ id, order }) to add.
+   * @param pkg - The Package entity to associate auth methods with.
+   * @returns {Promise<number>} A Promise that resolves to an array of the newly inserted `PackageAuthMethod` IDs.
+   */
+  public addPackageAuthMethods = async (
+    authMethods: AuthMethodPayload[],
+    pkg: Package,
+  ): Promise<number[]> => {
+    this.logger.debug(
+      `Adding auth methods to package ID ${pkg.id}: ${JSON.stringify(
+        authMethods,
+      )}`,
+    );
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const authMethodRepository =
+          transactionalEntityManager.getRepository(AuthMethod);
+        const packageAuthMethodRepository =
+          transactionalEntityManager.getRepository(PackageAuthMethod);
+
+        // Sort and remove duplicates based on id, keeping the first occurrence
+        const authMap = new Map<number, AuthMethodPayload>();
+        authMethods.forEach((m) => authMap.set(m.id, m));
+        authMethods = Array.from(authMap.values()).sort((a, b) => a.id - b.id);
+
+        const auths = await authMethodRepository.find({
+          where: { id: In(authMethods.map((am) => am!.id)) },
+          order: { id: 'ASC' },
+        });
+
+        // Create PackageAuthMethod entities
+        const packageAuthMethods: PackageAuthMethod[] = [];
+
+        for (let i = 0; i < authMethods.length; i++) {
+          const pam = packageAuthMethodRepository.create({
+            authMethod: auths[i],
+            package: pkg,
+            order: authMethods[i].order,
+          });
+
+          packageAuthMethods.push(pam);
+        }
+
+        // Save PackageAuthMethod entities to the database
+        const addedAuths =
+          await packageAuthMethodRepository.insert(packageAuthMethods);
+
+        this.logger.debug(
+          `PackageAuthMethod for package ID ${pkg.id} added successfully`,
+        );
+
+        return addedAuths.identifiers.map((a) => a.id as number);
+      },
+    );
+  };
+
+  /**
+   * Checks if the specified user is an admin.
+   * @param userId - The ID of the user to validate.
+   * @returns {Promise<boolean>} True if the user is an admin, otherwise false.
+   */
+  public validateAdminRequest = async (userId: number): Promise<boolean> => {
+    this.logger.debug(`Validating admin request for userId: ${userId}`);
+
+    const User = await this.userRepository.findOne({
+      where: { id: userId, isAdmin: true },
+    });
+
+    if (!User) {
+      this.logger.debug(`User with id ${userId} is not an admin.`);
+      return false;
+    }
+
+    this.logger.debug(`User with id ${userId} is an admin.`);
+    return true;
+  };
+
+  /**
+   * Validates that all provided authentication method IDs exist in the database.
+   *
+   * - Fetches AuthMethod entities by the given IDs.
+   * - Throws NotFoundError if any provided ID does not exist.
+   *
+   * @param authMethods - Array of authentication method IDs to validate.
+   * @throws {NotFoundError} If any of the provided IDs are not found.
+   * @returns {Promise<void>}
+   */
+  validateAuthMethods = async (authMethods: number[]) => {
+    // Find AuthMethods by IDs
+    const existingAuthMethods = (
+      await this.authMethodRepository.findBy({
+        id: In(authMethods),
+      })
+    ).map((am) => am.id);
+
+    // Check if all provided IDs exist
+    if (authMethods.length !== existingAuthMethods.length) {
+      const notFoundAuths = authMethods.filter(
+        (a) => !existingAuthMethods.includes(a),
+      );
+
+      throw new NotFoundError(
+        `Some auth methods not found for IDs: ${JSON.stringify(notFoundAuths)}`,
+      );
+    }
   };
 }
 

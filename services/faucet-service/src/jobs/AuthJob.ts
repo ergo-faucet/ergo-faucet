@@ -1,6 +1,6 @@
 import WinstonLogger from '@rosen-bridge/winston-logger';
 import { DiscordAction, GoogleAction, XAction } from '@ergo-faucet/database';
-import { authJobConfig } from '@configs';
+import { jobConfig } from '@configs';
 
 const logger = WinstonLogger.getInstance().getLogger(import.meta.url);
 
@@ -47,7 +47,7 @@ const jobExpireXAuths = async (): Promise<void> => {
 };
 
 export const scheduleExpiringJob = async (): Promise<void> => {
-  const jobInterval = authJobConfig.authJobInterval * 1000; //convert to ms
+  const jobInterval = jobConfig.authJobInterval * 1000; //convert to ms
   setInterval(async () => {
     await jobExpireDiscordAuths();
     await jobExpireGoogleAuths();

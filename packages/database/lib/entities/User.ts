@@ -76,4 +76,7 @@ export class User {
 
   @UpdateDateColumn({ name: 'modified_at' })
   modifiedAt!: Date;
+
+  @Column({ type: 'boolean', default: false })
+  isAdmin!: boolean;
 }

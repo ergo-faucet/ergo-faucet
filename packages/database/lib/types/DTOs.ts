@@ -12,6 +12,7 @@ export interface AssetDTO {
   tokenId: string;
   assetName: string;
   amount: string;
+  decimals: number;
   usageDescription: string;
 }
 
@@ -35,6 +36,7 @@ export interface PackageDTO {
 }
 
 export interface RequestDTO {
+  requestId: number;
   packageId: number;
   packageName: string;
   status: RequestStaus;

@@ -10,4 +10,5 @@ export const xAuthConfig = {
   scope: config.get<string>('x-platform.scope'),
   expiresTime: config.get<number>('x-platform.expiresTime'),
   sessionTTL: config.get<number>('x-platform.sessionTTL'),
+  frontBaseURL: config.get<string>('URLs.frontCallbackURL'),
 };

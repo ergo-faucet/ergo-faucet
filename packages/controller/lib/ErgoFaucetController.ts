@@ -2,6 +2,7 @@ import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
 import { Network } from '@fleet-sdk/common';
+import { NodeModel } from '@ergo-faucet/ergo-utils';
 import { RequestHistoryController, PackageController } from './';
 
 class ErgoFaucetController {
@@ -24,17 +25,20 @@ class ErgoFaucetController {
     fastifyServer: FastifyAPIServer,
     private readonly packageAction: PackageAction,
     private readonly NETWORK_TYPE: Network,
+    private readonly nodeModel: NodeModel,
     private readonly requsetHistoryAction: RequestHistoryAction,
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
     this.fastifyServer = fastifyServer;
-    this.packageController = new PackageController(
-      this.packageAction,
-      this.fastifyServer,
-      this.NETWORK_TYPE,
+    this.packageController = new PackageController({
+      packageAction: this.packageAction,
+      fastifyServer: this.fastifyServer,
+      networkType: this.NETWORK_TYPE,
+      nodeModel: this.nodeModel,
       logger,
-    );
+    });
+
     this.requestHistoryController = new RequestHistoryController(
       this.requsetHistoryAction,
       this.fastifyServer,
@@ -69,6 +73,7 @@ class ErgoFaucetController {
     fastifyServer: FastifyAPIServer,
     packageAction: PackageAction,
     networkType: Network,
+    nodeModel: NodeModel,
     requsetHistoryAction: RequestHistoryAction,
     logger?: AbstractLogger,
   ) => {
@@ -81,6 +86,7 @@ class ErgoFaucetController {
       fastifyServer,
       packageAction,
       networkType,
+      nodeModel,
       requsetHistoryAction,
       logger,
     );

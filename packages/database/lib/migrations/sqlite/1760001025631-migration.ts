@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1758972259171 implements MigrationInterface {
-  name = 'Migration1758972259171';
+export class Migration1760001025631 implements MigrationInterface {
+  name = 'Migration1760001025631';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -93,6 +93,7 @@ export class Migration1758972259171 implements MigrationInterface {
                 "lastLogin" bigint,
                 "created_at" datetime NOT NULL DEFAULT (datetime('now')),
                 "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "isAdmin" boolean NOT NULL DEFAULT (0),
                 CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),
                 CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
                 CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id")
@@ -276,6 +277,7 @@ export class Migration1758972259171 implements MigrationInterface {
                 "amount" varchar NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer,
+                "decimals" integer NOT NULL,
                 "created_at" datetime NOT NULL DEFAULT (datetime('now')),
                 "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
                 CONSTRAINT "FK_dc2ee4d919892ecaad131a176e5" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
@@ -308,9 +310,227 @@ export class Migration1758972259171 implements MigrationInterface {
     await queryRunner.query(`
             CREATE INDEX "IDX_941e620c721dbd2ec1a03bdef3" ON "asset_entity" ("tokenId")
         `);
+    await queryRunner.query(`
+            CREATE TABLE "temporary_package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer NOT NULL,
+                "packageId" integer,
+                "authMethodId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "temporary_package_auth_method_entity"(
+                    "id",
+                    "order",
+                    "packageId",
+                    "authMethodId",
+                    "created_at",
+                    "modified_at"
+                )
+            SELECT "id",
+                "order",
+                "packageId",
+                "authMethodId",
+                "created_at",
+                "modified_at"
+            FROM "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "temporary_package_auth_method_entity"
+                RENAME TO "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "temporary_package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer,
+                "packageId" integer,
+                "authMethodId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "temporary_package_auth_method_entity"(
+                    "id",
+                    "order",
+                    "packageId",
+                    "authMethodId",
+                    "created_at",
+                    "modified_at"
+                )
+            SELECT "id",
+                "order",
+                "packageId",
+                "authMethodId",
+                "created_at",
+                "modified_at"
+            FROM "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "temporary_package_auth_method_entity"
+                RENAME TO "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "temporary_package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer,
+                "packageId" integer,
+                "authMethodId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "temporary_package_auth_method_entity"(
+                    "id",
+                    "order",
+                    "packageId",
+                    "authMethodId",
+                    "created_at",
+                    "modified_at"
+                )
+            SELECT "id",
+                "order",
+                "packageId",
+                "authMethodId",
+                "created_at",
+                "modified_at"
+            FROM "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "temporary_package_auth_method_entity"
+                RENAME TO "package_auth_method_entity"
+        `);
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.query(`
+            ALTER TABLE "package_auth_method_entity"
+                RENAME TO "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer,
+                "packageId" integer,
+                "authMethodId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "package_auth_method_entity"(
+                    "id",
+                    "order",
+                    "packageId",
+                    "authMethodId",
+                    "created_at",
+                    "modified_at"
+                )
+            SELECT "id",
+                "order",
+                "packageId",
+                "authMethodId",
+                "created_at",
+                "modified_at"
+            FROM "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "package_auth_method_entity"
+                RENAME TO "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer NOT NULL,
+                "packageId" integer,
+                "authMethodId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "package_auth_method_entity"(
+                    "id",
+                    "order",
+                    "packageId",
+                    "authMethodId",
+                    "created_at",
+                    "modified_at"
+                )
+            SELECT "id",
+                "order",
+                "packageId",
+                "authMethodId",
+                "created_at",
+                "modified_at"
+            FROM "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            ALTER TABLE "package_auth_method_entity"
+                RENAME TO "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            CREATE TABLE "package_auth_method_entity" (
+                "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
+                "order" integer NOT NULL,
+                "packageId" integer,
+                "authMethodId" integer,
+                "created_at" datetime NOT NULL DEFAULT (datetime('now')),
+                "modified_at" datetime NOT NULL DEFAULT (datetime('now')),
+                CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
+                CONSTRAINT "FK_c850da4a6db32f58d834e68ac57" FOREIGN KEY ("authMethodId") REFERENCES "auth_method_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
+                CONSTRAINT "FK_2626bb61c0eb6af245c70a6fb5b" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
+            )
+        `);
+    await queryRunner.query(`
+            INSERT INTO "package_auth_method_entity"(
+                    "id",
+                    "order",
+                    "packageId",
+                    "authMethodId",
+                    "created_at",
+                    "modified_at"
+                )
+            SELECT "id",
+                "order",
+                "packageId",
+                "authMethodId",
+                "created_at",
+                "modified_at"
+            FROM "temporary_package_auth_method_entity"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "temporary_package_auth_method_entity"
+        `);
     await queryRunner.query(`
             DROP INDEX "IDX_941e620c721dbd2ec1a03bdef3"
         `);

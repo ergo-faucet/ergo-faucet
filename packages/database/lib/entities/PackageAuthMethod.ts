@@ -30,7 +30,7 @@ export class PackageAuthMethod {
   @JoinColumn()
   authMethod!: Relation<AuthMethod>;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   order!: number;
 
   @CreateDateColumn({ name: 'created_at' })

@@ -1,5 +1,7 @@
 import axios from 'axios';
+import Redis from 'ioredis';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
+import { v4 as uuidv4 } from 'uuid';
 
 import {
   FastifyAPIServer,
@@ -9,11 +11,13 @@ import { DiscordAction } from '@ergo-faucet/database';
 import {
   CallBackRouteQuery,
   CallBackRouteQueryType,
-  CallBackRouteResponse200,
   discordToken,
   ErrorResponse,
   userDiscordData,
   DiscordAuthConfig,
+  SessionData,
+  LoginRouteQuery,
+  LoginRouteResponse200,
 } from './types';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 export class DiscordAuth {
@@ -27,6 +31,11 @@ export class DiscordAuth {
   private readonly redirectURL: string;
   private readonly scope: string;
   private readonly expiresTime: number;
+
+  private readonly redis: Redis;
+  private readonly sessionTTL: number;
+  private readonly frontBaseURL: string;
+  private readonly SESSION_PREFIX = 'discordAuth:session:';
 
   private readonly DISCORD_EPOCH = 1420070400000;
   private readonly GRANT_TYPE = 'authorization_code';
@@ -50,6 +59,9 @@ export class DiscordAuth {
     this.redirectURL = config.redirectURL;
     this.scope = config.scope;
     this.expiresTime = config.expiresTime;
+    this.redis = new Redis(config.redis);
+    this.sessionTTL = config.sessionTTL;
+    this.frontBaseURL = config.frontBaseURL;
   }
 
   /**
@@ -70,7 +82,6 @@ export class DiscordAuth {
     await this.instance.registerRoutes(this.instance.Discord_AUTH_PREFIX);
     this.instance.logger.info(`DiscordAuth initialized successfully.`);
   };
-
   /**
    * Returns the singleton instance after initialization.
    * @returns DiscordAuth instance
@@ -84,13 +95,99 @@ export class DiscordAuth {
   };
 
   /**
+   * Sets session data in Redis with TTL.
+   * @param key - Session key
+   * @param value - string data
+   * @param ttl - Time to live in seconds
+   */
+  private setSessionData = async (
+    key: string,
+    value: string,
+    ttl: number,
+  ): Promise<void> => {
+    const fullKey = `${this.SESSION_PREFIX}${key}`;
+    this.logger.debug(`Try to set session data for key: ${key}`);
+    await this.redis.set(fullKey, value);
+    if (ttl) {
+      await this.redis.expire(fullKey, ttl);
+    }
+  };
+
+  /**
+   * Gets session data from Redis.
+   * @param key - Session key
+   * @returns Session data or null if not found
+   */
+  private getSessionData = async (key: string): Promise<string | undefined> => {
+    const fullKey = `${this.SESSION_PREFIX}${key}`;
+    this.logger.debug(`Try to get session data for key: ${key}`);
+    const raw = await this.redis.get(fullKey);
+    if (!raw) {
+      return undefined;
+    }
+    return raw;
+  };
+
+  /**
+   * Deletes session data from Redis.
+   * @param key - Session key
+   */
+  private deleteSessionData = async (key: string): Promise<void> => {
+    const fullKey = `${this.SESSION_PREFIX}${key}`;
+    this.logger.debug(`Try to delete session data for key: ${key}`);
+    await this.redis.del(fullKey);
+  };
+
+  /**
    * Builds the Discord OAuth2 login URL.
+   * @param frontState - State parameter from the front-end to be included in the session
+   * @param userId - ID of the user initiating the login
    * @returns Fully qualified Discord login URL with all query params
    */
-  private buildLoginURL = (): string => {
-    return `${this.DISCORD_OAUTH_URL}/authorize?client_id=${this.clientID}&redirect_uri=${encodeURIComponent(
-      this.redirectURL,
-    )}&response_type=code&scope=${this.scope}`;
+  private buildLoginURL = async (
+    frontState: string,
+    userId: number,
+  ): Promise<string> => {
+    const state = uuidv4();
+    const value = { frontState, userId };
+    const encodedValue = Buffer.from(JSON.stringify(value), 'utf-8').toString(
+      'base64url',
+    );
+
+    await this.setSessionData(state, encodedValue, this.sessionTTL);
+
+    const params = new URLSearchParams({
+      client_id: this.clientID,
+      redirect_uri: this.redirectURL,
+      response_type: 'code',
+      scope: this.scope,
+      state,
+    });
+
+    return `${this.DISCORD_OAUTH_URL}/authorize?${params.toString()}`;
+  };
+
+  /**
+   * Builds the front-end redirect URL with query parameters for Discord OAuth2 login result.
+   *
+   * @param status - Result status of the OAuth flow ('success' or 'false')
+   * @param frontState - Optional state value provided by the front-end to maintain session/context
+   * @param message - Optional message to include in the URL (e.g., success or error message)
+   * @returns Fully qualified URL string combining the frontBaseURL, frontState, and query parameters
+   */
+  private buildRedirectURL = (
+    frontState: string,
+    status: 'success' | 'failed',
+    message?: string,
+  ): string => {
+    const [path, query] = frontState.split('?');
+    const params = new URLSearchParams(query);
+    params.set('authMethod', 'discord');
+    params.set('authMethodStatus', status);
+    if (message) {
+      params.set('message', message);
+    }
+    return `${this.frontBaseURL + path}?${params.toString()}`;
   };
 
   /**
@@ -153,13 +250,14 @@ export class DiscordAuth {
    * @param fastify - Fastify instance
    */
   private loginRoute = async (fastify: FastifySeverInstance) => {
-    fastify.get(
+    fastify.get<{ Querystring: { state?: string } }>(
       '/login',
       {
         preHandler: this.fastifyServer.authPreHandler(),
         schema: {
+          querystring: LoginRouteQuery,
           response: {
-            302: { description: 'Redirect to Discord OAuth2 login' },
+            200: LoginRouteResponse200,
             401: ErrorResponse,
           },
           security: [
@@ -169,9 +267,22 @@ export class DiscordAuth {
           ],
         },
       },
-      async (_, reply) => {
-        const loginURL = this.buildLoginURL();
-        return reply.status(302).redirect(loginURL);
+      async (request, reply) => {
+        try {
+          const frontState = request.query.state ?? '';
+          const user = request.user as userRequestPayload;
+          const loginURL = await this.buildLoginURL(frontState, user.userId);
+          return reply.status(200).send({ redirectURL: loginURL });
+        } catch (err) {
+          this.logger.error(`Error in build login url`, {
+            message: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          reply.status(500).send({
+            error: 'Internal server error occured',
+            code: 'internal-error',
+          });
+        }
       },
     );
   };
@@ -190,31 +301,39 @@ export class DiscordAuth {
     fastify.get<{ Querystring: CallBackRouteQueryType }>(
       '/callback',
       {
-        preHandler: this.fastifyServer.authPreHandler(),
         schema: {
           querystring: CallBackRouteQuery,
           response: {
-            200: CallBackRouteResponse200,
-            400: ErrorResponse,
-            401: ErrorResponse,
-            500: ErrorResponse,
+            302: { description: 'Redirect to front-end with auth result' },
           },
-          security: [
-            {
-              bearerAuth: [],
-            },
-          ],
         },
       },
       async (request, reply) => {
-        const { code } = request.query;
-        const user = request.user as userRequestPayload;
+        const { code, state } = request.query;
+        let decodedSession: SessionData | undefined;
 
-        if (!code || !user.userId) {
-          return reply.status(400).send({ error: 'Missing code or userId' });
+        if (!code || !state) {
+          return reply.redirect(
+            this.buildRedirectURL(
+              '',
+              'failed',
+              'Missing code or state from Discord callback',
+            ),
+          );
         }
 
         try {
+          const session = await this.getSessionData(state);
+          if (!session) {
+            return reply.redirect(
+              this.buildRedirectURL('', 'failed', 'Session expired or invalid'),
+            );
+          }
+          await this.deleteSessionData(state);
+          decodedSession = JSON.parse(
+            Buffer.from(session, 'base64url').toString('utf-8'),
+          ) as SessionData;
+
           const tokenData: discordToken = await this.exchangeCodeForToken(code);
           const accessToken = tokenData.accessToken;
           const refreshToken = tokenData.refreshToken;
@@ -223,7 +342,7 @@ export class DiscordAuth {
             await this.fetchDiscordUser(accessToken);
 
           await this.discordAction.linkDiscordAccount(
-            Number(user.userId),
+            Number(decodedSession.userId),
             discordUser.userId,
             discordUser.username,
             discordUser.join_date,
@@ -234,20 +353,25 @@ export class DiscordAuth {
             discordUser.global_name,
           );
 
-          return reply.status(200).send({
-            success: true,
-            message: `The user with id ${user.userId} logged in successfully in discord`,
-          });
+          return reply.redirect(
+            this.buildRedirectURL(
+              decodedSession.frontState,
+              'success',
+              `The user with username ${discordUser.username} logged in successfully with Discord`,
+            ),
+          );
         } catch (err) {
-          if (err instanceof Error) {
-            this.logger.error(`Discord callback failed`, {
-              message: err.message,
-              stack: err.stack,
-            });
-          }
-          return reply
-            .status(500)
-            .send({ error: 'Discord authentication failed' });
+          this.logger.error(`Discord callback failed`, {
+            message: err instanceof Error ? err.message : err,
+            stack: err instanceof Error ? err.stack : undefined,
+          });
+          return reply.redirect(
+            this.buildRedirectURL(
+              decodedSession?.frontState ?? '',
+              'failed',
+              'Failed to log in with Discord',
+            ),
+          );
         }
       },
     );

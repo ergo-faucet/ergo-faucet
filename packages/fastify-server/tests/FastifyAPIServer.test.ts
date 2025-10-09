@@ -13,7 +13,7 @@ import {
   vi,
   afterAll,
 } from 'vitest';
-import { FastifyAPIServer, FastifySeverInstance } from '../lib';
+import { FastifyAPIServer, FastifyRequest, FastifySeverInstance } from '../lib';
 import { config, mockGoogleRecaptcha } from './mockData';
 
 /**
@@ -366,5 +366,184 @@ describe('FastifyAPIServer', () => {
     });
 
     await instance.close();
+  });
+
+  /**
+   * Tests for the adminPreHandler method of PackageController
+   * @description
+   * Tests the adminPreHandler functionality, ensuring that only admin users
+   * can access routes protected by this preHandler. Tests various scenarios
+   * including valid admin access, non-admin users, and internal server errors.
+   */
+  describe('adminPreHandler', async () => {
+    let fastifyInstance: FastifyAPIServer;
+
+    /**
+     * Initialize Fastify server and reset singleton instance before each test
+     */
+    beforeEach(async () => {
+      // Reset the singleton
+      // eslint-disable-next-line
+      (FastifyAPIServer as any).instance = undefined;
+
+      await FastifyAPIServer.initialize(config);
+      fastifyInstance = FastifyAPIServer.getInstance();
+
+      vi.clearAllMocks();
+    });
+
+    /**
+     * Test admin user access
+     * @scenario
+     * - POST /allow-admin with valid admin user
+     * @expected
+     * - Returns 200 and success response
+     */
+    it('should allow admin user', async () => {
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: true,
+              };
+            }
+          };
+        },
+      );
+      await fastifyInstance.register(async (fastify) => {
+        fastify.post(
+          '/allow-admin',
+          {
+            preHandler: [
+              fastifyInstance.authPreHandler(),
+              fastifyInstance.adminPreHandler,
+            ],
+          },
+          async () => ({ success: true }),
+        );
+      }, '');
+
+      await fastifyInstance.start();
+
+      const response = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/allow-admin',
+        payload: {},
+      });
+
+      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
+      expect(response.statusCode).toBe(200);
+      expect(JSON.parse(response.body)).toEqual({ success: true });
+
+      await fastifyInstance.close();
+    });
+
+    /**
+     * Test non-admin user with isAdmin set to undefined
+     * @scenario
+     * - POST /deny-user with user where isAdmin is undefined
+     * @expected
+     * - Returns 403 Forbidden
+     */
+    it('should deny non-admin user and return 403 forbidden when isAdmin is undefined ', async () => {
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: undefined,
+              };
+            }
+          };
+        },
+      );
+
+      await fastifyInstance.register(async (fastify) => {
+        fastify.post(
+          '/deny-user',
+          {
+            preHandler: [
+              fastifyInstance.authPreHandler(),
+              fastifyInstance.adminPreHandler,
+            ],
+          },
+          async () => ({ success: true }),
+        );
+      }, '');
+      await fastifyInstance.start();
+
+      const response = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/deny-user',
+        payload: {},
+      });
+
+      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body)).toEqual({ error: 'Forbidden' });
+
+      await fastifyInstance.close();
+    });
+
+    /**
+     * Test non-admin user with isAdmin set to false
+     * @scenario
+     * - POST /deny-user with user where isAdmin is false
+     * @expected
+     * - Returns 403 Forbidden
+     */
+    it('should deny non-admin user and return 403 forbidden when isAdmin is false ', async () => {
+      vi.spyOn(fastifyInstance, 'authPreHandler').mockImplementation(
+        (verifyAndEnforce: boolean = true) => {
+          return async (request: FastifyRequest) => {
+            if (!verifyAndEnforce) return;
+            else {
+              // Simulate JWT verification and set request.user
+              request.user = {
+                userId: 12345,
+                address: 'mocked-user-address',
+                isAdmin: false,
+              };
+            }
+          };
+        },
+      );
+
+      await fastifyInstance.register(async (fastify) => {
+        fastify.post(
+          '/deny-user',
+          {
+            preHandler: [
+              fastifyInstance.authPreHandler(),
+              fastifyInstance.adminPreHandler,
+            ],
+          },
+          async () => ({ success: true }),
+        );
+      }, '');
+
+      await fastifyInstance.start();
+
+      const response = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/deny-user',
+        payload: {},
+      });
+
+      expect(fastifyInstance.authPreHandler).toHaveBeenCalled();
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body)).toEqual({ error: 'Forbidden' });
+
+      await fastifyInstance.close();
+    });
   });
 });
