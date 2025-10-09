@@ -5,11 +5,10 @@ import {
   Box,
   TokenTargetAmount,
   ensureUTxOBigInt,
-  Network,
 } from '@fleet-sdk/common';
 import { ErgoHDKey, Prover } from '@fleet-sdk/wallet';
 import { NodeModel } from './NodeModel';
-import { NotEnoughAssetsError } from './types';
+import { NotEnoughAssetsError, WalletConfig } from './types';
 
 export class Wallet {
   private static instance: Wallet;
@@ -19,27 +18,43 @@ export class Wallet {
   private readonly walletAddress: string;
 
   private constructor(
-    mnemonic: string,
-    network: Network,
+    walletConfig: WalletConfig,
+
     logger?: AbstractLogger,
   ) {
     this.logger = logger ? logger : new DummyLogger();
     this.prover = new Prover();
-    const rootKey = ErgoHDKey.fromMnemonicSync(mnemonic);
-    this.childKey = rootKey.deriveChild(0);
-    this.walletAddress = this.childKey.address.encode(network);
+
+    if (walletConfig.privateKey) {
+      this.childKey = new ErgoHDKey({
+        privateKey: Buffer.from(walletConfig.privateKey, 'hex'),
+      });
+    } else if (walletConfig.mnemonic) {
+      const rootKey = ErgoHDKey.fromMnemonicSync(walletConfig.mnemonic, {
+        passphrase: walletConfig.passphrase,
+      });
+
+      this.childKey = rootKey.deriveChild(0);
+    } else {
+      throw new Error(
+        'Wallet configuration must include either a mnemonic phrase or a private key.',
+      );
+    }
+
+    this.walletAddress = this.childKey.address.encode(walletConfig.network);
     this.logger.debug('First address of the mnemonic', this.walletAddress);
   }
 
   public static initialize = (
-    mnemonic: string,
-    network: Network,
+    walletConfig: WalletConfig,
+
     logger?: AbstractLogger,
   ): void => {
     if (this.instance) {
       throw new Error('Wallet instance has already been initialized.');
     }
-    Wallet.instance = new Wallet(mnemonic, network, logger);
+
+    Wallet.instance = new Wallet(walletConfig, logger);
   };
 
   /**

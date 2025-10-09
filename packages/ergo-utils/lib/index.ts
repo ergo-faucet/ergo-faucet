@@ -8,5 +8,6 @@ export {
   tokenByIdResponse,
   tokenByIdResponseSuccess,
   TokenNotFoundError,
+  WalletConfig,
 } from './types';
 export { isValidErgoAddress, validateAmountPrecision } from './utils';

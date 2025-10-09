@@ -18,7 +18,7 @@ describe('Wallet - selectBoxes', () => {
     const mnemonic =
       'steel wet husband avoid surround trial insect stone gauge trick zone dry famous family mechanic';
     await NodeModel.initialize('nodeUrl', 1000);
-    await Wallet.initialize(mnemonic, Network.Testnet);
+    await Wallet.initialize({ mnemonic, network: Network.Testnet });
   });
 
   it('should select boxes with enough ERGs and tokens', async () => {

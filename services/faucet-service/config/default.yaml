@@ -88,6 +88,8 @@ jobs:
 ergo:
   network: 'mainnet'
   mnemonic: ''
+  passphrase: ''
+  privateKey: ''
   minNanoErg: 10000000
   minFee: 1000000
   node:
@@ -97,7 +99,6 @@ ergo:
 accountant:
   tryLimit: 3
   confirmationLimit: 40
-
 
 URLs:
   frontCallbackURL: ''

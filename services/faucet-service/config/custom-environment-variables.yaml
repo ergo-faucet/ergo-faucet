@@ -31,9 +31,10 @@ googleAuth:
 
 ergo:
   mnemonic: WALLET_MNEMONIC
+  passphrase: 'PASSPHRASE'
+  privateKey: 'PRIVATEKEY'
   node:
     URL: NODE_URL
-
 
 URLs:
   frontCallbackURL: FRONT_CALLBACK_URL
