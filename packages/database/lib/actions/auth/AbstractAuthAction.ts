@@ -28,6 +28,16 @@ abstract class AbstractAuthAction {
     this.authMethodRepository = dataSource.getRepository(AuthMethod);
   }
 
+  /**
+   * Links an external OAuth2 account to an existing user in the database.
+   * - Creates or updates the UserAuthStatus record.
+   *
+   * @param userID - ID of the existing user to link the account to
+   * @param userData - User data retrieved from the OAuth2 provider
+   * @param expiresTime - Token expiration time in seconds
+   * @param access_token - OAuth2 access token
+   * @param refresh_token - OAuth2 refresh token
+   */
   public abstract linkAccount(
     userID: number,
     userData: UserData,
@@ -35,6 +45,7 @@ abstract class AbstractAuthAction {
     access_token: string,
     refresh_token: string,
   ): Promise<void>;
+
   /**
    * Ensures the AuthMethod is seeded in the database.
    * - Checks if an AuthMethod exists.

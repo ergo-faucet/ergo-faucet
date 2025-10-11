@@ -132,11 +132,29 @@ export abstract class AbstractOAuth {
     return { codeVerifier, codeChallenge };
   };
 
+  /**
+   * Builds the login URL for the OAuth2 provider.
+   * @param frontState - The state parameter from the front-end
+   * @param userId - The ID of the user attempting to log in
+   */
   protected abstract buildLoginURL(
     frontState: string,
     userId: number,
   ): Promise<string>;
+
+  /**
+   * Fetches user information from the OAuth2 provider using the access token.
+   *
+   * @param accessToken - The access token obtained from the OAuth2 provider
+   */
   protected abstract fetchUser(accessToken: string): Promise<UserData>;
+
+  /**
+   * Exchanges the authorization code for access and refresh tokens.
+   *
+   * @param code - The authorization code received from the OAuth2 provider
+   * @param SessionData - The session data associated with the login attempt
+   */
   protected abstract exchangeCodeForToken(
     code: string,
     SessionData: SessionData,
@@ -190,14 +208,8 @@ export abstract class AbstractOAuth {
   };
 
   /**
-   * Registers the `/callback` route:
-   *
-   * **GET `/discord/callback`**
-   * - Requires JWT auth
-   * - Expects a `code` query param
-   * - Exchanges code for tokens, fetches Discord user, links account to the user
-   *
-   * @param fastify - Fastify instance
+   * Defines the /callback route for handling the OAuth2 provider's callback.
+   * @param fastify Fastify server instance
    */
   protected callbackRoute = async (fastify: FastifySeverInstance) => {
     fastify.get<{ Querystring: CallBackRouteQueryType }>(

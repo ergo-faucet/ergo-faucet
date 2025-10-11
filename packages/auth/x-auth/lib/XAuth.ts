@@ -116,7 +116,7 @@ export class XAuth extends AbstractOAuth {
   /**
    * Exchanges the authorization `code` for X-platform OAuth2 access/refresh tokens.
    * @param code - Authorization code returned by X-platform after login
-   * @param codeVerifier - PKCE code verifier
+   * @param sessionData - Session data containing the PKCE code verifier
    * @returns `XToken` containing accessToken, refreshToken, and expiry
    */
   exchangeCodeForToken = async (

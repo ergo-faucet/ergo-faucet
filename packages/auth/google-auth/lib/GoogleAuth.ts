@@ -114,7 +114,7 @@ export class GoogleAuth extends AbstractOAuth {
   /**
    * Exchanges the authorization `code` for Google OAuth2 access/refresh tokens.
    * @param code - Authorization code returned by Google after login
-   * @param codeVerifier - PKCE code verifier
+   * @param sessionData - Session data containing the PKCE code verifier
    * @returns `GoogleToken` containing accessToken, refreshToken, and expiry
    */
   protected exchangeCodeForToken = async (
