@@ -4,6 +4,7 @@ import {
   errorResponse,
   DoubleSpendError,
   tokenByIdResponseSuccess,
+  TokenNotFoundError,
 } from './types';
 import { Box } from '@fleet-sdk/common';
 
@@ -341,6 +342,7 @@ export class NodeModel {
   public getTokenById = async (
     tokenId: string,
   ): Promise<tokenByIdResponseSuccess> => {
+    this.logger.debug(`Fetching token data. Token ID: ${tokenId}`);
     if (this.axiosInstance == undefined) {
       const error: errorResponse = {
         error: 500,
@@ -349,11 +351,21 @@ export class NodeModel {
       };
       throw error;
     }
+
     return await this.axiosInstance
       .get<tokenByIdResponseSuccess>(`/blockchain/token/byId/${tokenId}`)
-      .then((res) => res.data)
+      .then((res) => {
+        this.logger.debug(
+          `Successfully fetched token data. ${JSON.stringify(res.data)}`,
+        );
+        return res.data;
+      })
       .catch((error) => {
         if (axios.isAxiosError(error)) {
+          if (error.status === 400 || error.status === 404) {
+            this.logger.debug(`Token with id ${tokenId} not found.`);
+            throw new TokenNotFoundError(`Token with id ${tokenId} not found`);
+          }
           this.logger.error(`Axios error.`, {
             error,
             message: error.message,

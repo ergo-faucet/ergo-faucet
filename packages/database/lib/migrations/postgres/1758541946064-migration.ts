@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1758209265964 implements MigrationInterface {
-  name = 'Migration1758209265964';
+export class Migration1758541946064 implements MigrationInterface {
+  name = 'Migration1758541946064';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -40,6 +40,7 @@ export class Migration1758209265964 implements MigrationInterface {
                 "name" character varying,
                 "metadata" text,
                 "lastLogin" bigint,
+                "isAdmin" boolean NOT NULL DEFAULT false,
                 CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
                 CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
                 CONSTRAINT "UQ_85e382b226c35988718a4b5899d" UNIQUE ("google_id"),
@@ -70,7 +71,7 @@ export class Migration1758209265964 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "package_auth_method_entity" (
                 "id" SERIAL NOT NULL,
-                "order" integer NOT NULL,
+                "order" integer,
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
@@ -97,6 +98,7 @@ export class Migration1758209265964 implements MigrationInterface {
                 "tokenId" character varying NOT NULL,
                 "asset_name" character varying NOT NULL,
                 "amount" character varying NOT NULL,
+                "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
                 "packageId" integer,
                 CONSTRAINT "PK_038b7b28b83db2205747ef9912e" PRIMARY KEY ("id")

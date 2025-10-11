@@ -8,6 +8,9 @@ export {
   AuthMethodDTO,
   PackageType,
   AuthMethodStatus,
+  PackagePayload,
+  AssetPayload,
+  AuthMethodPayload,
 } from './types';
 export { DataSourceHandler } from './DataSourceHandler';
 export {

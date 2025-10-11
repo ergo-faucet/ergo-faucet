@@ -24,11 +24,11 @@ const main = async () => {
     await setupDatabase();
     await setupFastifyServer();
     await setupErgoAuth();
+    await setupErgoUtils();
     await setupController();
     await setupDiscordAuth();
     await setupXAuth();
     await setupGoogleAuth();
-    await setupErgoUtils();
     await setupAccountant();
     logger.info('All packages was initialized successfuly');
     await startServerService();

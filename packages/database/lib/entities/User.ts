@@ -68,4 +68,7 @@ export class User {
 
   @Column({ type: 'bigint', nullable: true })
   lastLogin!: number | null;
+
+  @Column({ type: 'boolean', default: false })
+  isAdmin!: boolean;
 }

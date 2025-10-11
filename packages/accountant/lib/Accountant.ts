@@ -215,6 +215,8 @@ class Accountant {
             request.id,
             'paid',
             request.numberOfTries,
+            undefined,
+            request.txId,
           );
         }
         return;

@@ -9,10 +9,10 @@ import { ErgoAddress } from '@fleet-sdk/core';
  * @throws Error if the amount exceeds the allowed precision.
  */
 export const validateAmountPrecision = (
-  amount: number,
+  amount: string,
   tokenDecimals: number,
 ): void => {
-  const amountDecimalPlaces = amount.toString().split('.')[1]?.length || 0;
+  const amountDecimalPlaces = amount.split('.')[1]?.length || 0;
   if (amountDecimalPlaces > tokenDecimals) {
     const errorMessage = `Amount has too many decimal places. Token supports up to ${tokenDecimals} decimal places, but received ${amountDecimalPlaces}.`;
     throw new InvalidTokenPrecisionError(errorMessage);

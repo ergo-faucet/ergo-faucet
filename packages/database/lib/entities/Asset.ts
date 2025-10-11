@@ -28,6 +28,9 @@ export class Asset {
   @Column({ type: 'varchar' })
   amount!: string;
 
+  @Column({ type: 'int' })
+  decimals!: number;
+
   @Column({ type: 'text' })
   usageDescription!: string;
 }

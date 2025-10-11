@@ -48,7 +48,6 @@ describe('PackageAction.getPackages with mock data', () => {
     const statusRepo = sqliteDataSource.getRepository(UserAuthStatus);
 
     savedPackages = [];
-
     for (const pkgMock of mockPackages) {
       const pkg = await pkgRepo.save({
         name: pkgMock.name,
@@ -67,6 +66,7 @@ describe('PackageAction.getPackages with mock data', () => {
           tokenId: a.tokenId,
           assetName: a.assetName,
           amount: a.amount,
+          decimals: 0,
           usageDescription: a.usageDescription,
         });
       }
