@@ -1,4 +1,4 @@
-export { AuthConfig, ActionType } from './config';
+export { AuthConfig } from './config';
 export { SessionData, TokenData } from './authData';
 export {
   ErrorResponse,

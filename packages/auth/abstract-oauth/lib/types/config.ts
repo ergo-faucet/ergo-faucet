@@ -1,11 +1,10 @@
-import { DiscordAction, GoogleAction, XAction } from '@ergo-faucet/database';
+import { AbstractAuthAction } from '@ergo-faucet/database';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { RedisOptions } from 'ioredis';
 
-export type ActionType = DiscordAction | GoogleAction | XAction;
 export interface AuthConfig {
   fastifyServer: FastifyAPIServer;
-  action: ActionType;
+  action: AbstractAuthAction;
   clientID: string;
   clientSecret: string;
   redirectURL: string;
