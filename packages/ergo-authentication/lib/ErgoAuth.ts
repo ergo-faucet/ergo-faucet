@@ -15,7 +15,7 @@ import {
   LogoutResponse200,
   ErrorResponse,
 } from './types';
-import { userRequestPayload } from '@ergo-faucet/common-types';
+import { UserRequestPayload } from '@ergo-faucet/common-types';
 import {
   FastifyAPIServer,
   FastifySeverInstance,
@@ -334,7 +334,7 @@ export class ErgoAuth {
           const user =
             await this.userAddressAction.findOrCreateUserWithAddress(address);
 
-          const accessTokenPayload: userRequestPayload = {
+          const accessTokenPayload: UserRequestPayload = {
             userId: user.id,
             address: address,
             name: user.name,
@@ -397,7 +397,7 @@ export class ErgoAuth {
       async (request, reply) => {
         try {
           const decoded = await request.jwtVerify<{
-            refresh: userRequestPayload;
+            refresh: UserRequestPayload;
           }>({
             onlyCookie: true,
           });
@@ -454,7 +454,7 @@ export class ErgoAuth {
       },
       async (request, reply) => {
         try {
-          const user = request.user as userRequestPayload;
+          const user = request.user as UserRequestPayload;
           this.fastifyServer.clearCookie(reply);
           this.logger.debug(`userId ${user.userId} was loged out`);
 

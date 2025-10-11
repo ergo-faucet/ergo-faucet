@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import sqliteDataSource from '../lib/migrationDataSource/sqliteDataSource';
 import { User, UserAuthStatus, AuthMethod } from '../lib/entities';
 import { DummyLogger } from '@rosen-bridge/abstract-logger';
-import { AbstractAuthAction } from '../lib/actions/AbstractAuthAction';
+import { AbstractAuthAction } from '../lib/actions/auth/AbstractAuthAction';
 import { DataSource } from '@rosen-bridge/extended-typeorm';
 
 /**
@@ -13,6 +13,9 @@ class TestAuthAction extends AbstractAuthAction {
 
   constructor(dataSource: DataSource, logger?: DummyLogger) {
     super(dataSource, logger);
+  }
+  async linkAccount(): Promise<void> {
+    return Promise.resolve();
   }
 }
 

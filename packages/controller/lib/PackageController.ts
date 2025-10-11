@@ -18,7 +18,7 @@ import {
   RequestPackageBodyType,
   RequestPackageResponse200,
 } from './types';
-import { userRequestPayload } from '@ergo-faucet/common-types';
+import { UserRequestPayload } from '@ergo-faucet/common-types';
 import { isValidErgoAddress } from '@ergo-faucet/ergo-utils';
 import { Network } from '@fleet-sdk/common';
 
@@ -77,7 +77,7 @@ class PackageController {
       },
       async (request, reply) => {
         const { offset, limit, sort, order } = request.query;
-        const user = request.user as userRequestPayload;
+        const user = request.user as UserRequestPayload;
 
         try {
           const packages = await this.packageAction.getPackages(
@@ -143,7 +143,7 @@ class PackageController {
 
       async (request, reply) => {
         this.logger.debug(`New request for package ${request.body.packageId}`);
-        const user = request.user as userRequestPayload;
+        const user = request.user as UserRequestPayload;
         const { packageId, destAddress } = request.body;
 
         try {

@@ -37,6 +37,7 @@
     "node": ">=20.11.0"
   },
   "dependencies": {
+    "@ergo-faucet/common-types": "^0.1.0",
     "@rosen-bridge/abstract-logger": "^2.0.1",
     "@rosen-bridge/extended-typeorm": "^0.2.1",
     "pg": "^8.16.0"

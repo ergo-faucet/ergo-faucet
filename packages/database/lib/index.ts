@@ -18,6 +18,7 @@ export {
   GoogleAction,
   AccountantAction,
   RequestHistoryAction,
+  AbstractAuthAction,
 } from './actions';
 export {
   Asset,

@@ -1,0 +1,13 @@
+{
+  "extends": "../../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "./dist"
+  },
+  "include": ["lib"],
+  "references": [
+    { "path": "../../database" },
+    { "path": "../../fastify-server" },
+    { "path": "../../common-types" },
+    { "path": "../abstract-oauth" }
+  ]
+}

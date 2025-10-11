@@ -1,5 +1,2 @@
-export interface userRequestPayload {
-  userId: number;
-  address: string;
-  name?: string;
-}
+export { UserRequestPayload } from './userRequestPayload';
+export { UserData } from './userData';
