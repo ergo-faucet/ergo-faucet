@@ -11,7 +11,7 @@ import {
   RecaptchaClientError,
   RecaptchaServerError,
 } from '@ergo-faucet/google-recaptcha';
-import { userRequestPayload } from '@ergo-faucet/common-types';
+import { UserRequestPayload } from '@ergo-faucet/common-types';
 
 /**
  * Fastify-based API server implementation.
@@ -332,7 +332,7 @@ export class FastifyAPIServer {
     res: U,
   ) => {
     // Extract user payload from request
-    const user = req.user as userRequestPayload;
+    const user = req.user as UserRequestPayload;
 
     // Check if user has admin flag
     if (!user.isAdmin) {
