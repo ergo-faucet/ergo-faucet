@@ -91,8 +91,8 @@ ergo:
   # With mnemonic, the first wallet address is derived. privateKey takes priority.
   # Missing both causes an error.
   mnemonic: ''
-  passphrase: ''
-  privateKey: ''
+  #passphrase: ''
+  #privateKey: ''
   minNanoErg: 10000000
   minFee: 1000000
   node:
