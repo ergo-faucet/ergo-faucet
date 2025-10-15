@@ -44,7 +44,7 @@ export class Package {
   assets!: Relation<Asset[]>;
 
   @Column({ type: 'int', name: 'max_payout', nullable: true })
-  maxPayout!: number | null;
+  maxPayout?: number;
 
   @OneToMany(() => PackageAuthMethod, (pam) => pam.package)
   packageAuthMethods!: Relation<PackageAuthMethod[]>;

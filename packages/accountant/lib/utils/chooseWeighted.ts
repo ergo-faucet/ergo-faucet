@@ -1,7 +1,4 @@
-interface Weighted {
-  weight: number;
-}
-
+import { Weighted } from '../types';
 /**
  * Selects one item using weight-proportional (roulette-wheel) selection.
  *

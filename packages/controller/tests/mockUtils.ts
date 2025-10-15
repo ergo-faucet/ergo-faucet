@@ -162,7 +162,6 @@ mockPackage = {
   requests: [],
   createdAt: 1705312800,
   modifiedAt: 1705312800,
-  maxPayout: null,
 };
 
 export const mockPackageDTO = [
