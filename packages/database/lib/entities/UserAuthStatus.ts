@@ -46,6 +46,7 @@ export class UserAuthStatus {
   metadata!: {
     token?: string;
     refresh_token?: string;
+    address?: string;
   };
 
   @Column({ type: 'int' })

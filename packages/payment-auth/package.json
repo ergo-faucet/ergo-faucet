@@ -33,7 +33,10 @@
     "node": ">=22.18.0"
   },
   "dependencies": {
+    "@ergo-faucet/common-types": "^0.1.0",
     "@ergo-faucet/ergo-utils": "^0.1.0",
-    "@rosen-bridge/abstract-logger": "^2.1.0"
+    "@ergo-faucet/fastify-server": "^0.1.0",
+    "@rosen-bridge/abstract-logger": "^2.1.0",
+    "@sinclair/typebox": "^0.34.41"
   }
 }

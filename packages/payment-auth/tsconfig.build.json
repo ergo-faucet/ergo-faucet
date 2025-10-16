@@ -6,6 +6,8 @@
   "exclude": ["tests", "vitest.config.ts"],
   "references": [
     { "path": "../database/tsconfig.build.json" },
-    { "path": "../ergo-utils/tsconfig.build.json" }
+    { "path": "../ergo-utils/tsconfig.build.json" },
+    { "path": "../fastify-server/tsconfig.build.json" },
+    { "path": "../common-types/tsconfig.build.json" }
   ]
 }

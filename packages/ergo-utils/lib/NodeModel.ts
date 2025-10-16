@@ -6,7 +6,8 @@ import {
   tokenByIdResponseSuccess,
   TokenNotFoundError,
 } from './types';
-import { Box } from '@fleet-sdk/common';
+import { Box, ensureUTxOBigInt, TokenTargetAmount } from '@fleet-sdk/common';
+import { BoxSelector } from '@fleet-sdk/core';
 
 export class NodeModel {
   private static instance: NodeModel;
@@ -412,5 +413,59 @@ export class NodeModel {
 
       throw new Error('FetchingDecimalsTokenError: Unknown error occurred');
     }
+  };
+
+  public checkForPayment = async (
+    address: string,
+    assets: TokenTargetAmount<bigint>[],
+  ): Promise<boolean> => {
+    const ergAssets = assets.filter((asset) => asset.tokenId === 'ERG');
+
+    const ergsAmount = ergAssets.length
+      ? ergAssets.reduce(
+          (total: bigint, erg: TokenTargetAmount<bigint>) =>
+            total + BigInt(erg.amount!),
+          0n,
+        )
+      : 0n;
+
+    let tokens: TokenTargetAmount<bigint>[] = [];
+    tokens = assets.filter((asset) => asset.tokenId !== 'ERG');
+
+    let offset: number = 0;
+    const limit: number = 100;
+
+    const boxes: Box<bigint>[] = [];
+    let receivedBoxes: Box<bigint>[] = [];
+    do {
+      receivedBoxes = await NodeModel.getInstance().getUnspentBoxes(
+        address,
+        offset,
+        limit,
+      );
+      this.logger.debug('Successfully retrieved boxes');
+      offset += limit;
+
+      // updating boxes
+      receivedBoxes.forEach((box) => {
+        boxes.push(ensureUTxOBigInt(box));
+      });
+
+      const selector: BoxSelector<Box<bigint>> = new BoxSelector(boxes);
+      try {
+        selector.select({
+          nanoErgs: ergsAmount,
+          tokens: tokens,
+        });
+        this.logger.debug('User has paid the required ergs and assets.');
+        return true;
+      } catch (error) {
+        // the error is usual as we are using pagination
+        if (error instanceof Error) this.logger.debug(error.message);
+      }
+    } while (receivedBoxes.length); //till no more boxes are there
+
+    // if user didn't pay enough
+    return false;
   };
 }

@@ -10,6 +10,8 @@ import {
 import { ErgoHDKey, Prover } from '@fleet-sdk/wallet';
 import { NodeModel } from './NodeModel';
 import { NotEnoughAssetsError } from './types';
+import { compile } from '@fleet-sdk/compiler';
+import { SLong, SSigmaProp, SGroupElement } from '@fleet-sdk/serializer';
 
 export class Wallet {
   private static instance: Wallet;
@@ -17,6 +19,8 @@ export class Wallet {
   private readonly prover: Prover;
   private readonly childKey: ErgoHDKey;
   private readonly walletAddress: string;
+  private readonly network: Network;
+  private readonly paymentScript = `faucetPK && sigmaProp(CONTEXT.headers(0).timestamp > contractTime)`;
 
   private constructor(
     mnemonic: string,
@@ -27,7 +31,9 @@ export class Wallet {
     this.prover = new Prover();
     const rootKey = ErgoHDKey.fromMnemonicSync(mnemonic);
     this.childKey = rootKey.deriveChild(0);
+    this.network = network;
     this.walletAddress = this.childKey.address.encode(network);
+
     this.logger.debug('First address of the mnemonic', this.walletAddress);
   }
 
@@ -130,5 +136,27 @@ export class Wallet {
 
     // if didn't return with selcted boxes
     throw new NotEnoughAssetsError('Not enough ERG/tokens.');
+  };
+
+  /**
+   * Generates a time-locked payment address derived from the wallet's child key.
+   *
+   * Compiles the payment script with the child's public key and the provided
+   * contractTime, then returns the resulting address for the configured network.
+   *
+   * @param contractTime - Contract time value used in the payment script (bigint).
+   * @returns {string} The generated payment address.
+   */
+  public generateUniquePaymentAddress = (contractTime: bigint): string => {
+    const paymentContract = compile(this.paymentScript, {
+      map: {
+        faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
+        contractTime: SLong(contractTime),
+      },
+    });
+
+    const paymentAddress = paymentContract.toAddress(this.network).toString();
+    this.logger.debug(`Generated unique payment address: ${paymentAddress}`);
+    return paymentAddress;
   };
 }
