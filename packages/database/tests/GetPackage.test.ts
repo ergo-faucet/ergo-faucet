@@ -111,7 +111,7 @@ describe('PackageAction.getPackages with mock data', () => {
    * - Each package contains correct authMethods with user status applied
    */
   it('should fetch all packages with assets and user-specific auth status', async () => {
-    const result = await action.getPackages(0, 10, 'id', 'asc', user.id);
+    const result = await action.getPackages(0, 10, 'id', 'asc', {}, user.id);
 
     expect(result).toHaveLength(savedPackages.length);
 
@@ -152,7 +152,7 @@ describe('PackageAction.getPackages with mock data', () => {
    * - All authMethods should have undefined status
    */
   it('should fetch packages without userId (all statuses undefined)', async () => {
-    const result = await action.getPackages(0, 10, 'id', 'asc');
+    const result = await action.getPackages(0, 10, 'id', 'asc', {});
 
     expect(result).toHaveLength(savedPackages.length);
     for (const pkg of result) {
@@ -172,7 +172,7 @@ describe('PackageAction.getPackages with mock data', () => {
    * - Returned package should be the second one in savedPackages
    */
   it('should fetch packages with limit and offset', async () => {
-    const result = await action.getPackages(1, 1, 'id', 'asc', user.id);
+    const result = await action.getPackages(1, 1, 'id', 'asc', {}, user.id);
 
     expect(result).toHaveLength(1);
     expect(result[0].id).toBe(savedPackages[1].pkg.id);
@@ -187,7 +187,7 @@ describe('PackageAction.getPackages with mock data', () => {
    * - Returned package IDs should match savedPackages sorted descending
    */
   it('should fetch packages sorted by id desc', async () => {
-    const result = await action.getPackages(0, 10, 'id', 'desc', user.id);
+    const result = await action.getPackages(0, 10, 'id', 'desc', {}, user.id);
 
     const sortedIds = [...savedPackages.map((s) => s.pkg.id)].sort(
       (a, b) => b - a,

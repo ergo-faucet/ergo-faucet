@@ -1,8 +1,31 @@
 import { Type } from '@sinclair/typebox';
 
 export const PackagesRouteQuery = Type.Object({
+  // offset and limit (pagination)
   offset: Type.Number({ minimum: 0, default: 0 }),
   limit: Type.Number({ minimum: 0, maximum: 100, default: 25 }),
+
+  // asset filter
+  asset_any: Type.Optional(Type.Array(Type.String({ minLength: 3 }))),
+  asset_all: Type.Optional(Type.Array(Type.String({ minLength: 3 }))),
+
+  // auth filter
+  auth_any: Type.Optional(Type.Array(Type.Number({ minimum: 0 }))),
+  auth_all: Type.Optional(Type.Array(Type.Number({ minimum: 0 }))),
+
+  // time filter
+  open_before: Type.Optional(Type.Number({ minimum: 0 })),
+  open_after: Type.Optional(Type.Number({ minimum: 0 })),
+  close_before: Type.Optional(Type.Number({ minimum: 0 })),
+  close_after: Type.Optional(Type.Number({ minimum: 0 })),
+
+  // search by pattern
+  pattern: Type.Optional(Type.String()),
+
+  // search by id
+  id: Type.Optional(Type.Number({ minimum: 0 })),
+
+  // sort and order
   sort: Type.Union(
     [
       Type.Literal('id'),
