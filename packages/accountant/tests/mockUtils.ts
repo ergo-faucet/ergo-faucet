@@ -60,15 +60,14 @@ export const mockUserRequest: UserRequest = {
     type: 'normal',
     assets: [{ tokenId: 'token1', amount: '100' }],
   } as Package,
-  timestamp: Date.now(),
   destinationAddress: '3WxFE2x4KVDYeQyJhKvK912AHHME6wNLBT8p6w7M1KqMp71jCAWc',
   status: 'pending',
   txSerialized: null,
   txId: null,
   creationHeight: 100,
   numberOfTries: 0,
-  createdAt: new Date('2024-01-15T10:00:00.000Z'),
-  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+  createdAt: Math.floor(Date.now() / 1000),
+  modifiedAt: Math.floor(Date.now() / 1000),
 };
 
 export { mockNodeModel, mockWallet, mockAccountantAction, mockLogger };
