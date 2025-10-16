@@ -1,4 +1,10 @@
-import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
+import {
+  Asset,
+  Package,
+  PackageAction,
+  PackageAuthMethod,
+  RequestHistoryAction,
+} from '@ergo-faucet/database';
 import { vi } from 'vitest';
 import {
   FastifyAPIServer,
@@ -72,9 +78,9 @@ export const mockNodeModel = {
   // eslint-disable-next-line
 } as any;
 
-let mockPackage = {};
+let mockPackage = {} as Package;
 
-const mockAsset1 = {
+const mockAsset1: Asset = {
   id: 1,
   package: mockPackage,
   tokenId: 'token-abc-123',
@@ -86,7 +92,7 @@ const mockAsset1 = {
   modifiedAt: 1705312800,
 };
 
-const mockAsset2 = {
+const mockAsset2: Asset = {
   id: 2,
   package: mockPackage,
   tokenId: 'token-def-456',
@@ -98,7 +104,7 @@ const mockAsset2 = {
   modifiedAt: 1705312800,
 };
 
-const mockAuthMethod1 = {
+const mockAuthMethod1: PackageAuthMethod = {
   id: 1,
   authMethod: {
     id: 1,
@@ -115,7 +121,7 @@ const mockAuthMethod1 = {
   modifiedAt: 1705312800,
 };
 
-const mockAuthMethod2 = {
+const mockAuthMethod2: PackageAuthMethod = {
   id: 2,
   authMethod: {
     id: 2,
@@ -128,8 +134,8 @@ const mockAuthMethod2 = {
   },
   order: 2,
   package: mockPackage,
-  createdAt: new Date('2024-01-15T10:00:00.000Z'),
-  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
 mockPackage = {

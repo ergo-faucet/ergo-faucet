@@ -6,8 +6,6 @@ import {
   JoinColumn,
   Unique,
   Relation,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { Package } from './Package';
 import { AuthMethod } from './AuthMethod';
@@ -33,9 +31,9 @@ export class PackageAuthMethod {
   @Column({ type: 'int', nullable: true })
   order!: number;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
+  @Column({ type: 'int' })
+  createdAt!: number;
 
-  @UpdateDateColumn({ name: 'modified_at' })
-  modifiedAt!: Date;
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }
