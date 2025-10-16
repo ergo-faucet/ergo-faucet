@@ -19,3 +19,4 @@ export {
   UnexpectedError,
   NotAvailableError,
 } from './errors';
+export type { FilterOptions } from './types';

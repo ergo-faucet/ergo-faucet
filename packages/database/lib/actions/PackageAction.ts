@@ -1,11 +1,17 @@
 import {
+  And,
   DataSource,
   Equal,
   FindOptionsOrder,
   In,
+  FindOptionsWhere,
+  ILike,
   IsNull,
+  LessThanOrEqual,
+  MoreThanOrEqual,
   Not,
   Repository,
+  SelectQueryBuilder,
 } from '@rosen-bridge/extended-typeorm';
 import {
   Package,
@@ -27,6 +33,7 @@ import {
   PackageDTO,
   RequestLimitError,
   NotAvailableError,
+  FilterOptions,
 } from '../types';
 
 class PackageAction {
@@ -106,26 +113,40 @@ class PackageAction {
     limit: number,
     sort: 'id' | 'openAt' | 'closeAt' | 'name' | 'createdAt' | 'modifiedAt',
     order: 'asc' | 'desc',
+    options: FilterOptions,
     userId?: number,
   ): Promise<PackageDTO[]> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
 
-    const orderOption: FindOptionsOrder<Package> = { [sort]: order };
+    let qb = this.packageRepository
+      .createQueryBuilder('pkg')
+      .leftJoinAndSelect('pkg.assets', 'asset')
+      .leftJoinAndSelect('pkg.packageAuthMethods', 'pam')
+      .leftJoinAndSelect('pam.authMethod', 'authMethod');
+    const where: FindOptionsWhere<Package>[] = [{ status: 'show' }];
 
-    // Query the database for packages with status 'show'
-    const packages = await this.packageRepository.find({
-      where: { status: 'show' },
-      order: orderOption,
-      skip: offset,
-      take: limit,
-      relations: [
-        'assets',
-        'packageAuthMethods',
-        'packageAuthMethods.authMethod',
-      ],
-    });
+    const orderOption: FindOptionsOrder<Package> = { [sort]: order };
+    if (options.id === undefined) {
+      qb = this.filterAssets(qb, options.asset_all, options.asset_any);
+      this.filterAuths(qb, options.auth_all, options.auth_any);
+      this.filterCloseTime(where, options.close_before, options.close_after);
+      this.filterOpenTime(where, options.open_before, options.open_after);
+
+      this.searchPattern(where, options.pattern);
+    } else {
+      where[0].id = options.id;
+    }
+
+    const packages = await qb
+      .setFindOptions({
+        where,
+        order: orderOption,
+        skip: offset,
+        take: limit,
+      })
+      .getMany();
 
     const result: PackageDTO[] = [];
 
@@ -587,6 +608,176 @@ class PackageAction {
         `Some auth methods not found for IDs: ${JSON.stringify(notFoundAuths)}`,
       );
     }
+  };
+
+  /**
+   * Filters packages by their associated assets.
+   *
+   * @param qb - The base query builder for the Package entity.
+   * @param assets_all - List of token IDs that a package must contain **all of**.
+   * @param assets_any - List of token IDs where a package must contain **at least one**.
+   * @returns A modified query builder with asset filtering applied.
+   */
+  filterAssets = (
+    qb: SelectQueryBuilder<Package>,
+    assets_all?: string[],
+    assets_any?: string[],
+  ): SelectQueryBuilder<Package> => {
+    // asset_any: package must have at least one of the tokens
+    if (assets_any?.length) {
+      qb.andWhere((subQb) => {
+        const sub = subQb
+          .subQuery()
+          .select('subPkg.id')
+          .from(Package, 'subPkg')
+          .innerJoin('subPkg.assets', 'subAsset')
+          .where('subAsset.tokenId IN (:...assets_any)', { assets_any })
+          .getQuery();
+        return `pkg.id IN ${sub}`;
+      });
+    }
+
+    // asset_all: must contain ALL of the given tokens
+    if (assets_all?.length) {
+      qb.andWhere((subQb) => {
+        const sub = subQb
+          .subQuery()
+          .select('subPkg.id')
+          .from(Package, 'subPkg')
+          .innerJoin('subPkg.assets', 'subAsset')
+          .where('subAsset.tokenId IN (:...assets_all)', { assets_all })
+          .groupBy('subPkg.id')
+          .having('COUNT(DISTINCT subAsset.tokenId) = :count')
+          .getQuery();
+        return `pkg.id IN ${sub}`;
+      }).setParameter('count', assets_all.length);
+    }
+
+    return qb;
+  };
+
+  /**
+   * Filters packages by their associated authentication methods.
+   *
+   * @param qb - The base query builder for the Package entity.
+   * @param auth_all - List of auth method IDs that a package must include **all of**.
+   * @param auth_any - List of auth method IDs where a package must include **at least one**.
+   * @returns A modified query builder with authentication filtering applied.
+   */
+  filterAuths = (
+    qb: SelectQueryBuilder<Package>,
+    auth_all?: number[],
+    auth_any?: number[],
+  ): SelectQueryBuilder<Package> => {
+    // auth_any: package must have at least one of these auth methods
+    if (auth_any?.length) {
+      qb.andWhere((subQb) => {
+        const sub = subQb
+          .subQuery()
+          .select('subPkg.id')
+          .from(Package, 'subPkg')
+          .innerJoin('subPkg.packageAuthMethods', 'subPam')
+          .innerJoin('subPam.authMethod', 'subAuth')
+          .where('subAuth.id IN (:...auth_any)', { auth_any })
+          .getQuery();
+        return `pkg.id IN ${sub}`;
+      });
+    }
+
+    // auth_all: package must have ALL of the given auth methods
+    if (auth_all?.length) {
+      qb.andWhere((subQb) => {
+        const sub = subQb
+          .subQuery()
+          .select('subPkg.id')
+          .from(Package, 'subPkg')
+          .innerJoin('subPkg.packageAuthMethods', 'subPam')
+          .innerJoin('subPam.authMethod', 'subAuth')
+          .where('subAuth.id IN (:...auth_all)', { auth_all })
+          .groupBy('subPkg.id')
+          .having('COUNT(DISTINCT subAuth.id) = :count')
+          .getQuery();
+        return `pkg.id IN ${sub}`;
+      }).setParameter('count', auth_all.length);
+    }
+
+    return qb;
+  };
+
+  /**
+   * Filters packages by their closing time.
+   *
+   * @param where - Array of conditions for the Package entity.
+   * @param close_before - Maximum allowed closing time (inclusive).
+   * @param close_after - Minimum allowed closing time (inclusive).
+   * @returns The modified condition array with closing-time filters applied.
+   */
+  filterCloseTime = (
+    where: FindOptionsWhere<Package>[],
+    close_before?: number,
+    close_after?: number,
+  ): FindOptionsWhere<Package>[] => {
+    if (close_before && close_after) {
+      where[0].closeAt = And(
+        LessThanOrEqual(close_before),
+        MoreThanOrEqual(close_after),
+      );
+    } else if (close_before) {
+      where[0].closeAt = LessThanOrEqual(close_before);
+    } else if (close_after) {
+      where[0].closeAt = MoreThanOrEqual(close_after);
+    }
+
+    return where;
+  };
+
+  /**
+   * Filters packages by their opening time.
+   *
+   * @param where - Array of conditions for the Package entity.
+   * @param open_before - Maximum allowed opening time (inclusive).
+   * @param open_after - Minimum allowed opening time (inclusive).
+   * @returns The modified condition array with opening-time filters applied.
+   */
+  filterOpenTime = (
+    where: FindOptionsWhere<Package>[],
+    open_before?: number,
+    open_after?: number,
+  ): FindOptionsWhere<Package>[] => {
+    if (open_before && open_after) {
+      where[0].openAt = And(
+        LessThanOrEqual(open_before),
+        MoreThanOrEqual(open_after),
+      );
+    } else if (open_before) {
+      where[0].openAt = LessThanOrEqual(open_before);
+    } else if (open_after) {
+      where[0].openAt = MoreThanOrEqual(open_after);
+    }
+
+    return where;
+  };
+
+  /**
+   * Filters packages by matching a search pattern in their name or description.
+   *
+   * @param where - Array of conditions for the Package entity.
+   * @param pattern - Text pattern to search for in name or description (case-insensitive).
+   * @returns The modified condition array with pattern-matching filters applied.
+   */
+  searchPattern = (
+    where: FindOptionsWhere<Package>[],
+    pattern?: string,
+  ): FindOptionsWhere<Package>[] => {
+    if (pattern) {
+      where[0].name = ILike(`%${pattern}%`);
+      where.push({
+        ...where[0],
+        name: undefined,
+        description: ILike(`%${pattern}%`),
+      });
+    }
+    return where;
   };
 }
 

@@ -126,6 +126,7 @@ export class FastifyAPIServer {
     });
 
     this.instance.logger.info(`FastifyAPIServer initialized successfully.`);
+    await this.instance.register(this.instance.infoRoute, '/info');
   };
 
   /**
@@ -168,6 +169,32 @@ export class FastifyAPIServer {
     );
   };
 
+  /**
+   * /info route
+   * @returns the OpenAPI service info metadata (title, description, version)
+   */
+  public infoRoute = async (fastify: FastifySeverInstance) => {
+    fastify.get('', {
+      schema: {
+        summary: 'Get service information',
+        description: 'Returns the current service metadata from OpenAPI config',
+        response: {
+          200: {
+            type: 'object',
+            properties: {
+              version: { type: 'string' },
+            },
+          },
+        },
+      },
+      handler: async (_, reply) => {
+        const info = this.swagger.openapi?.info;
+        return reply.status(200).send({
+          version: info?.version,
+        });
+      },
+    });
+  };
   /**
    * Sets an authentication cookie in the response.
    * @param reply - The Fastify reply object to set the cookie on.
