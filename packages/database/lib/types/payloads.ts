@@ -9,10 +9,11 @@ export interface PackagePayload {
   status: 'show' | 'hide';
   delay: string;
   numberEachUser: number;
-  createAt?: Date;
-  modifiedAt?: Date;
 }
 
-export type AssetPayload = Omit<Asset, 'id' | 'package'>;
+export type AssetPayload = Omit<
+  Asset,
+  'id' | 'package' | 'createdAt' | 'modifiedAt'
+>;
 
 export type AuthMethodPayload = { id: number; order?: number };

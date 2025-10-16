@@ -41,7 +41,6 @@ export const processAssets = async (
   nodeModel: NodeModel,
 ): Promise<AssetPayload[]> => {
   const tokens: AssetPayload[] = [];
-  const now = new Date();
   for (let i = 0; i < assets.length; i++) {
     const { tokenId, amount: value, usageDescription } = assets[i];
 
@@ -59,8 +58,6 @@ export const processAssets = async (
         usageDescription: usageDescription
           ? usageDescription
           : 'no description',
-        createdAt: now,
-        modifiedAt: now,
       });
       continue;
     }
@@ -80,8 +77,6 @@ export const processAssets = async (
       amount,
       decimals: decimals,
       usageDescription: usageDescription ? usageDescription : description,
-      createdAt: now,
-      modifiedAt: now,
     });
   }
 

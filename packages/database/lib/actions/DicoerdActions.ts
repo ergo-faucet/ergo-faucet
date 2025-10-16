@@ -91,6 +91,7 @@ class DiscordAction extends AbstractAuthAction {
 
     user.discord_id = discord_id;
     user.name = user.name ?? global_name ?? undefined;
+    user.modifiedAt = Math.floor(Date.now() / 1000);
     user.metadata = {
       ...user.metadata,
       discord: {

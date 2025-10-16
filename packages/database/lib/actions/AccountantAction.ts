@@ -111,6 +111,7 @@ class AccountantAction {
     userRequest.txSerialized = txSerialized ? txSerialized : null;
     userRequest.txId = txId ? txId : null;
     userRequest.numberOfTries = numberOfTries;
+    userRequest.modifiedAt = Math.floor(Date.now() / 1000);
 
     // Save updated user request
     await this.userRequestRepository.save(userRequest);
@@ -145,8 +146,10 @@ class AccountantAction {
       );
       return;
     }
+
     // Update creation height
     userRequest.creationHeight = creationHeight;
+    userRequest.modifiedAt = Math.floor(Date.now() / 1000);
 
     // Save updated user request
     await this.userRequestRepository.save(userRequest);

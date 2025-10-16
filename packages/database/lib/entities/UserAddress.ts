@@ -1,13 +1,11 @@
 import {
   Column,
-  CreateDateColumn,
   Entity,
   JoinColumn,
   ManyToOne,
   PrimaryGeneratedColumn,
   Relation,
   Unique,
-  UpdateDateColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 
@@ -24,9 +22,9 @@ export class UserAddress {
   @Column({ type: 'varchar' })
   value!: string;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
+  @Column({ type: 'int' })
+  createdAt!: number;
 
-  @UpdateDateColumn({ name: 'modified_at' })
-  modifiedAt!: Date;
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

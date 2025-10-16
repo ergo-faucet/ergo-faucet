@@ -4,8 +4,6 @@ import {
   Column,
   OneToMany,
   Relation,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { Asset } from './Asset';
 import { PackageAuthMethod } from './PackageAuthMethod';
@@ -53,9 +51,9 @@ export class Package {
   @OneToMany(() => UserRequest, (request) => request.package)
   requests!: Relation<UserRequest[]>;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
+  @Column({ type: 'int' })
+  createdAt!: number;
 
-  @UpdateDateColumn({ name: 'modified_at' })
-  modifiedAt!: Date;
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

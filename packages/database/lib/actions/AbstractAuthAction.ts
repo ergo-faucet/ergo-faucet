@@ -42,6 +42,8 @@ abstract class AbstractAuthAction {
       method = this.authMethodRepository.create({
         name: this.authMethodName,
         config: JSON.stringify({}),
+        createdAt: Math.floor(Date.now() / 1000),
+        modifiedAt: Math.floor(Date.now() / 1000),
       });
       this.authMethod = await this.authMethodRepository.save(method);
     } else {
@@ -72,7 +74,6 @@ abstract class AbstractAuthAction {
       },
       relations: ['authMethod', 'user'],
     });
-
     if (!authStatus) {
       authStatus = this.userAuthStatusRepository.create({
         user,
@@ -84,6 +85,8 @@ abstract class AbstractAuthAction {
           token: accessToken,
           refresh_token: refreshToken,
         },
+        createdAt: Math.floor(Date.now() / 1000),
+        modifiedAt: Math.floor(Date.now() / 1000),
       });
     } else {
       authStatus.verifiedAt = new Date();
@@ -93,6 +96,7 @@ abstract class AbstractAuthAction {
         token: accessToken,
         refresh_token: refreshToken,
       };
+      authStatus.modifiedAt = Math.floor(Date.now() / 1000);
     }
 
     await this.userAuthStatusRepository.save(authStatus);
@@ -111,6 +115,7 @@ abstract class AbstractAuthAction {
     userAuthStatus.status = 'expired';
     userAuthStatus.metadata.refresh_token = '';
     userAuthStatus.metadata.token = '';
+    userAuthStatus.modifiedAt = Math.floor(Date.now() / 1000);
     await this.userAuthStatusRepository.save(userAuthStatus);
 
     this.logger.debug(

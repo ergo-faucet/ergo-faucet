@@ -260,7 +260,7 @@ class PackageAction {
 
     if (requestsCount) {
       const latestRequest = userRequests[0];
-      const lastRequestTime = latestRequest.timestamp;
+      const lastRequestTime = latestRequest.createdAt;
       const timeDifference = currentTime - lastRequestTime;
 
       if (timeDifference < Number(pkg.delay))
@@ -377,7 +377,8 @@ class PackageAction {
       package: pkg!,
       status: 'pending',
       user: usr!,
-      timestamp: Math.floor(Date.now() / 1000), // In seconds
+      createdAt: Math.floor(Date.now() / 1000),
+      modifiedAt: Math.floor(Date.now() / 1000),
     });
 
     await this.userRequestRepository.save(userRequest);
@@ -415,6 +416,8 @@ class PackageAction {
           closeAt: packagePayload.closeAt,
           delay: packagePayload.delay,
           numberEachUser: packagePayload.numberEachUser,
+          createdAt: Math.floor(Date.now() / 1000),
+          modifiedAt: Math.floor(Date.now() / 1000),
         });
 
         // Save the package to the database
@@ -457,6 +460,8 @@ class PackageAction {
             decimals: asset.decimals,
             usageDescription: asset.usageDescription,
             package: pkg, // Associate with the saved package
+            createdAt: Math.floor(Date.now() / 1000),
+            modifiedAt: Math.floor(Date.now() / 1000),
           })),
         );
 

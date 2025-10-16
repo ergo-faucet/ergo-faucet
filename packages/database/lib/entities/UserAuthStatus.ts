@@ -5,8 +5,6 @@ import {
   ManyToOne,
   JoinColumn,
   Relation,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 import { AuthMethod } from './AuthMethod';
@@ -50,9 +48,9 @@ export class UserAuthStatus {
     refresh_token?: string;
   };
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
+  @Column({ type: 'int' })
+  createdAt!: number;
 
-  @UpdateDateColumn({ name: 'modified_at' })
-  modifiedAt!: Date;
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

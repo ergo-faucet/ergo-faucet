@@ -833,8 +833,6 @@ describe('PackageController', () => {
           amount: '1000000000',
           decimals: 9,
           usageDescription: 'Test',
-          createdAt: new Date('2024-01-15T10:00:00.000Z'),
-          modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
         },
       ]);
       mockedPackageAction.addAssets.mockRejectedValue(

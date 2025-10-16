@@ -5,8 +5,6 @@ import {
   ManyToOne,
   JoinColumn,
   Relation,
-  CreateDateColumn,
-  UpdateDateColumn,
 } from '@rosen-bridge/extended-typeorm';
 import { User } from './User';
 import { Package } from './Package';
@@ -30,9 +28,6 @@ export class UserRequest {
   @JoinColumn()
   package!: Relation<Package>;
 
-  @Column({ type: 'int' })
-  timestamp!: number;
-
   @Column({ type: 'varchar' })
   destinationAddress!: string;
 
@@ -51,9 +46,9 @@ export class UserRequest {
   @Column({ type: 'int', default: 0 })
   numberOfTries!: number;
 
-  @CreateDateColumn({ name: 'created_at' })
-  createdAt!: Date;
+  @Column({ type: 'int' })
+  createdAt!: number;
 
-  @UpdateDateColumn({ name: 'modified_at' })
-  modifiedAt!: Date;
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

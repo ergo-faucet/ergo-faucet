@@ -85,6 +85,7 @@ class GoogleAction extends AbstractAuthAction {
 
     user.google_id = google_id;
     user.name = user.name ?? name ?? undefined;
+    user.modifiedAt = Math.floor(Date.now() / 1000);
     user.metadata = {
       ...user.metadata,
       google: {

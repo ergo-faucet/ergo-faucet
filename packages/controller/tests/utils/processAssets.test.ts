@@ -5,7 +5,7 @@ import {
 import { mockNodeModel } from '../mockUtils';
 import { expect, it, describe, vi, beforeEach, afterAll } from 'vitest';
 import { toBigIntAmount, processAssets } from '../../lib/utils';
-const fixedDate = new Date('2024-01-15T10:00:00.000Z');
+const fixedDate = 1705312800 * 1000;
 
 describe('utils', () => {
   beforeEach(() => {
@@ -80,8 +80,6 @@ describe('utils', () => {
           amount: '1500000000',
           decimals: 9,
           usageDescription: 'Test ERG',
-          createdAt: new Date('2024-01-15T10:00:00.000Z'),
-          modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
         },
       ]);
     });
@@ -118,8 +116,6 @@ describe('utils', () => {
           amount: '10025',
           decimals: 2,
           usageDescription: 'Test token',
-          createdAt: new Date('2024-01-15T10:00:00.000Z'),
-          modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
         },
       ]);
     });

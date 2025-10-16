@@ -1,10 +1,4 @@
-import {
-  PackageAction,
-  Package,
-  Asset,
-  PackageAuthMethod,
-  RequestHistoryAction,
-} from '@ergo-faucet/database';
+import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
 import { vi } from 'vitest';
 import {
   FastifyAPIServer,
@@ -78,9 +72,9 @@ export const mockNodeModel = {
   // eslint-disable-next-line
 } as any;
 
-let mockPackage = {} as Package;
+let mockPackage = {};
 
-const mockAsset1: Asset = {
+const mockAsset1 = {
   id: 1,
   package: mockPackage,
   tokenId: 'token-abc-123',
@@ -88,11 +82,11 @@ const mockAsset1: Asset = {
   assetName: 'token-abc-123',
   amount: '1000',
   usageDescription: 'Initial reward',
-  createdAt: new Date('2024-01-15T10:00:00.000Z'),
-  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
-const mockAsset2: Asset = {
+const mockAsset2 = {
   id: 2,
   package: mockPackage,
   tokenId: 'token-def-456',
@@ -100,11 +94,11 @@ const mockAsset2: Asset = {
   assetName: 'token-def-456',
   amount: '500',
   usageDescription: 'Bonus item',
-  createdAt: new Date('2024-01-15T10:00:00.000Z'),
-  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
-const mockAuthMethod1: PackageAuthMethod = {
+const mockAuthMethod1 = {
   id: 1,
   authMethod: {
     id: 1,
@@ -112,16 +106,16 @@ const mockAuthMethod1: PackageAuthMethod = {
     config: '{"botToken": "123456:ABC-DEF"}',
     packageAuthMethods: [],
     userAuthStatuses: [],
-    createdAt: new Date('2024-01-15T10:00:00.000Z'),
-    modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+    createdAt: 1705312800,
+    modifiedAt: 1705312800,
   },
   order: 1,
   package: mockPackage,
-  createdAt: new Date('2024-01-15T10:00:00.000Z'),
-  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
-const mockAuthMethod2: PackageAuthMethod = {
+const mockAuthMethod2 = {
   id: 2,
   authMethod: {
     id: 2,
@@ -129,8 +123,8 @@ const mockAuthMethod2: PackageAuthMethod = {
     config: '{"smtpServer": "smtp.example.com"}',
     packageAuthMethods: [],
     userAuthStatuses: [],
-    createdAt: new Date('2024-01-15T10:00:00.000Z'),
-    modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+    createdAt: 1705312800,
+    modifiedAt: 1705312800,
   },
   order: 2,
   package: mockPackage,
@@ -152,8 +146,8 @@ mockPackage = {
   packageAuthMethods: [mockAuthMethod1, mockAuthMethod2],
   authStatuses: [],
   requests: [],
-  createdAt: new Date('2024-01-15T10:00:00.000Z'),
-  modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
 export const mockPackageDTO = [

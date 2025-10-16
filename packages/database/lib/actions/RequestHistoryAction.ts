@@ -96,7 +96,7 @@ class RequestHistoryAction {
         packageId: r.package.id,
         packageName: r.package.name,
         status: r.status,
-        timestamp: r.timestamp,
+        timestamp: r.createdAt,
         destinationAddress: r.destinationAddress,
         txId: r.txId || undefined,
       }),

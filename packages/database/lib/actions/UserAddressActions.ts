@@ -102,6 +102,7 @@ class UserAddressAction {
 
     if (user) {
       user.lastLogin = now;
+      user.modifiedAt = Math.floor(Date.now() / 1000);
       await this.UserRepository.save(user);
       this.logger.debug(`Updated lastLogin for user ID ${user.id} at ${now}`);
       return user;
@@ -119,6 +120,8 @@ class UserAddressAction {
         const userAddress = userAddressRepoTx.create({
           user: savedUser,
           value: address,
+          createdAt: Math.floor(Date.now() / 1000),
+          modifiedAt: Math.floor(Date.now() / 1000),
         });
         await userAddressRepoTx.save(userAddress);
 
