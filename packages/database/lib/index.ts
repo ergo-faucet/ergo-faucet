@@ -21,6 +21,7 @@ export {
   GoogleAction,
   AccountantAction,
   RequestHistoryAction,
+  PaymentAction,
 } from './actions';
 export {
   Asset,

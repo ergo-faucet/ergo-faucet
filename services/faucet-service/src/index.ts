@@ -12,6 +12,7 @@ import {
   startServerService,
   setupAccountant,
   setupErgoUtils,
+  setupPaymentAuth,
 } from './handler';
 import { scheduleExpiringJob, schedulePayingJob } from './jobs';
 
@@ -30,6 +31,7 @@ const main = async () => {
     await setupXAuth();
     await setupGoogleAuth();
     await setupAccountant();
+    await setupPaymentAuth();
     logger.info('All packages was initialized successfuly');
     await startServerService();
     await scheduleExpiringJob();

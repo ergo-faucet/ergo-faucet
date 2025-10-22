@@ -1,2 +1,2 @@
 export type { PaymentAuthConfig } from './PaymentAuthConfig';
-export { getAddressParam } from './schemas';
+export { checkStatusOrGetAddressBody } from './schemas';

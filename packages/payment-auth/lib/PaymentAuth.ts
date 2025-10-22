@@ -1,11 +1,12 @@
 import { NodeModel, Wallet } from '@ergo-faucet/ergo-utils';
-import { getAddressParam, PaymentAuthConfig } from './types';
+import { checkStatusOrGetAddressBody, PaymentAuthConfig } from './types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   FastifyAPIServer,
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
 import { userRequestPayload } from '@ergo-faucet/common-types';
+import { NotFoundError, PaymentAction } from '@ergo-faucet/database';
 
 class PaymentAuth {
   private static instance: PaymentAuth;
@@ -13,6 +14,7 @@ class PaymentAuth {
   private readonly wallet: Wallet;
   private readonly nodeModel: NodeModel;
   private readonly fastifyServer: FastifyAPIServer;
+  private readonly paymentAction: PaymentAction;
 
   private readonly PAYMENT_AUTH_PREFIX = '/auth/payment';
 
@@ -26,6 +28,7 @@ class PaymentAuth {
     this.wallet = config.wallet;
     this.nodeModel = config.nodeModel;
     this.fastifyServer = config.fastifyServer;
+    this.paymentAction = config.paymentAction;
   }
 
   /**
@@ -34,14 +37,17 @@ class PaymentAuth {
    * @param config - Configuration object for the PaymentAuth.
    * @param logger - Optional logger for debugging.
    */
-  public static initialize = (
+  public static initialize = async (
     config: PaymentAuthConfig,
     logger?: AbstractLogger,
-  ): void => {
+  ): Promise<void> => {
     if (this.instance) {
       throw new Error('PaymentAuth instance has already been initialized.');
     }
     PaymentAuth.instance = new PaymentAuth(config, logger);
+    await PaymentAuth.instance.registerRoutes(
+      PaymentAuth.instance.PAYMENT_AUTH_PREFIX,
+    );
   };
 
   /**
@@ -56,33 +62,73 @@ class PaymentAuth {
     return this.instance;
   };
 
-  private checkStatusOrGetAddressRoute = async (
+  public checkStatusOrGetAddressRoute = async (
     fastify: FastifySeverInstance,
   ) => {
-    fastify.get(
+    fastify.post<{ Body: typeof checkStatusOrGetAddressBody }>(
       '',
       {
         errorHandler: this.fastifyServer.errorHandler,
         preHandler: [
           this.fastifyServer.authPreHandler(),
-          //  this.fastifyServer.captchaPreHandler,
+          this.fastifyServer.captchaPreHandler,
         ],
-        schema: { params: getAddressParam },
+        schema: { body: checkStatusOrGetAddressBody },
       },
       async (request, reply) => {
         try {
           const user = request.user as userRequestPayload;
-          const { packageId } = request.params as { packageId: number };
+
+          const { packageId, authMethodId } = request.body;
 
           this.logger.debug(
             `User ${user.userId} is checking payment auth status or getting address for package ${packageId}`,
           );
 
-          // check database for user auth status for the packageId
-          // if is there a pending or passed status return it
-          // otherwise return a new address for payment
-          // not implemented yet
+          const paymentStatus =
+            await this.paymentAction.getUserPaymentAuthStatus(
+              user.userId,
+              authMethodId,
+              packageId,
+            );
+          if (paymentStatus === null) {
+            this.logger.debug(
+              `No payment record found for user ${user.userId}, package ${packageId}, auth method ${authMethodId}`,
+            );
+            const newPaymentStatus =
+              await this.paymentAction.addUserPaymentAuthStatus(
+                user.userId,
+                authMethodId,
+                packageId,
+                'empty-address-placeholder',
+              );
+
+            return reply.status(200).send({ paymentStatus: newPaymentStatus });
+          }
+          if (
+            paymentStatus.status === 'expired' ||
+            paymentStatus.status === 'failed'
+          ) {
+            const updatedPaymentStatus =
+              await this.paymentAction.updateUserPaymentAuthStatus(
+                user.userId,
+                authMethodId,
+                packageId,
+                'pending',
+                'empty-address-placeholder',
+              );
+            return reply
+              .status(200)
+              .send({ paymentStatus: updatedPaymentStatus });
+          }
+          return reply.status(200).send({ paymentStatus });
         } catch (error) {
+          if (error instanceof NotFoundError) {
+            this.logger.debug(error.message);
+            return reply
+              .status(400)
+              .send({ error: error.message, code: 'NOT_FOUND' });
+          }
           this.logger.error(`Error fetching packages:`, {
             error: error instanceof Error ? error.message : error,
             stack: error instanceof Error ? error.stack : undefined,

@@ -8,3 +8,4 @@ export { setupController } from './controller';
 export { setupGoogleAuth } from './googleAuth';
 export { setupAccountant } from './accountant';
 export { setupErgoUtils } from './ergoUtils';
+export { setupPaymentAuth } from './paymentAuth';

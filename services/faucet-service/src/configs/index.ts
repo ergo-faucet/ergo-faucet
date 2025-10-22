@@ -11,3 +11,4 @@ export { jobConfig } from './authJob';
 export { controllerConfig } from './controller';
 export { accountantConfig } from './accountant';
 export { ergoConfig } from './ergo';
+export { paymentAuthConfig } from './paymentAuth';
