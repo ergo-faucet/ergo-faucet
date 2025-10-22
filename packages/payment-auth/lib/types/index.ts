@@ -1,2 +1,5 @@
 export type { PaymentAuthConfig } from './PaymentAuthConfig';
-export { checkStatusOrGetAddressBody } from './schemas';
+export {
+  checkStatusOrGetAddressBody,
+  CheckStatusOrGetAddressResponse200,
+} from './schemas';

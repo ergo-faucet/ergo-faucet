@@ -11,7 +11,7 @@ import { ErgoHDKey, Prover } from '@fleet-sdk/wallet';
 import { NodeModel } from './NodeModel';
 import { NotEnoughAssetsError } from './types';
 import { compile } from '@fleet-sdk/compiler';
-import { SLong, SSigmaProp, SGroupElement } from '@fleet-sdk/serializer';
+import { SSigmaProp, SGroupElement, SInt } from '@fleet-sdk/serializer';
 
 export class Wallet {
   private static instance: Wallet;
@@ -20,7 +20,7 @@ export class Wallet {
   private readonly childKey: ErgoHDKey;
   private readonly walletAddress: string;
   private readonly network: Network;
-  private readonly paymentScript = `faucetPK && sigmaProp(CONTEXT.headers(0).timestamp > contractTime)`;
+  private readonly paymentScript = `{ faucetPK && sigmaProp(HEIGHT > trueScriptsIndex) }`;
 
   private constructor(
     mnemonic: string,
@@ -139,19 +139,20 @@ export class Wallet {
   };
 
   /**
-   * Generates a time-locked payment address derived from the wallet's child key.
+   * Generates a unique payment address derived from the wallet's child key.
    *
-   * Compiles the payment script with the child's public key and the provided
-   * contractTime, then returns the resulting address for the configured network.
+   * Compiles the controller script using:
+   *  - faucetPK set to the child's public key
+   *  - trueScriptsIndex set to -count (to produce a distinct script/address per count)
    *
-   * @param contractTime - Contract time value used in the payment script (bigint).
+   * @param count - Non-negative integer used to derive a unique script index.
    * @returns {string} The generated payment address.
    */
-  public generateUniquePaymentAddress = (contractTime: bigint): string => {
+  public generateUniquePaymentAddress = (count: number): string => {
     const paymentContract = compile(this.paymentScript, {
       map: {
         faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
-        contractTime: SLong(contractTime),
+        trueScriptsIndex: SInt(-count),
       },
     });
 

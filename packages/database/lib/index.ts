@@ -32,4 +32,5 @@ export {
   UserAddress,
   UserAuthStatus,
   UserRequest,
+  Counter,
 } from './entities';

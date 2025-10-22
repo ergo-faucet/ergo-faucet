@@ -1,5 +1,9 @@
 import { NodeModel, Wallet } from '@ergo-faucet/ergo-utils';
-import { checkStatusOrGetAddressBody, PaymentAuthConfig } from './types';
+import {
+  checkStatusOrGetAddressBody,
+  CheckStatusOrGetAddressResponse200,
+  PaymentAuthConfig,
+} from './types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   FastifyAPIServer,
@@ -7,6 +11,7 @@ import {
 } from '@ergo-faucet/fastify-server';
 import { userRequestPayload } from '@ergo-faucet/common-types';
 import { NotFoundError, PaymentAction } from '@ergo-faucet/database';
+import { toDTO } from './utils/toDTO';
 
 class PaymentAuth {
   private static instance: PaymentAuth;
@@ -73,7 +78,10 @@ class PaymentAuth {
           this.fastifyServer.authPreHandler(),
           this.fastifyServer.captchaPreHandler,
         ],
-        schema: { body: checkStatusOrGetAddressBody },
+        schema: {
+          body: checkStatusOrGetAddressBody,
+          response: { 200: CheckStatusOrGetAddressResponse200 },
+        },
       },
       async (request, reply) => {
         try {
@@ -95,15 +103,20 @@ class PaymentAuth {
             this.logger.debug(
               `No payment record found for user ${user.userId}, package ${packageId}, auth method ${authMethodId}`,
             );
+            const addressIndex =
+              await this.paymentAction.getAndIncrementCounter();
+
+            const newAddress =
+              this.wallet.generateUniquePaymentAddress(addressIndex);
             const newPaymentStatus =
               await this.paymentAction.addUserPaymentAuthStatus(
                 user.userId,
                 authMethodId,
                 packageId,
-                'empty-address-placeholder',
+                newAddress,
               );
 
-            return reply.status(200).send({ paymentStatus: newPaymentStatus });
+            return reply.status(200).send(toDTO(newPaymentStatus));
           }
           if (
             paymentStatus.status === 'expired' ||
@@ -117,11 +130,10 @@ class PaymentAuth {
                 'pending',
                 'empty-address-placeholder',
               );
-            return reply
-              .status(200)
-              .send({ paymentStatus: updatedPaymentStatus });
+            return reply.status(200).send(toDTO(updatedPaymentStatus));
           }
-          return reply.status(200).send({ paymentStatus });
+
+          return reply.status(200).send(toDTO(paymentStatus));
         } catch (error) {
           if (error instanceof NotFoundError) {
             this.logger.debug(error.message);

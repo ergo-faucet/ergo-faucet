@@ -1,6 +1,12 @@
 import { DataSource, Repository } from '@rosen-bridge/extended-typeorm';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { AuthMethod, Package, User, UserAuthStatus } from '../entities';
+import {
+  AuthMethod,
+  Counter,
+  Package,
+  User,
+  UserAuthStatus,
+} from '../entities';
 import { NotFoundError } from '../types';
 
 class PaymentAction {
@@ -12,6 +18,8 @@ class PaymentAction {
   private packageRepository: Repository<Package>;
   private authmethodRepository: Repository<AuthMethod>;
   private userRepository: Repository<User>;
+
+  private counterRepository: Repository<Counter>;
 
   /**
    * Constructs an PaymentAction instance.
@@ -27,6 +35,7 @@ class PaymentAction {
     this.packageRepository = this.dataSource.getRepository(Package);
     this.authmethodRepository = this.dataSource.getRepository(AuthMethod);
     this.userRepository = this.dataSource.getRepository(User);
+    this.counterRepository = this.dataSource.getRepository(Counter);
 
     this.logger.debug('PaymentAction instance created.');
   }
@@ -94,6 +103,7 @@ class PaymentAction {
         package: pkg,
         authMethod: paymentAuth,
       },
+      relations: ['authMethod'],
     });
 
     return userPaymentAuthStatus;
@@ -122,6 +132,7 @@ class PaymentAction {
         package: pkg!,
         authMethod: paymentAuth!,
       },
+      relations: ['authMethod'],
     });
 
     if (!userPaymentAuthStatus) {
@@ -165,18 +176,19 @@ class PaymentAction {
     authMethodId: number,
     status: 'passed' | 'failed' | 'pending' | 'expired',
     paymentAddress?: string,
-  ): Promise<void> => {
+  ): Promise<UserAuthStatus> => {
     this.logger.debug(
       `Updating payment auth status for user ID: ${userId}, package ID: ${packageId}, auth method ID: ${authMethodId} to status: ${status}.`,
     );
 
-    const userPaymentAuthStatus = await this.userAuthStatusRepository.findOneBy(
-      {
+    const userPaymentAuthStatus = await this.userAuthStatusRepository.findOne({
+      where: {
         user: { id: userId },
         package: { id: packageId },
         authMethod: { id: authMethodId },
       },
-    );
+      relations: ['authMethod'],
+    });
 
     if (!userPaymentAuthStatus) {
       throw new NotFoundError(
@@ -192,6 +204,29 @@ class PaymentAction {
     this.logger.info(
       `Payment auth status for user ID: ${userId}, package ID: ${packageId}, auth method ID: ${authMethodId} updated to status: ${status}.`,
     );
+    return userPaymentAuthStatus;
+  };
+
+  /**
+   * Retrieves the current counter value and increments it in the database.
+   *
+   * - Creates a counter record with initial value 1 if none exists.
+   * - Increments the stored counter and returns the value before incrementing.
+   *
+   * @returns {Promise<number>} The counter value prior to the increment.
+   * @throws {Error} If a database operation fails.
+   */
+
+  public getAndIncrementCounter = async (): Promise<number> => {
+    let counterRecord = await this.counterRepository.findOneBy({});
+    if (!counterRecord) {
+      counterRecord = this.counterRepository.create({ count: 1 });
+    }
+    const currentCount = counterRecord.count;
+    counterRecord.count += 1;
+    await this.counterRepository.save(counterRecord);
+    this.logger.debug(`Counter incremented to ${counterRecord.count}`);
+    return currentCount;
   };
 }
 

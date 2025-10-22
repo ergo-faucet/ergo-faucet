@@ -16,7 +16,13 @@ export const setupPaymentAuth = async () => {
   const paymentAction = await PaymentAction.getInstance();
 
   await PaymentAuth.initialize(
-    { nodeModel, wallet, fastifyServer, paymentAction, ...paymentAuthConfig },
+    {
+      nodeModel,
+      wallet,
+      fastifyServer,
+      paymentAction,
+      ...paymentAuthConfig,
+    },
     paymentAuthLogger,
   );
 
