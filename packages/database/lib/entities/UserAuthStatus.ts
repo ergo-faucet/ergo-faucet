@@ -33,14 +33,14 @@ export class UserAuthStatus {
   @JoinColumn()
   package?: Relation<Package>;
 
-  @Column({ type: 'date' })
-  verifiedAt!: Date;
+  @Column({ type: 'int' })
+  verifiedAt!: number;
 
   @Column({ type: 'text' })
   status!: 'passed' | 'failed' | 'pending' | 'expired';
 
-  @Column({ type: 'date', nullable: true })
-  expiresAt?: Date;
+  @Column({ type: 'int', nullable: true })
+  expiresAt?: number;
 
   @Column({ type: 'simple-json', nullable: true })
   metadata!: {

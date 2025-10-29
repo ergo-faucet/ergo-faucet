@@ -5,18 +5,14 @@ import {
 import { mockNodeModel } from '../mockUtils';
 import { expect, it, describe, vi, beforeEach, afterAll } from 'vitest';
 import { toBigIntAmount, processAssets } from '../../lib/utils';
-const fixedDate = 1705312800 * 1000;
 
 describe('utils', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.useFakeTimers();
-    vi.setSystemTime(fixedDate);
   });
 
   afterAll(() => {
     vi.restoreAllMocks();
-    vi.useRealTimers();
   });
 
   /**

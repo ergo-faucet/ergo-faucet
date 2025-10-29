@@ -245,7 +245,7 @@ export const mockRequestDTO = [
     packageId: 101,
     packageName: 'Starter Pack',
     status: 'submitted',
-    timestamp: 19900822100,
+    createdAt: 19900822100,
     destinationAddress: '9hT2oAddress',
     txId: 'tx_abc',
   },

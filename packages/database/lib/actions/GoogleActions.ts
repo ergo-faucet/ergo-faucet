@@ -97,7 +97,7 @@ class GoogleAction extends AbstractAuthAction {
     const savedUser = await this.userRepository.save(user);
     this.logger.debug(`Linked Google ID ${google_id} to user ID ${userId}`);
 
-    const expiresAt = new Date(Date.now() + expiresTime * 1000);
+    const expiresAt = Date.now() + expiresTime * 1000;
 
     await this.saveOrUpdateAuthStatus(
       savedUser,

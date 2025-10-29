@@ -140,7 +140,6 @@ export const RequsetHistoryRouteQuery = Type.Object({
   limit: Type.Number({ minimum: 0, maximum: 100, default: 25 }),
   sort: Type.Union(
     [
-      Type.Literal('timestamp'),
       Type.Literal('status'),
       Type.Literal('createdAt'),
       Type.Literal('modifiedAt'),
@@ -164,7 +163,7 @@ const RequestHistorySchema = Type.Object({
     Type.Literal('pending'),
     Type.Literal('submitted'),
   ]),
-  timestamp: Type.Number(),
+  createdAt: Type.Number(),
   destinationAddress: Type.String(),
   txId: Type.Optional(Type.String()),
 });

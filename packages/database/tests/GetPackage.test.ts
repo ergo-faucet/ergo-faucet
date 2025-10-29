@@ -105,7 +105,7 @@ describe('PackageAction.getPackages with mock data', () => {
             authMethod,
             package: pkg,
             status: am.status,
-            verifiedAt: new Date(),
+            verifiedAt: Math.floor(Date.now() / 1000),
             metadata: { token: 'dummy', refresh_token: 'dummy' },
             createdAt: 2000,
             modifiedAt: 2000,

@@ -63,7 +63,7 @@ describe('RequestController', () => {
     it('should return request history successfully', async () => {
       const result = await fastifyInstance['fastify'].inject({
         method: 'GET',
-        url: '/request-history?offset=0&limit=100&sort=timestamp&order=desc',
+        url: '/request-history?offset=0&limit=100&order=desc',
       });
 
       expect(result.statusCode).toEqual(200);
@@ -107,7 +107,7 @@ describe('RequestController', () => {
 
       const result = await fastifyInstance['fastify'].inject({
         method: 'GET',
-        url: '/request-history?offset=0&limit=10&sort=timestamp&order=desc',
+        url: '/request-history?offset=0&limit=10&order=desc',
       });
 
       expect(result.statusCode).toBe(500);
