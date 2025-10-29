@@ -1,4 +1,8 @@
+import config from 'config';
+
 /**
  * PaymentAuth configuration
  */
-export const paymentAuthConfig = {};
+export const paymentAuthConfig = {
+  expiresTime: config.get<number>('paymentAuth.expiresTime'),
+};

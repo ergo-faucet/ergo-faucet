@@ -10,8 +10,12 @@ import {
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
 import { userRequestPayload } from '@ergo-faucet/common-types';
-import { NotFoundError, PaymentAction } from '@ergo-faucet/database';
-import { toDTO } from './utils/toDTO';
+import {
+  NotFoundError,
+  PaymentAction,
+  UserAuthStatus,
+} from '@ergo-faucet/database';
+import { toDTO } from './utils';
 
 class PaymentAuth {
   private static instance: PaymentAuth;
@@ -20,6 +24,7 @@ class PaymentAuth {
   private readonly nodeModel: NodeModel;
   private readonly fastifyServer: FastifyAPIServer;
   private readonly paymentAction: PaymentAction;
+  private readonly expiresTime: number;
 
   private readonly PAYMENT_AUTH_PREFIX = '/auth/payment';
 
@@ -34,6 +39,7 @@ class PaymentAuth {
     this.nodeModel = config.nodeModel;
     this.fastifyServer = config.fastifyServer;
     this.paymentAction = config.paymentAction;
+    this.expiresTime = config.expiresTime;
   }
 
   /**
@@ -117,18 +123,21 @@ class PaymentAuth {
               );
 
             return reply.status(200).send(toDTO(newPaymentStatus));
-          }
-          if (
+          } else if (
             paymentStatus.status === 'expired' ||
             paymentStatus.status === 'failed'
           ) {
+            const addressIndex =
+              await this.paymentAction.getAndIncrementCounter();
+
+            const newAddress =
+              this.wallet.generateUniquePaymentAddress(addressIndex);
+
             const updatedPaymentStatus =
               await this.paymentAction.updateUserPaymentAuthStatus(
-                user.userId,
-                authMethodId,
-                packageId,
+                paymentStatus,
                 'pending',
-                'empty-address-placeholder',
+                newAddress,
               );
             return reply.status(200).send(toDTO(updatedPaymentStatus));
           }
@@ -155,6 +164,61 @@ class PaymentAuth {
     );
   };
 
+  public processPayments = async (): Promise<void> => {
+    try {
+      const payments: UserAuthStatus[] =
+        await this.paymentAction.getUnpaidRecords();
+
+      if (payments.length === 0) {
+        this.logger.debug('There is no payment to process.');
+        return;
+      }
+
+      let prvConfig: string = '';
+      let assets;
+      for (let i = 0; i < payments.length; i++) {
+        const payment = payments[i];
+        const currentConfig = payment.authMethod.config;
+        if (prvConfig !== currentConfig) {
+          prvConfig = currentConfig;
+          assets = JSON.parse(currentConfig); //as TokenTargetAmount<bigint>[];
+        }
+
+        const isPaid: boolean = await this.nodeModel.checkForPayment(
+          payment.metadata.address!,
+          assets,
+        );
+
+        if (isPaid) {
+          await this.paymentAction.updateUserPaymentAuthStatus(
+            payment,
+            'passed',
+            undefined,
+          );
+        } else {
+          /** There is no modifiedAt property for now */
+          // const now = Math.floor(Date.now() / 1000);
+          // const elapsed = now - payment.modifiedAt;
+          // // Check if the payment has exceeded the allowed time window
+          // if (elapsed > this.expiresTime) {
+          //   this.logger.debug(
+          //     `Payment ID ${payment.id} has expired. Elapsed time: ${elapsed}s, allowed time: ${this.expiresTime}s.`,
+          //   );
+          //   await this.paymentAction.updateUserPaymentAuthStatus(
+          //     payment,
+          //     'failed',
+          //     undefined,
+          //   );
+          // }
+        }
+      }
+    } catch (error) {
+      this.logger.warn('Error during processPayments', {
+        message: error instanceof Error ? error.message : '',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+    }
+  };
   /**
    * Registers the API routes for PaymentAuth.
    * @param prefix - URL prefix for the routes

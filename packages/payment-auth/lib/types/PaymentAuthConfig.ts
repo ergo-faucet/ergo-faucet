@@ -7,4 +7,5 @@ export interface PaymentAuthConfig {
   nodeModel: NodeModel;
   fastifyServer: FastifyAPIServer;
   paymentAction: PaymentAction;
+  expiresTime: number;
 }

@@ -1,4 +1,4 @@
-import { DataSource, Repository } from '@rosen-bridge/extended-typeorm';
+import { DataSource, ILike, Repository } from '@rosen-bridge/extended-typeorm';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   AuthMethod,
@@ -20,6 +20,7 @@ class PaymentAction {
   private userRepository: Repository<User>;
 
   private counterRepository: Repository<Counter>;
+  private readonly paymentPattern = 'p-*';
 
   /**
    * Constructs an PaymentAction instance.
@@ -170,7 +171,7 @@ class PaymentAction {
     return userPaymentAuthStatus;
   };
 
-  updateUserPaymentAuthStatus = async (
+  updateUserPaymentAuthStatusUsingIds = async (
     userId: number,
     packageId: number,
     authMethodId: number,
@@ -207,26 +208,75 @@ class PaymentAction {
     return userPaymentAuthStatus;
   };
 
+  updateUserPaymentAuthStatus = async (
+    userAuthStatus: UserAuthStatus,
+    status: 'passed' | 'failed' | 'pending' | 'expired',
+    paymentAddress?: string,
+  ): Promise<UserAuthStatus> => {
+    this.logger.debug(
+      `Updating payment auth status for user ID: ${userAuthStatus.user.id}, package ID: ${userAuthStatus.package!.id}, auth method ID: ${userAuthStatus.authMethod.id} to status: ${status}.`,
+    );
+
+    userAuthStatus.status = status;
+    userAuthStatus.metadata = {
+      address: paymentAddress,
+    };
+
+    await this.userAuthStatusRepository.save(userAuthStatus);
+    this.logger.info(
+      `Payment auth status for user ID: ${userAuthStatus.user.id}, package ID: ${userAuthStatus.package!.id}, auth method ID: ${userAuthStatus.authMethod.id} updated to status: ${status}.`,
+    );
+    return userAuthStatus;
+  };
+
   /**
-   * Retrieves the current counter value and increments it in the database.
+   * Retrieves the current counter value and increments it in the database atomically.
    *
    * - Creates a counter record with initial value 1 if none exists.
-   * - Increments the stored counter and returns the value before incrementing.
+   * - Uses pessimistic locking to ensure atomic read and increment.
    *
    * @returns {Promise<number>} The counter value prior to the increment.
    * @throws {Error} If a database operation fails.
    */
-
   public getAndIncrementCounter = async (): Promise<number> => {
-    let counterRecord = await this.counterRepository.findOneBy({});
-    if (!counterRecord) {
-      counterRecord = this.counterRepository.create({ count: 1 });
-    }
-    const currentCount = counterRecord.count;
-    counterRecord.count += 1;
-    await this.counterRepository.save(counterRecord);
-    this.logger.debug(`Counter incremented to ${counterRecord.count}`);
-    return currentCount;
+    return await this.counterRepository.manager.transaction(
+      'SERIALIZABLE',
+      async (transactionalEntityManager) => {
+        const counterRepo = transactionalEntityManager.getRepository(Counter);
+
+        // Lock the row for update to prevent concurrent modifications
+        let counterRecord = await counterRepo.findOne({
+          where: {},
+          lock: { mode: 'pessimistic_write' },
+        });
+
+        // Create initial counter if it doesn't exist
+        if (!counterRecord) {
+          counterRecord = counterRepo.create({ count: 1 });
+          await counterRepo.save(counterRecord);
+          this.logger.debug(`Counter initialized to 1`);
+          return 0; // Return 0 as the previous value
+        }
+
+        const currentCount = counterRecord.count;
+
+        // Use atomic increment
+        await counterRepo.increment({ count: counterRecord.count }, 'count', 1);
+
+        this.logger.debug(`Counter incremented to ${currentCount + 1}`);
+        return currentCount;
+      },
+    );
+  };
+
+  getUnpaidRecords = async (): Promise<UserAuthStatus[]> => {
+    return await this.userAuthStatusRepository.find({
+      where: {
+        status: 'pending',
+        authMethod: { name: ILike(`%${this.paymentPattern}%`) },
+      },
+      relations: ['package', 'authMethod', 'user'],
+    });
   };
 }
 
