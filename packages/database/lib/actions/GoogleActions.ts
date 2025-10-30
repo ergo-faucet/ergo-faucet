@@ -85,6 +85,7 @@ class GoogleAction extends AbstractAuthAction {
 
     user.google_id = google_id;
     user.name = user.name ?? name ?? undefined;
+    user.modifiedAt = Math.floor(Date.now() / 1000);
     user.metadata = {
       ...user.metadata,
       google: {
@@ -96,7 +97,7 @@ class GoogleAction extends AbstractAuthAction {
     const savedUser = await this.userRepository.save(user);
     this.logger.debug(`Linked Google ID ${google_id} to user ID ${userId}`);
 
-    const expiresAt = new Date(Date.now() + expiresTime * 1000);
+    const expiresAt = Math.floor(Date.now() / 1000) + expiresTime;
 
     await this.saveOrUpdateAuthStatus(
       savedUser,

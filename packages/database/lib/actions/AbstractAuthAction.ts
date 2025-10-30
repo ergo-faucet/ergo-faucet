@@ -42,6 +42,8 @@ abstract class AbstractAuthAction {
       method = this.authMethodRepository.create({
         name: this.authMethodName,
         config: JSON.stringify({}),
+        createdAt: Math.floor(Date.now() / 1000),
+        modifiedAt: Math.floor(Date.now() / 1000),
       });
       this.authMethod = await this.authMethodRepository.save(method);
     } else {
@@ -54,14 +56,14 @@ abstract class AbstractAuthAction {
   /**
    * Creates or updates the `UserAuthStatus` record for a user's auth authentication.
    * @param user - User entity already saved in DB
-   * @param expiresAt Token expiration date
+   * @param expiresAt Token expiration
    * @param accessToken - OAuth2 access token
    * @param refreshToken - OAuth2 refresh token
    * @returns Promise<void>
    */
   protected saveOrUpdateAuthStatus = async (
     user: User,
-    expiresAt: Date,
+    expiresAt: number,
     accessToken: string,
     refreshToken: string,
   ): Promise<void> => {
@@ -72,27 +74,29 @@ abstract class AbstractAuthAction {
       },
       relations: ['authMethod', 'user'],
     });
-
     if (!authStatus) {
       authStatus = this.userAuthStatusRepository.create({
         user,
         authMethod: this.authMethod,
-        verifiedAt: new Date(),
+        verifiedAt: Math.floor(Date.now() / 1000),
         status: 'passed',
         expiresAt,
         metadata: {
           token: accessToken,
           refresh_token: refreshToken,
         },
+        createdAt: Math.floor(Date.now() / 1000),
+        modifiedAt: Math.floor(Date.now() / 1000),
       });
     } else {
-      authStatus.verifiedAt = new Date();
+      authStatus.verifiedAt = Math.floor(Date.now() / 1000);
       authStatus.status = 'passed';
       authStatus.expiresAt = expiresAt;
       authStatus.metadata = {
         token: accessToken,
         refresh_token: refreshToken,
       };
+      authStatus.modifiedAt = Math.floor(Date.now() / 1000);
     }
 
     await this.userAuthStatusRepository.save(authStatus);
@@ -111,6 +115,7 @@ abstract class AbstractAuthAction {
     userAuthStatus.status = 'expired';
     userAuthStatus.metadata.refresh_token = '';
     userAuthStatus.metadata.token = '';
+    userAuthStatus.modifiedAt = Math.floor(Date.now() / 1000);
     await this.userAuthStatusRepository.save(userAuthStatus);
 
     this.logger.debug(
@@ -123,7 +128,7 @@ abstract class AbstractAuthAction {
    * that are past their expiry time.
    */
   public expireAllExpiredAuths = async (): Promise<void> => {
-    const now = new Date();
+    const now = Math.floor(Date.now() / 1000);
     const expiredRecords: UserAuthStatus[] =
       await this.userAuthStatusRepository.find({
         where: {

@@ -98,6 +98,5 @@ accountant:
   tryLimit: 3
   confirmationLimit: 40
 
-
 URLs:
   frontCallbackURL: ''

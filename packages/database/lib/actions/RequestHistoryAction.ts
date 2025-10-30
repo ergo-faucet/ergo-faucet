@@ -74,7 +74,7 @@ class RequestHistoryAction {
   public getRequestHistory = async (
     offset: number,
     limit: number,
-    sort: 'timestamp' | 'status',
+    sort: 'status' | 'createdAt' | 'modifiedAt',
     order: 'asc' | 'desc',
   ): Promise<RequestDTO[]> => {
     this.logger.debug(
@@ -96,7 +96,7 @@ class RequestHistoryAction {
         packageId: r.package.id,
         packageName: r.package.name,
         status: r.status,
-        timestamp: r.timestamp,
+        createdAt: r.createdAt,
         destinationAddress: r.destinationAddress,
         txId: r.txId || undefined,
       }),

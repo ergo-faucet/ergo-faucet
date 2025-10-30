@@ -3,14 +3,16 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1758541414828 implements MigrationInterface {
-  name = 'Migration1758541414828';
+export class Migration1761808848208 implements MigrationInterface {
+  name = 'Migration1761808848208';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
             CREATE TABLE "user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer,
                 CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value")
             )
@@ -18,13 +20,14 @@ export class Migration1758541414828 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_request_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "timestamp" integer NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
                 "txId" text,
                 "signed_tx" text,
                 "creationHeight" integer,
                 "numberOfTries" integer NOT NULL DEFAULT (0),
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer,
                 "packageId" integer
             )
@@ -38,6 +41,8 @@ export class Migration1758541414828 implements MigrationInterface {
                 "name" varchar,
                 "metadata" text,
                 "lastLogin" bigint,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "isAdmin" boolean NOT NULL DEFAULT (0),
                 CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
                 CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
@@ -47,10 +52,12 @@ export class Migration1758541414828 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_auth_status_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "verifiedAt" date NOT NULL,
+                "verifiedAt" integer NOT NULL,
                 "status" text NOT NULL,
-                "expiresAt" date,
+                "expiresAt" integer,
                 "metadata" text,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer
@@ -60,13 +67,17 @@ export class Migration1758541414828 implements MigrationInterface {
             CREATE TABLE "auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "name" varchar NOT NULL,
-                "config" text NOT NULL
+                "config" text NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL
             )
         `);
     await queryRunner.query(`
             CREATE TABLE "package_auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "order" integer,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order")
@@ -82,7 +93,9 @@ export class Migration1758541414828 implements MigrationInterface {
                 "open_at" integer,
                 "close_at" integer,
                 "delay" varchar NOT NULL DEFAULT ('0'),
-                "number_each_user" integer NOT NULL
+                "number_each_user" integer NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL
             )
         `);
     await queryRunner.query(`
@@ -93,6 +106,8 @@ export class Migration1758541414828 implements MigrationInterface {
                 "amount" varchar NOT NULL,
                 "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "packageId" integer
             )
         `);
@@ -103,15 +118,25 @@ export class Migration1758541414828 implements MigrationInterface {
             CREATE TABLE "temporary_user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer,
                 CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value"),
                 CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION
             )
         `);
     await queryRunner.query(`
-            INSERT INTO "temporary_user_address_entity"("id", "value", "userId")
+            INSERT INTO "temporary_user_address_entity"(
+                    "id",
+                    "value",
+                    "createdAt",
+                    "modifiedAt",
+                    "userId"
+                )
             SELECT "id",
                 "value",
+                "createdAt",
+                "modifiedAt",
                 "userId"
             FROM "user_address_entity"
         `);
@@ -125,13 +150,14 @@ export class Migration1758541414828 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "temporary_user_request_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "timestamp" integer NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
                 "txId" text,
                 "signed_tx" text,
                 "creationHeight" integer,
                 "numberOfTries" integer NOT NULL DEFAULT (0),
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer,
                 "packageId" integer,
                 CONSTRAINT "FK_81e7a8f90b7f4b7e6d36c86aeea" FOREIGN KEY ("userId") REFERENCES "user_entity" ("id") ON DELETE CASCADE ON UPDATE NO ACTION,
@@ -141,24 +167,26 @@ export class Migration1758541414828 implements MigrationInterface {
     await queryRunner.query(`
             INSERT INTO "temporary_user_request_entity"(
                     "id",
-                    "timestamp",
                     "destinationAddress",
                     "status",
                     "txId",
                     "signed_tx",
                     "creationHeight",
                     "numberOfTries",
+                    "createdAt",
+                    "modifiedAt",
                     "userId",
                     "packageId"
                 )
             SELECT "id",
-                "timestamp",
                 "destinationAddress",
                 "status",
                 "txId",
                 "signed_tx",
                 "creationHeight",
                 "numberOfTries",
+                "createdAt",
+                "modifiedAt",
                 "userId",
                 "packageId"
             FROM "user_request_entity"
@@ -173,10 +201,12 @@ export class Migration1758541414828 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "temporary_user_auth_status_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "verifiedAt" date NOT NULL,
+                "verifiedAt" integer NOT NULL,
                 "status" text NOT NULL,
-                "expiresAt" date,
+                "expiresAt" integer,
                 "metadata" text,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer,
@@ -192,6 +222,8 @@ export class Migration1758541414828 implements MigrationInterface {
                     "status",
                     "expiresAt",
                     "metadata",
+                    "createdAt",
+                    "modifiedAt",
                     "userId",
                     "authMethodId",
                     "packageId"
@@ -201,6 +233,8 @@ export class Migration1758541414828 implements MigrationInterface {
                 "status",
                 "expiresAt",
                 "metadata",
+                "createdAt",
+                "modifiedAt",
                 "userId",
                 "authMethodId",
                 "packageId"
@@ -217,6 +251,8 @@ export class Migration1758541414828 implements MigrationInterface {
             CREATE TABLE "temporary_package_auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "order" integer,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
@@ -225,9 +261,18 @@ export class Migration1758541414828 implements MigrationInterface {
             )
         `);
     await queryRunner.query(`
-            INSERT INTO "temporary_package_auth_method_entity"("id", "order", "packageId", "authMethodId")
+            INSERT INTO "temporary_package_auth_method_entity"(
+                    "id",
+                    "order",
+                    "createdAt",
+                    "modifiedAt",
+                    "packageId",
+                    "authMethodId"
+                )
             SELECT "id",
                 "order",
+                "createdAt",
+                "modifiedAt",
                 "packageId",
                 "authMethodId"
             FROM "package_auth_method_entity"
@@ -250,6 +295,8 @@ export class Migration1758541414828 implements MigrationInterface {
                 "amount" varchar NOT NULL,
                 "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "packageId" integer,
                 CONSTRAINT "FK_dc2ee4d919892ecaad131a176e5" FOREIGN KEY ("packageId") REFERENCES "package_entity" ("id") ON DELETE NO ACTION ON UPDATE NO ACTION
             )
@@ -262,6 +309,8 @@ export class Migration1758541414828 implements MigrationInterface {
                     "amount",
                     "decimals",
                     "usageDescription",
+                    "createdAt",
+                    "modifiedAt",
                     "packageId"
                 )
             SELECT "id",
@@ -270,6 +319,8 @@ export class Migration1758541414828 implements MigrationInterface {
                 "amount",
                 "decimals",
                 "usageDescription",
+                "createdAt",
+                "modifiedAt",
                 "packageId"
             FROM "asset_entity"
         `);
@@ -301,6 +352,8 @@ export class Migration1758541414828 implements MigrationInterface {
                 "amount" varchar NOT NULL,
                 "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "packageId" integer
             )
         `);
@@ -312,6 +365,8 @@ export class Migration1758541414828 implements MigrationInterface {
                     "amount",
                     "decimals",
                     "usageDescription",
+                    "createdAt",
+                    "modifiedAt",
                     "packageId"
                 )
             SELECT "id",
@@ -320,6 +375,8 @@ export class Migration1758541414828 implements MigrationInterface {
                 "amount",
                 "decimals",
                 "usageDescription",
+                "createdAt",
+                "modifiedAt",
                 "packageId"
             FROM "temporary_asset_entity"
         `);
@@ -337,15 +394,26 @@ export class Migration1758541414828 implements MigrationInterface {
             CREATE TABLE "package_auth_method_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "order" integer,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order")
             )
         `);
     await queryRunner.query(`
-            INSERT INTO "package_auth_method_entity"("id", "order", "packageId", "authMethodId")
+            INSERT INTO "package_auth_method_entity"(
+                    "id",
+                    "order",
+                    "createdAt",
+                    "modifiedAt",
+                    "packageId",
+                    "authMethodId"
+                )
             SELECT "id",
                 "order",
+                "createdAt",
+                "modifiedAt",
                 "packageId",
                 "authMethodId"
             FROM "temporary_package_auth_method_entity"
@@ -360,10 +428,12 @@ export class Migration1758541414828 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_auth_status_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "verifiedAt" date NOT NULL,
+                "verifiedAt" integer NOT NULL,
                 "status" text NOT NULL,
-                "expiresAt" date,
+                "expiresAt" integer,
                 "metadata" text,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer
@@ -376,6 +446,8 @@ export class Migration1758541414828 implements MigrationInterface {
                     "status",
                     "expiresAt",
                     "metadata",
+                    "createdAt",
+                    "modifiedAt",
                     "userId",
                     "authMethodId",
                     "packageId"
@@ -385,6 +457,8 @@ export class Migration1758541414828 implements MigrationInterface {
                 "status",
                 "expiresAt",
                 "metadata",
+                "createdAt",
+                "modifiedAt",
                 "userId",
                 "authMethodId",
                 "packageId"
@@ -400,13 +474,14 @@ export class Migration1758541414828 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_request_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
-                "timestamp" integer NOT NULL,
                 "destinationAddress" varchar NOT NULL,
                 "status" text NOT NULL,
                 "txId" text,
                 "signed_tx" text,
                 "creationHeight" integer,
                 "numberOfTries" integer NOT NULL DEFAULT (0),
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer,
                 "packageId" integer
             )
@@ -414,24 +489,26 @@ export class Migration1758541414828 implements MigrationInterface {
     await queryRunner.query(`
             INSERT INTO "user_request_entity"(
                     "id",
-                    "timestamp",
                     "destinationAddress",
                     "status",
                     "txId",
                     "signed_tx",
                     "creationHeight",
                     "numberOfTries",
+                    "createdAt",
+                    "modifiedAt",
                     "userId",
                     "packageId"
                 )
             SELECT "id",
-                "timestamp",
                 "destinationAddress",
                 "status",
                 "txId",
                 "signed_tx",
                 "creationHeight",
                 "numberOfTries",
+                "createdAt",
+                "modifiedAt",
                 "userId",
                 "packageId"
             FROM "temporary_user_request_entity"
@@ -447,14 +524,24 @@ export class Migration1758541414828 implements MigrationInterface {
             CREATE TABLE "user_address_entity" (
                 "id" integer PRIMARY KEY AUTOINCREMENT NOT NULL,
                 "value" varchar NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer,
                 CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value")
             )
         `);
     await queryRunner.query(`
-            INSERT INTO "user_address_entity"("id", "value", "userId")
+            INSERT INTO "user_address_entity"(
+                    "id",
+                    "value",
+                    "createdAt",
+                    "modifiedAt",
+                    "userId"
+                )
             SELECT "id",
                 "value",
+                "createdAt",
+                "modifiedAt",
                 "userId"
             FROM "temporary_user_address_entity"
         `);

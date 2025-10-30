@@ -39,7 +39,11 @@ describe('PackageAction.getPackages with mock data', () => {
     await sqliteDataSource.synchronize(true);
 
     const userRepo = sqliteDataSource.getRepository(User);
-    user = await userRepo.save({ name: 'test-user' } as User);
+    user = await userRepo.save({
+      name: 'test-user',
+      createdAt: 2000,
+      modifiedAt: 2000,
+    } as User);
 
     const pkgRepo = sqliteDataSource.getRepository(Package);
     const authRepo = sqliteDataSource.getRepository(AuthMethod);
@@ -56,6 +60,8 @@ describe('PackageAction.getPackages with mock data', () => {
         status: 'show',
         delay: pkgMock.delay,
         numberEachUser: pkgMock.numberEachUser,
+        createdAt: 2000,
+        modifiedAt: 2000,
       });
 
       savedPackages.push({ pkg, mock: pkgMock });
@@ -68,6 +74,8 @@ describe('PackageAction.getPackages with mock data', () => {
           amount: a.amount,
           decimals: 0,
           usageDescription: a.usageDescription,
+          createdAt: 2000,
+          modifiedAt: 2000,
         });
       }
 
@@ -75,13 +83,20 @@ describe('PackageAction.getPackages with mock data', () => {
       for (const am of pkgMock.authMethods) {
         let authMethod = await authRepo.findOne({ where: { name: am.name } });
         if (!authMethod) {
-          authMethod = await authRepo.save({ name: am.name, config: '{}' });
+          authMethod = await authRepo.save({
+            name: am.name,
+            config: '{}',
+            createdAt: 2000,
+            modifiedAt: 2000,
+          });
         }
 
         await pamRepo.save({
           package: pkg,
           authMethod,
           order: orderCounter++,
+          createdAt: 2000,
+          modifiedAt: 2000,
         });
 
         if (am.status) {
@@ -90,8 +105,10 @@ describe('PackageAction.getPackages with mock data', () => {
             authMethod,
             package: pkg,
             status: am.status,
-            verifiedAt: new Date(),
+            verifiedAt: Math.floor(Date.now() / 1000),
             metadata: { token: 'dummy', refresh_token: 'dummy' },
+            createdAt: 2000,
+            modifiedAt: 2000,
           });
         }
       }

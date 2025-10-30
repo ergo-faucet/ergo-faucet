@@ -33,4 +33,10 @@ export class Asset {
 
   @Column({ type: 'text' })
   usageDescription!: string;
+
+  @Column({ type: 'int' })
+  createdAt!: number;
+
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

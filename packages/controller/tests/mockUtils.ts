@@ -1,7 +1,7 @@
 import {
-  PackageAction,
-  Package,
   Asset,
+  Package,
+  PackageAction,
   PackageAuthMethod,
   RequestHistoryAction,
 } from '@ergo-faucet/database';
@@ -88,6 +88,8 @@ const mockAsset1: Asset = {
   assetName: 'token-abc-123',
   amount: '1000',
   usageDescription: 'Initial reward',
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
 const mockAsset2: Asset = {
@@ -98,6 +100,8 @@ const mockAsset2: Asset = {
   assetName: 'token-def-456',
   amount: '500',
   usageDescription: 'Bonus item',
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
 const mockAuthMethod1: PackageAuthMethod = {
@@ -108,9 +112,13 @@ const mockAuthMethod1: PackageAuthMethod = {
     config: '{"botToken": "123456:ABC-DEF"}',
     packageAuthMethods: [],
     userAuthStatuses: [],
+    createdAt: 1705312800,
+    modifiedAt: 1705312800,
   },
   order: 1,
   package: mockPackage,
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
 const mockAuthMethod2: PackageAuthMethod = {
@@ -121,9 +129,13 @@ const mockAuthMethod2: PackageAuthMethod = {
     config: '{"smtpServer": "smtp.example.com"}',
     packageAuthMethods: [],
     userAuthStatuses: [],
+    createdAt: 1705312800,
+    modifiedAt: 1705312800,
   },
   order: 2,
   package: mockPackage,
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
 mockPackage = {
@@ -140,6 +152,8 @@ mockPackage = {
   packageAuthMethods: [mockAuthMethod1, mockAuthMethod2],
   authStatuses: [],
   requests: [],
+  createdAt: 1705312800,
+  modifiedAt: 1705312800,
 };
 
 export const mockPackageDTO = [
@@ -231,7 +245,7 @@ export const mockRequestDTO = [
     packageId: 101,
     packageName: 'Starter Pack',
     status: 'submitted',
-    timestamp: 19900822100,
+    createdAt: 19900822100,
     destinationAddress: '9hT2oAddress',
     txId: 'tx_abc',
   },

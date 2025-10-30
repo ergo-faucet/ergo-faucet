@@ -40,7 +40,7 @@ export interface RequestDTO {
   packageId: number;
   packageName: string;
   status: RequestStaus;
-  timestamp: number;
+  createdAt: number;
   destinationAddress: string;
   txId?: string;
 }
