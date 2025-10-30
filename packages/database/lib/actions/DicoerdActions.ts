@@ -105,7 +105,7 @@ class DiscordAction extends AbstractAuthAction {
     const savedUser = await this.userRepository.save(user);
     this.logger.debug(`Linked Discord ID ${discord_id} to user ID ${userId}`);
 
-    const expiresAt = Date.now() + expiresTime * 1000;
+    const expiresAt = Math.floor(Date.now() / 1000) + expiresTime;
 
     await this.saveOrUpdateAuthStatus(
       savedUser,
