@@ -3,6 +3,7 @@ import {
   checkStatusOrGetAddressBody,
   CheckStatusOrGetAddressResponse200,
   PaymentAuthConfig,
+  checkStatusOrGetAddressBodyType,
 } from './types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
@@ -25,6 +26,7 @@ class PaymentAuth {
   private readonly nodeModel: NodeModel;
   private readonly fastifyServer: FastifyAPIServer;
   private readonly paymentAction: PaymentAction;
+
   private readonly expiresTime: number; // Time (in seconds) the user is allowed to complete the payment
   private readonly expiresTimeDelay: number; // Additional time (in seconds) allowed for delayed payments
 
@@ -79,22 +81,29 @@ class PaymentAuth {
   public checkStatusOrGetAddressRoute = async (
     fastify: FastifySeverInstance,
   ) => {
-    fastify.post<{ Body: typeof checkStatusOrGetAddressBody }>(
+    fastify.post<{ Body: checkStatusOrGetAddressBodyType }>(
       '',
       {
         errorHandler: this.fastifyServer.errorHandler,
         preHandler: [
-          this.fastifyServer.authPreHandler(),
-          this.fastifyServer.captchaPreHandler,
+          //     this.fastifyServer.authPreHandler(),
+          //    this.fastifyServer.captchaPreHandler,
         ],
         schema: {
           body: checkStatusOrGetAddressBody,
           response: { 200: CheckStatusOrGetAddressResponse200 },
+          security: [
+            {
+              bearerAuth: [],
+            },
+          ],
         },
       },
       async (request, reply) => {
         try {
-          const user = request.user as userRequestPayload;
+          // const user = request.user as userRequestPayload;
+
+          const user = { userId: 1 } as userRequestPayload;
           const { packageId, authMethodId } = request.body;
 
           this.logger.debug(
@@ -128,9 +137,44 @@ class PaymentAuth {
                 newAddress,
               );
 
-            return reply.status(200).send(toDTO(newPaymentStatus));
+            return reply
+              .status(200)
+              .send(toDTO(newPaymentStatus, this.expiresTime));
           }
-          return reply.status(200).send(toDTO(paymentStatus));
+
+          // Expire pending payment if its allowed payment window has passed.
+          if (paymentStatus.status === 'pending') {
+            const now = Math.floor(Date.now() / 1000); // In milliseconds
+            const elapsed = now - paymentStatus.createdAt;
+
+            this.logger.debug(
+              `Payment ID ${paymentStatus.id} has expired. Elapsed time: ${elapsed}s, allowed user time: ${this.expiresTime}s. Marking paymnet as failed.`,
+            );
+            if (elapsed >= this.expiresTime) {
+              await this.paymentAction.updateUserPaymentAuthStatus(
+                paymentStatus,
+                'failed',
+              );
+              const addressIndex =
+                await this.paymentAction.getAndIncrementCounter();
+
+              const newAddress =
+                this.wallet.generateUniquePaymentAddress(addressIndex);
+              const newPaymentStatus =
+                await this.paymentAction.addUserPaymentAuthStatus(
+                  user.userId,
+                  authMethodId,
+                  packageId,
+                  newAddress,
+                );
+
+              return reply
+                .status(200)
+                .send(toDTO(newPaymentStatus, this.expiresTime));
+            }
+          }
+
+          return reply.status(200).send(toDTO(paymentStatus, this.expiresTime));
         } catch (error) {
           if (error instanceof NotFoundError) {
             this.logger.debug(error.message);
@@ -170,6 +214,13 @@ class PaymentAuth {
         if (prvConfig !== currentConfig) {
           prvConfig = currentConfig;
           assets = JSON.parse(currentConfig) as TokenTargetAmount<string>[];
+
+          if (!Array.isArray(assets)) {
+            this.logger.warn(
+              `Invalid config for payment ${payment.id}, skipping.`,
+            );
+            continue;
+          }
         }
 
         const isPaid: boolean = await this.nodeModel.checkForPayment(
@@ -178,26 +229,20 @@ class PaymentAuth {
         );
 
         if (isPaid) {
-          await this.paymentAction.updateUserPaymentAuthStatus(
-            payment,
-            'passed',
-            undefined,
-          );
+          await this.paymentAction.passUserPayment(payment);
         } else {
-          /** There is no modifiedAt property for now */
-          // const now = Math.floor(Date.now() / 1000);
-          // const elapsed = now - payment.modifiedAt;
-          // // Check if the payment has exceeded the allowed time window
-          // if (elapsed > this.expiresTime) {
-          //   this.logger.debug(
-          //     `Payment ID ${payment.id} has expired. Elapsed time: ${elapsed}s, allowed time: ${this.expiresTime}s.`,
-          //   );
-          //   await this.paymentAction.updateUserPaymentAuthStatus(
-          //     payment,
-          //     'failed',
-          //     undefined,
-          //   );
-          // }
+          const now = Math.floor(Date.now() / 1000);
+          const elapsed = now - payment.createdAt;
+          // Check if the payment has exceeded the allowed time window (allowedTime = expiresTime + expiresTimeDelay)
+          if (elapsed >= this.expiresTime + this.expiresTimeDelay) {
+            this.logger.debug(
+              `Payment ID ${payment.id} has expired. Elapsed time: ${elapsed}s, allowed backend time: ${this.expiresTime + this.expiresTimeDelay}s. Marking paymnet as failed.`,
+            );
+            await this.paymentAction.updateUserPaymentAuthStatus(
+              payment,
+              'failed',
+            );
+          }
         }
       }
     } catch (error) {

@@ -87,13 +87,17 @@ class PaymentAction {
     this.logger.debug(
       `Checking payment record for user ID: ${userId} for package with Id ${packageId} with auth method ID: ${authMethodId}`,
     );
-    const pkg = await this.packageRepository.findOneBy({ id: packageId });
+    const pkg = await this.packageRepository.findOne({
+      where: { id: packageId },
+      relations: ['packageAuthMethods', 'packageAuthMethods.authMethod'],
+    });
     if (!pkg) {
       throw new NotFoundError(`Package with Id ${packageId} not found`);
     }
 
     const paymentAuth = await this.authmethodRepository.findOneBy({
       id: authMethodId,
+      name: ILike(`%${this.paymentPattern}%`),
     });
     if (!paymentAuth) {
       throw new NotFoundError(`PaymentAuth with Id ${authMethodId} not found`);
@@ -102,6 +106,16 @@ class PaymentAction {
     const user = await this.userRepository.findOneBy({ id: userId });
     if (!user) {
       throw new NotFoundError(`User with Id ${userId} not found`);
+    }
+
+    // Check if the package includes the given auth method
+    const hasAuthMethod = pkg.packageAuthMethods.some(
+      (pam) => pam.authMethod.id === authMethodId,
+    );
+    if (!hasAuthMethod) {
+      throw new NotFoundError(
+        `AuthMethod with Id ${authMethodId} not found in Package ${packageId}`,
+      );
     }
 
     const userPaymentAuthStatus = await this.userAuthStatusRepository.findOne({
@@ -134,11 +148,14 @@ class PaymentAction {
 
     const user = await this.userRepository.findOneBy({ id: userId });
 
+    const now = Date.now();
+
     const newUserPaymentAuthStatus = this.userAuthStatusRepository.create({
       user: user!,
       authMethod: paymentAuth!,
       package: pkg!,
-      verifiedAt: new Date(),
+      createdAt: Math.floor(now / 1000),
+      modifiedAt: Math.floor(now / 1000),
       status: 'pending',
       metadata: {
         address: paymentAddress,
@@ -190,7 +207,7 @@ class PaymentAction {
     return userPaymentAuthStatus;
   };
 
-  updateUserPaymentAuthStatus = async (
+  public updateUserPaymentAuthStatus = async (
     userAuthStatus: UserAuthStatus,
     status: 'passed' | 'failed' | 'pending' | 'expired',
     paymentAddress?: string,
@@ -200,6 +217,7 @@ class PaymentAction {
     );
 
     userAuthStatus.status = status;
+    userAuthStatus.modifiedAt = Math.floor(Date.now() / 1000);
     if (paymentAddress) {
       userAuthStatus.metadata = {
         address: paymentAddress,
@@ -211,6 +229,15 @@ class PaymentAction {
       `Payment auth status for user ID: ${userAuthStatus.user.id}, package ID: ${userAuthStatus.package!.id}, auth method ID: ${userAuthStatus.authMethod.id} updated to status: ${status}.`,
     );
     return userAuthStatus;
+  };
+
+  public passUserPayment = async (payment: UserAuthStatus): Promise<void> => {
+    const now = Math.floor(Date.now() / 1000);
+    payment.status = 'passed';
+    payment.verifiedAt = now;
+    payment.modifiedAt = now;
+
+    await this.userAuthStatusRepository.save(payment);
   };
 
   /**
@@ -252,8 +279,7 @@ class PaymentAction {
     );
   };
 
-  getUnpaidRecords = async (): Promise<UserAuthStatus[]> => {
-    // const userAuthStatuses =
+  public getUnpaidRecords = async (): Promise<UserAuthStatus[]> => {
     return await this.userAuthStatusRepository.find({
       where: {
         status: 'pending',

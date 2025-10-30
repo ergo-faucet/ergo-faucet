@@ -269,7 +269,6 @@ export class NodeModel {
     address: string,
     offset: number,
     limit: number,
-    maxAllowedHeight: number,
   ): Promise<Box<bigint>[]> => {
     if (this.axiosInstance == undefined) {
       const error: errorResponse = {
@@ -281,20 +280,16 @@ export class NodeModel {
     }
 
     return await this.axiosInstance
-      .post(`/blockchain/box/unspent/byAddress`, address, {
+      .post(`/blockchain/box/byAddress`, address, {
         params: {
           offset: offset,
           limit: limit,
-          excludeMempoolSpent: true,
         },
       })
       .then((response) => {
         this.logger.debug('The Boxes retrieved successfully.');
 
-        const boxes = (response.data as Box<bigint>[]).filter(
-          (box) => box.creationHeight <= maxAllowedHeight,
-        );
-        return boxes;
+        return response.data;
       })
       .catch((error) => {
         if (axios.isAxiosError(error)) {
@@ -495,11 +490,12 @@ export class NodeModel {
     const boxes: Box<bigint>[] = [];
     let receivedBoxes: Box<bigint>[] = [];
     do {
-      receivedBoxes = await NodeModel.getInstance().getUnspentBoxes(
-        address,
-        offset,
-        limit,
-      );
+      receivedBoxes =
+        await NodeModel.getInstance().getUnspentBoxesForCheckPayment(
+          address,
+          offset,
+          limit,
+        );
       this.logger.debug('Successfully retrieved boxes');
       offset += limit;
 
