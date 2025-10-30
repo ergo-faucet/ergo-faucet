@@ -16,6 +16,7 @@ import {
   UserAuthStatus,
 } from '@ergo-faucet/database';
 import { toDTO } from './utils';
+import { TokenTargetAmount } from '@fleet-sdk/common';
 
 class PaymentAuth {
   private static instance: PaymentAuth;
@@ -24,7 +25,8 @@ class PaymentAuth {
   private readonly nodeModel: NodeModel;
   private readonly fastifyServer: FastifyAPIServer;
   private readonly paymentAction: PaymentAction;
-  private readonly expiresTime: number;
+  private readonly expiresTime: number; // Time (in seconds) the user is allowed to complete the payment
+  private readonly expiresTimeDelay: number; // Additional time (in seconds) allowed for delayed payments
 
   private readonly PAYMENT_AUTH_PREFIX = '/auth/payment';
 
@@ -40,6 +42,7 @@ class PaymentAuth {
     this.fastifyServer = config.fastifyServer;
     this.paymentAction = config.paymentAction;
     this.expiresTime = config.expiresTime;
+    this.expiresTimeDelay = config.expiresTimeDelay;
   }
 
   /**
@@ -92,7 +95,6 @@ class PaymentAuth {
       async (request, reply) => {
         try {
           const user = request.user as userRequestPayload;
-
           const { packageId, authMethodId } = request.body;
 
           this.logger.debug(
@@ -105,9 +107,13 @@ class PaymentAuth {
               authMethodId,
               packageId,
             );
-          if (paymentStatus === null) {
+          if (
+            paymentStatus === null ||
+            paymentStatus.status === 'expired' ||
+            paymentStatus.status === 'failed'
+          ) {
             this.logger.debug(
-              `No payment record found for user ${user.userId}, package ${packageId}, auth method ${authMethodId}`,
+              `No pending or passed payment record found for user ${user.userId}, package ${packageId}, auth method ${authMethodId}`,
             );
             const addressIndex =
               await this.paymentAction.getAndIncrementCounter();
@@ -123,25 +129,7 @@ class PaymentAuth {
               );
 
             return reply.status(200).send(toDTO(newPaymentStatus));
-          } else if (
-            paymentStatus.status === 'expired' ||
-            paymentStatus.status === 'failed'
-          ) {
-            const addressIndex =
-              await this.paymentAction.getAndIncrementCounter();
-
-            const newAddress =
-              this.wallet.generateUniquePaymentAddress(addressIndex);
-
-            const updatedPaymentStatus =
-              await this.paymentAction.updateUserPaymentAuthStatus(
-                paymentStatus,
-                'pending',
-                newAddress,
-              );
-            return reply.status(200).send(toDTO(updatedPaymentStatus));
           }
-
           return reply.status(200).send(toDTO(paymentStatus));
         } catch (error) {
           if (error instanceof NotFoundError) {
@@ -181,12 +169,12 @@ class PaymentAuth {
         const currentConfig = payment.authMethod.config;
         if (prvConfig !== currentConfig) {
           prvConfig = currentConfig;
-          assets = JSON.parse(currentConfig); //as TokenTargetAmount<bigint>[];
+          assets = JSON.parse(currentConfig) as TokenTargetAmount<string>[];
         }
 
         const isPaid: boolean = await this.nodeModel.checkForPayment(
           payment.metadata.address!,
-          assets,
+          assets!,
         );
 
         if (isPaid) {

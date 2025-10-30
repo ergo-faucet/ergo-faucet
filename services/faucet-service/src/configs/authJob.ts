@@ -6,4 +6,5 @@ import config from 'config';
 export const jobConfig = {
   authJobInterval: config.get<number>('jobs.authJobInterval'),
   accountantJobInterval: config.get<number>('jobs.accountantJobInterval'),
+  paymentAuthJobInterval: config.get<number>('jobs.paymentAuthJobInterval'),
 };

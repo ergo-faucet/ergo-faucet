@@ -259,6 +259,59 @@ export class NodeModel {
   };
 
   /**
+   * Retrieves unspent boxes by their associated address
+   *
+   * @param {offset} - amount of elements to skip from the start
+   * @param {limit} - amount of elements to retrieve
+   * @returns {Box<bigint>[]} - returns desired boxes
+   */
+  public getUnspentBoxesForCheckPayment = async (
+    address: string,
+    offset: number,
+    limit: number,
+    maxAllowedHeight: number,
+  ): Promise<Box<bigint>[]> => {
+    if (this.axiosInstance == undefined) {
+      const error: errorResponse = {
+        error: 500,
+        reason: 'Internal Error',
+        detail: 'The Network object has not been initialized!',
+      };
+      return Promise.reject(error);
+    }
+
+    return await this.axiosInstance
+      .post(`/blockchain/box/unspent/byAddress`, address, {
+        params: {
+          offset: offset,
+          limit: limit,
+          excludeMempoolSpent: true,
+        },
+      })
+      .then((response) => {
+        this.logger.debug('The Boxes retrieved successfully.');
+
+        const boxes = (response.data as Box<bigint>[]).filter(
+          (box) => box.creationHeight <= maxAllowedHeight,
+        );
+        return boxes;
+      })
+      .catch((error) => {
+        if (axios.isAxiosError(error)) {
+          this.logger.error(`Axios error.`, {
+            message: error.message,
+            stack: error.stack,
+          });
+        } else
+          this.logger.error('Error during selecing box for transaction', {
+            message: error.message,
+            stack: error.stack,
+          });
+        return [];
+      });
+  };
+
+  /**
    * Checks if a transaction is currently in the mempool.
    * @param {string} txId - The transaction ID to check.
    * @returns {Promise<boolean>} - True if the transaction is in the mempool, false otherwise.
@@ -417,9 +470,13 @@ export class NodeModel {
 
   public checkForPayment = async (
     address: string,
-    assets: TokenTargetAmount<bigint>[],
+    assets: TokenTargetAmount<string>[],
   ): Promise<boolean> => {
-    const ergAssets = assets.filter((asset) => asset.tokenId === 'ERG');
+    const assetsInBigint = assets.map((element): TokenTargetAmount<bigint> => {
+      return { tokenId: element.tokenId, amount: BigInt(element.amount!) };
+    });
+
+    const ergAssets = assetsInBigint.filter((asset) => asset.tokenId === 'ERG');
 
     const ergsAmount = ergAssets.length
       ? ergAssets.reduce(
@@ -430,7 +487,7 @@ export class NodeModel {
       : 0n;
 
     let tokens: TokenTargetAmount<bigint>[] = [];
-    tokens = assets.filter((asset) => asset.tokenId !== 'ERG');
+    tokens = assetsInBigint.filter((asset) => asset.tokenId !== 'ERG');
 
     let offset: number = 0;
     const limit: number = 100;
@@ -455,17 +512,20 @@ export class NodeModel {
       try {
         selector.select({
           nanoErgs: ergsAmount,
-          tokens: tokens,
+          tokens,
         });
         this.logger.debug('User has paid the required ergs and assets.');
+
         return true;
       } catch (error) {
         // the error is usual as we are using pagination
-        if (error instanceof Error) this.logger.debug(error.message);
+        if (error instanceof Error)
+          this.logger.debug(error.message, { stack: error.stack });
       }
     } while (receivedBoxes.length); //till no more boxes are there
 
     // if user didn't pay enough
+    this.logger.debug('User has not paid the required ergs and assets.');
     return false;
   };
 }

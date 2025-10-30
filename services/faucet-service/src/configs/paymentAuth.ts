@@ -5,4 +5,5 @@ import config from 'config';
  */
 export const paymentAuthConfig = {
   expiresTime: config.get<number>('paymentAuth.expiresTime'),
+  expiresTimeDelay: config.get<number>('paymentAuth.expiresTimeDelay'),
 };

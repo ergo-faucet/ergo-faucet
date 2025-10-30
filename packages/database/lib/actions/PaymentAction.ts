@@ -1,4 +1,10 @@
-import { DataSource, ILike, Repository } from '@rosen-bridge/extended-typeorm';
+import {
+  And,
+  DataSource,
+  ILike,
+  Not,
+  Repository,
+} from '@rosen-bridge/extended-typeorm';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   AuthMethod,
@@ -20,7 +26,7 @@ class PaymentAction {
   private userRepository: Repository<User>;
 
   private counterRepository: Repository<Counter>;
-  private readonly paymentPattern = 'p-*';
+  private readonly paymentPattern = 'p-';
 
   /**
    * Constructs an PaymentAction instance.
@@ -79,7 +85,7 @@ class PaymentAction {
     packageId: number,
   ): Promise<UserAuthStatus | null> => {
     this.logger.debug(
-      `Checking payment record for user ID: ${userId} for package with Id ${packageId}  with auth method ID: ${authMethodId}`,
+      `Checking payment record for user ID: ${userId} for package with Id ${packageId} with auth method ID: ${authMethodId}`,
     );
     const pkg = await this.packageRepository.findOneBy({ id: packageId });
     if (!pkg) {
@@ -103,6 +109,7 @@ class PaymentAction {
         user,
         package: pkg,
         authMethod: paymentAuth,
+        status: And(Not('failed'), Not('expired')),
       },
       relations: ['authMethod'],
     });
@@ -127,48 +134,23 @@ class PaymentAction {
 
     const user = await this.userRepository.findOneBy({ id: userId });
 
-    const userPaymentAuthStatus = await this.userAuthStatusRepository.findOne({
-      where: {
-        user: user!,
-        package: pkg!,
-        authMethod: paymentAuth!,
+    const newUserPaymentAuthStatus = this.userAuthStatusRepository.create({
+      user: user!,
+      authMethod: paymentAuth!,
+      package: pkg!,
+      verifiedAt: new Date(),
+      status: 'pending',
+      metadata: {
+        address: paymentAddress,
       },
-      relations: ['authMethod'],
     });
 
-    if (!userPaymentAuthStatus) {
-      const newUserPaymentAuthStatus = this.userAuthStatusRepository.create({
-        user: user!,
-        authMethod: paymentAuth!,
-        package: pkg!,
-        verifiedAt: new Date(),
-        status: 'pending',
-        metadata: {
-          address: paymentAddress,
-        },
-      });
+    await this.userAuthStatusRepository.insert(newUserPaymentAuthStatus);
+    this.logger.info(
+      `Payment record added for user ID: ${userId} for package with Id ${packageId}  with auth method ID: ${authMethodId}`,
+    );
 
-      await this.userAuthStatusRepository.insert(newUserPaymentAuthStatus);
-      this.logger.info(
-        `Payment record added for user ID: ${userId} for package with Id ${packageId}  with auth method ID: ${authMethodId}`,
-      );
-
-      return newUserPaymentAuthStatus;
-    }
-
-    const status = userPaymentAuthStatus.status;
-    // if status is not passed or pending, reset it to pending
-    if (status !== 'passed' && status !== 'pending') {
-      userPaymentAuthStatus.status = 'pending';
-      userPaymentAuthStatus.metadata = {
-        address: paymentAddress,
-      };
-      await this.userAuthStatusRepository.save(userPaymentAuthStatus);
-      this.logger.info(
-        `Payment record status reset to pending for user ID: ${userId} for package with Id ${packageId}  with auth method ID: ${authMethodId}`,
-      );
-    }
-    return userPaymentAuthStatus;
+    return newUserPaymentAuthStatus;
   };
 
   updateUserPaymentAuthStatusUsingIds = async (
@@ -218,9 +200,11 @@ class PaymentAction {
     );
 
     userAuthStatus.status = status;
-    userAuthStatus.metadata = {
-      address: paymentAddress,
-    };
+    if (paymentAddress) {
+      userAuthStatus.metadata = {
+        address: paymentAddress,
+      };
+    }
 
     await this.userAuthStatusRepository.save(userAuthStatus);
     this.logger.info(
@@ -259,9 +243,8 @@ class PaymentAction {
         }
 
         const currentCount = counterRecord.count;
-
-        // Use atomic increment
-        await counterRepo.increment({ count: counterRecord.count }, 'count', 1);
+        counterRecord.count += 1;
+        await counterRepo.save(counterRecord);
 
         this.logger.debug(`Counter incremented to ${currentCount + 1}`);
         return currentCount;
@@ -270,6 +253,7 @@ class PaymentAction {
   };
 
   getUnpaidRecords = async (): Promise<UserAuthStatus[]> => {
+    // const userAuthStatuses =
     return await this.userAuthStatusRepository.find({
       where: {
         status: 'pending',

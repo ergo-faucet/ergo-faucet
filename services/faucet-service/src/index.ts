@@ -14,7 +14,11 @@ import {
   setupErgoUtils,
   setupPaymentAuth,
 } from './handler';
-import { scheduleExpiringJob, schedulePayingJob } from './jobs';
+import {
+  scheduleExpiringJob,
+  schedulePayingJob,
+  scheduleVerifyIncomingPaymentsJob,
+} from './jobs';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
@@ -36,6 +40,7 @@ const main = async () => {
     await startServerService();
     await scheduleExpiringJob();
     await schedulePayingJob();
+    await scheduleVerifyIncomingPaymentsJob();
   } catch (err) {
     logger.debug('Error in initialize the packages', err);
   }

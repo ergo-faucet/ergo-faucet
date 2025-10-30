@@ -82,11 +82,13 @@ googleAuth:
   sessionTTL: 3600
 
 paymentAuth:
-  expiresTime: 3600
+  expiresTime: 3600 # Time (in seconds) the user is allowed to complete the payment
+  expiresTimeDelay: 300 # Additional time (in seconds) allowed for delayed payments
 
 jobs:
   authJobInterval: 300
   accountantJobInterval: 300
+  paymentAuthJobInterval: 5
 
 ergo:
   network: 'mainnet'

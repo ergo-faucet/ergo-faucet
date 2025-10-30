@@ -47,6 +47,7 @@ class PackageAction {
   private userRequestRepository: Repository<UserRequest>;
   private userRepository: Repository<User>;
   private authMethodRepository: Repository<AuthMethod>;
+  paymentPattern: string = 'p-';
 
   /**
    * Protected constructor to enforce singleton pattern.
@@ -401,6 +402,26 @@ class PackageAction {
       createdAt: Math.floor(Date.now() / 1000),
       modifiedAt: Math.floor(Date.now() / 1000),
     });
+
+    const paymentAuthMethods = await this.userAuthStatusRepository.find({
+      where: {
+        status: 'passed',
+        package: { id: packageId },
+        user: { id: userId },
+        authMethod: { name: ILike(`%${this.paymentPattern}%`) },
+      },
+    });
+
+    // Expire previously passed payment auth entries when creating a new request.
+    // This ensures an old/unused payment authorization cannot be reused —
+    // the user must create a fresh payment (new payment auth) for each request.
+    if (paymentAuthMethods.length !== 0) {
+      paymentAuthMethods.forEach((pam) => {
+        pam.status = 'expired';
+      });
+
+      await this.userAuthStatusRepository.save(paymentAuthMethods);
+    }
 
     await this.userRequestRepository.save(userRequest);
     this.logger.debug(

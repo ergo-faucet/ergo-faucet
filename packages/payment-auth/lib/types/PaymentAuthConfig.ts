@@ -8,4 +8,5 @@ export interface PaymentAuthConfig {
   fastifyServer: FastifyAPIServer;
   paymentAction: PaymentAction;
   expiresTime: number;
+  expiresTimeDelay: number;
 }
