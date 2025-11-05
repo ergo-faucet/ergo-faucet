@@ -1,0 +1,3 @@
+{
+  faucetPK && sigmaProp(HEIGHT > trueScriptsIndex);
+}

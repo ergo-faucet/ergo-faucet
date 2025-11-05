@@ -88,7 +88,7 @@ paymentAuth:
 jobs:
   authJobInterval: 300
   accountantJobInterval: 300
-  paymentAuthJobInterval: 5
+  paymentAuthJobInterval: 300
 
 ergo:
   network: 'mainnet'

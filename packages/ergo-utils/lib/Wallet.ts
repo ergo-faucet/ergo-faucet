@@ -12,6 +12,8 @@ import { NodeModel } from './NodeModel';
 import { NotEnoughAssetsError } from './types';
 import { compile } from '@fleet-sdk/compiler';
 import { SSigmaProp, SGroupElement, SInt } from '@fleet-sdk/serializer';
+import * as fs from 'fs';
+import path from 'path';
 
 export class Wallet {
   private static instance: Wallet;
@@ -20,7 +22,7 @@ export class Wallet {
   private readonly childKey: ErgoHDKey;
   private readonly walletAddress: string;
   private readonly network: Network;
-  private readonly paymentScript = `{ faucetPK && sigmaProp(HEIGHT > trueScriptsIndex) }`;
+  private readonly paymentScript: string;
 
   private constructor(
     mnemonic: string,
@@ -33,6 +35,11 @@ export class Wallet {
     this.childKey = rootKey.deriveChild(0);
     this.network = network;
     this.walletAddress = this.childKey.address.encode(network);
+    const SCRIPT_DIR = path.join(import.meta.dirname, `../lib/scripts/`);
+    this.paymentScript = fs.readFileSync(
+      path.join(SCRIPT_DIR, 'truePaymentScript.es'),
+      'utf8',
+    );
 
     this.logger.debug('First address of the mnemonic', this.walletAddress);
   }
@@ -159,5 +166,9 @@ export class Wallet {
     const paymentAddress = paymentContract.toAddress(this.network).toString();
     this.logger.debug(`Generated unique payment address: ${paymentAddress}`);
     return paymentAddress;
+  };
+
+  public getErgoTree = () => {
+    return this.childKey.address.ergoTree;
   };
 }

@@ -1,7 +1,14 @@
-import { Entity, PrimaryColumn } from '@rosen-bridge/extended-typeorm';
+import {
+  Column,
+  Entity,
+  PrimaryGeneratedColumn,
+} from '@rosen-bridge/extended-typeorm';
 
 @Entity('counter')
 export class Counter {
-  @PrimaryColumn({ name: 'count', type: 'int' })
+  @PrimaryGeneratedColumn()
+  id!: number;
+
+  @Column({ name: 'count', type: 'int' })
   count!: number;
 }

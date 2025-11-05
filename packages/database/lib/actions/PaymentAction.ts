@@ -133,9 +133,9 @@ class PaymentAction {
 
     const userPaymentAuthStatus = await this.userAuthStatusRepository.findOne({
       where: {
-        user,
-        package: pkg,
-        authMethod: paymentAuth,
+        user: { id: userId },
+        package: { id: packageId },
+        authMethod: { id: authMethodId },
         status: And(Not('failed'), Not('expired')),
       },
       relations: ['authMethod'],
@@ -267,7 +267,7 @@ class PaymentAction {
 
         // Lock the row for update to prevent concurrent modifications
         let counterRecord = await counterRepo.findOne({
-          where: {},
+          where: { id: 1 },
           lock: { mode: 'pessimistic_write' },
         });
 

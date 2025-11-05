@@ -4,6 +4,7 @@ import {
   CheckStatusOrGetAddressResponse200,
   PaymentAuthConfig,
   checkStatusOrGetAddressBodyType,
+  ErrorResponse,
 } from './types';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
@@ -102,7 +103,12 @@ class PaymentAuth {
         ],
         schema: {
           body: checkStatusOrGetAddressBody,
-          response: { 200: CheckStatusOrGetAddressResponse200 },
+          response: {
+            200: CheckStatusOrGetAddressResponse200,
+            400: ErrorResponse,
+            403: ErrorResponse,
+            500: ErrorResponse,
+          },
           security: [
             {
               bearerAuth: [],
@@ -125,6 +131,7 @@ class PaymentAuth {
               authMethodId,
               packageId,
             );
+
           if (
             paymentStatus === null ||
             paymentStatus.status === 'expired' ||
@@ -206,14 +213,7 @@ class PaymentAuth {
   };
 
   /**
-   * Processes pending payment authorizations.
-   *
-   * - Fetches pending payment auth records.
-   * - For each record, checks the blockchain for the required payment.
-   *   - If paid, marks the record as passed.
-   *   - If not paid and the allowed time (expiresTime + expiresTimeDelay) has elapsed, marks it failed.
-   * - Logs and swallows errors to avoid crashing the background processor.
-   *
+   * Processes all pending payment auths.
    * @returns {Promise<void>}
    */
   public processPayments = async (): Promise<void> => {
@@ -226,37 +226,12 @@ class PaymentAuth {
         return;
       }
 
-      for (let i = 0; i < payments.length; i++) {
-        const payment = payments[i];
-        const assets = payment.authMethod.config.payment;
+      this.logger.debug(
+        `Found ${payments.length} payment requests to process.`,
+      );
 
-        if (!assets) {
-          throw new Error(
-            `Invalid config for auth method with id ${payment.authMethod.id}`,
-          );
-        }
-
-        const isPaid: boolean = await this.nodeModel.checkForPayment(
-          payment.metadata.address!,
-          assets!,
-        );
-
-        if (isPaid) {
-          await this.paymentAction.passUserPayment(payment);
-        } else {
-          const now = Math.floor(Date.now() / 1000);
-          const elapsed = now - payment.createdAt;
-          // Check if the payment has exceeded the allowed time window (allowedTime = expiresTime + expiresTimeDelay)
-          if (elapsed >= this.expiresTime + this.expiresTimeDelay) {
-            this.logger.debug(
-              `Payment ID ${payment.id} has expired. Elapsed time: ${elapsed}s, allowed time with delay: ${this.expiresTime + this.expiresTimeDelay}s. Marking paymnet as failed.`,
-            );
-            await this.paymentAction.updateUserPaymentAuthStatus(
-              payment,
-              'failed',
-            );
-          }
-        }
+      for (const payment of payments) {
+        this.handlePaymentAuth(payment);
       }
     } catch (error) {
       this.logger.warn('Error during processPayments', {
@@ -265,6 +240,47 @@ class PaymentAuth {
       });
     }
   };
+
+  /**
+   * Process a single pending payment authorization.
+   *
+   * - Validates that the auth method has a payment config.
+   * - Checks the blockchain to see if the required ERG/tokens were paid to the stored address.
+   *   - If paid, marks the UserAuthStatus as passed.
+   *   - If not paid and the allowed window (expiresTime + expiresTimeDelay) has elapsed, marks it as failed.
+   *
+   * @param payment - The UserAuthStatus record to process.
+   * @returns {Promise<void>}
+   */
+  public handlePaymentAuth = async (payment: UserAuthStatus): Promise<void> => {
+    this.logger.debug(`Processing payment with id: ${payment.id}`);
+    const assets = payment.authMethod.config.payment;
+    if (!assets) {
+      throw new Error(
+        `Invalid config for auth method with id ${payment.authMethod.id}`,
+      );
+    }
+
+    const isPaid: boolean = await this.nodeModel.checkForPayment(
+      payment.metadata.address!,
+      assets!,
+    );
+
+    if (isPaid) {
+      await this.paymentAction.passUserPayment(payment);
+    } else {
+      // Check if the payment has exceeded the allowed time window (allowedTime = expiresTime + expiresTimeDelay)
+      const now = Math.floor(Date.now() / 1000);
+      const elapsed = now - payment.createdAt;
+      if (elapsed >= this.expiresTime + this.expiresTimeDelay) {
+        this.logger.debug(
+          `Payment ID ${payment.id} has expired. Elapsed time: ${elapsed}s, allowed time with delay: ${this.expiresTime + this.expiresTimeDelay}s. Marking paymnet as failed.`,
+        );
+        await this.paymentAction.updateUserPaymentAuthStatus(payment, 'failed');
+      }
+    }
+  };
+
   /**
    * Registers the API routes for PaymentAuth.
    * @param prefix - URL prefix for the routes

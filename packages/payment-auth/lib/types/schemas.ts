@@ -30,3 +30,8 @@ export const CheckStatusOrGetAddressResponse200 = Type.Object({
 
   expiresTime: Type.Number({ minimum: 1 }), // Payment expiry timestamp (seconds)
 });
+
+export const ErrorResponse = Type.Object({
+  error: Type.String(),
+  code: Type.String(),
+});
