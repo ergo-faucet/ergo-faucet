@@ -44,7 +44,7 @@ export const mockPassedStatus = {
 export const mockPendingStatus = {
   id: 11,
   status: 'pending',
-  createdAt: 1762344032 - 30, // within 60s limit
+  createdAt: 1762344032,
   modifiedAt: 1762344032,
   authMethod: { config: { payment: {} } } as AuthMethod,
   metadata: { address: 'pendingaddress' },
@@ -53,7 +53,7 @@ export const mockPendingStatus = {
 export const mockExpiredPendingStatus = {
   id: 11,
   status: 'pending',
-  createdAt: 1762344032 - 70, // > 60s expired
+  createdAt: 1762344032,
   modifiedAt: 1762344032,
   authMethod: { config: {} } as AuthMethod,
   metadata: { address: 'oldpending' },

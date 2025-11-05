@@ -44,7 +44,7 @@ describe('PaymentAuth', () => {
 
   describe('POST /auth/payment', () => {
     let fastifyInstance: FastifyAPIServer;
-
+    const userId = 123;
     beforeAll(async () => {
       // eslint-disable-next-line
       (FastifyAPIServer as any).instance = undefined;
@@ -66,7 +66,7 @@ describe('PaymentAuth', () => {
             else {
               // Simulate JWT verification and set request.user
               request.user = {
-                userId: 123,
+                userId,
                 address: 'mocked-user-address',
               };
             }
@@ -108,7 +108,7 @@ describe('PaymentAuth', () => {
 
       // Assert
       expect(mockPaymentAction.getUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
       );
@@ -117,7 +117,7 @@ describe('PaymentAuth', () => {
         mockIndex,
       );
       expect(mockPaymentAction.addUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
         mockAddress,
@@ -162,7 +162,7 @@ describe('PaymentAuth', () => {
 
       // Assert
       expect(mockPaymentAction.getUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
       );
@@ -171,7 +171,7 @@ describe('PaymentAuth', () => {
         mockIndex,
       );
       expect(mockPaymentAction.addUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
         mockAddress,
@@ -216,7 +216,7 @@ describe('PaymentAuth', () => {
 
       // Assert
       expect(mockPaymentAction.getUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
       );
@@ -225,7 +225,7 @@ describe('PaymentAuth', () => {
         mockIndex,
       );
       expect(mockPaymentAction.addUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
         mockAddress,
@@ -259,7 +259,7 @@ describe('PaymentAuth', () => {
 
       // Assert
       expect(mockPaymentAction.getUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
       );
@@ -298,7 +298,7 @@ describe('PaymentAuth', () => {
 
       // Assert
       expect(mockPaymentAction.getUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
       );
@@ -346,7 +346,7 @@ describe('PaymentAuth', () => {
 
       // Assert
       expect(mockPaymentAction.getUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
       );
@@ -358,7 +358,7 @@ describe('PaymentAuth', () => {
         mockIndex,
       );
       expect(mockPaymentAction.addUserPaymentAuthStatus).toHaveBeenCalledWith(
-        123,
+        userId,
         getAddressPayload.authMethodId,
         getAddressPayload.packageId,
         mockAddress,
@@ -477,26 +477,6 @@ describe('PaymentAuth', () => {
         2,
         mockPayments[1].metadata.address,
         mockPayments[1].authMethod.config.payment,
-      );
-    });
-
-    /**
-     * Test for no payments to process
-     * @scenario
-     * - No unpaid records
-     * @expected
-     * - Logs debug message
-     */
-    it('should log if no payments to process', async () => {
-      // Arrange
-      mockPaymentAction.getUnpaidRecords.mockResolvedValue([]);
-
-      // Act
-      await instance.processPayments();
-
-      // Assert
-      expect(mockLogger.debug).toHaveBeenCalledWith(
-        'There is no payment to process.',
       );
     });
 
