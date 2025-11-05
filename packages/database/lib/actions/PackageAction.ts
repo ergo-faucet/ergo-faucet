@@ -34,6 +34,7 @@ import {
   RequestLimitError,
   NotAvailableError,
   FilterOptions,
+  PackageList,
 } from '../types';
 
 class PackageAction {
@@ -115,7 +116,7 @@ class PackageAction {
     order: 'asc' | 'desc',
     options: FilterOptions,
     userId?: number,
-  ): Promise<PackageDTO[]> => {
+  ): Promise<PackageList> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
@@ -147,6 +148,8 @@ class PackageAction {
         take: limit,
       })
       .getMany();
+
+    const total = await qb.setFindOptions({ where }).getCount();
 
     const result: PackageDTO[] = [];
 
@@ -193,7 +196,7 @@ class PackageAction {
       });
     }
 
-    return result;
+    return { total, packages: result };
   };
 
   /**

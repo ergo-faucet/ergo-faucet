@@ -44,3 +44,13 @@ export interface RequestDTO {
   destinationAddress: string;
   txId?: string;
 }
+
+export interface RequestList {
+  total: number;
+  requests: RequestDTO[];
+}
+
+export interface PackageList {
+  total: number;
+  packages: PackageDTO[];
+}

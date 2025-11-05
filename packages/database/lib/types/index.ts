@@ -12,6 +12,8 @@ export type {
   PackageType,
   AuthMethodStatus,
   RequestDTO,
+  PackageList,
+  RequestList,
 } from './DTOs';
 export {
   NotFoundError,
