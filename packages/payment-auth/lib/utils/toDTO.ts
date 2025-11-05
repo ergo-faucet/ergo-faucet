@@ -7,7 +7,7 @@ export const toDTO = (authStatus: UserAuthStatus, expiresTime: number) => {
     createdAt: authStatus.createdAt,
     modifiedAt: authStatus.modifiedAt,
     status: authStatus.status,
-    config: authStatus.authMethod.config,
+    config: JSON.stringify(authStatus.authMethod.config),
     address: authStatus.metadata.address,
     expiresTime,
   };

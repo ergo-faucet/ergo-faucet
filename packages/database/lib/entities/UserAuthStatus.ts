@@ -33,7 +33,7 @@ export class UserAuthStatus {
   @JoinColumn()
   package?: Relation<Package>;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   verifiedAt!: number;
 
   @Column({ type: 'text' })

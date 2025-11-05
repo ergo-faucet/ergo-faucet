@@ -17,7 +17,6 @@ import {
   UserAuthStatus,
 } from '@ergo-faucet/database';
 import { toDTO } from './utils';
-import { TokenTargetAmount } from '@fleet-sdk/common';
 
 class PaymentAuth {
   private static instance: PaymentAuth;
@@ -78,6 +77,18 @@ class PaymentAuth {
     return this.instance;
   };
 
+  /**
+   * Registers a POST route that returns an existing payment auth or issues a new one.
+   *
+   * - If no active payment record exists or the record is expired/failed, generates a new
+   *   payment address, creates a pending UserAuthStatus and returns its DTO.
+   * - If a pending record exists but its payment window has elapsed, marks it failed,
+   *   issues a new address, creates a new pending record and returns its DTO.
+   * - Otherwise returns the current payment auth DTO (pending or passed).
+   *
+   * @param fastify - Fastify server instance to register the route on.
+   * @returns {Promise<void>}
+   */
   public checkStatusOrGetAddressRoute = async (
     fastify: FastifySeverInstance,
   ) => {
@@ -86,8 +97,8 @@ class PaymentAuth {
       {
         errorHandler: this.fastifyServer.errorHandler,
         preHandler: [
-          //     this.fastifyServer.authPreHandler(),
-          //    this.fastifyServer.captchaPreHandler,
+          this.fastifyServer.authPreHandler(),
+          this.fastifyServer.captchaPreHandler,
         ],
         schema: {
           body: checkStatusOrGetAddressBody,
@@ -101,9 +112,7 @@ class PaymentAuth {
       },
       async (request, reply) => {
         try {
-          // const user = request.user as userRequestPayload;
-
-          const user = { userId: 1 } as userRequestPayload;
+          const user = request.user as userRequestPayload;
           const { packageId, authMethodId } = request.body;
 
           this.logger.debug(
@@ -182,7 +191,7 @@ class PaymentAuth {
               .status(400)
               .send({ error: error.message, code: 'NOT_FOUND' });
           }
-          this.logger.error(`Error fetching packages:`, {
+          this.logger.error(`Error fetching or generating user auth status:`, {
             error: error instanceof Error ? error.message : error,
             stack: error instanceof Error ? error.stack : undefined,
           });
@@ -196,6 +205,17 @@ class PaymentAuth {
     );
   };
 
+  /**
+   * Processes pending payment authorizations.
+   *
+   * - Fetches pending payment auth records.
+   * - For each record, checks the blockchain for the required payment.
+   *   - If paid, marks the record as passed.
+   *   - If not paid and the allowed time (expiresTime + expiresTimeDelay) has elapsed, marks it failed.
+   * - Logs and swallows errors to avoid crashing the background processor.
+   *
+   * @returns {Promise<void>}
+   */
   public processPayments = async (): Promise<void> => {
     try {
       const payments: UserAuthStatus[] =
@@ -206,21 +226,14 @@ class PaymentAuth {
         return;
       }
 
-      let prvConfig: string = '';
-      let assets;
       for (let i = 0; i < payments.length; i++) {
         const payment = payments[i];
-        const currentConfig = payment.authMethod.config;
-        if (prvConfig !== currentConfig) {
-          prvConfig = currentConfig;
-          assets = JSON.parse(currentConfig) as TokenTargetAmount<string>[];
+        const assets = payment.authMethod.config.payment;
 
-          if (!Array.isArray(assets)) {
-            this.logger.warn(
-              `Invalid config for payment ${payment.id}, skipping.`,
-            );
-            continue;
-          }
+        if (!assets) {
+          throw new Error(
+            `Invalid config for auth method with id ${payment.authMethod.id}`,
+          );
         }
 
         const isPaid: boolean = await this.nodeModel.checkForPayment(
@@ -236,7 +249,7 @@ class PaymentAuth {
           // Check if the payment has exceeded the allowed time window (allowedTime = expiresTime + expiresTimeDelay)
           if (elapsed >= this.expiresTime + this.expiresTimeDelay) {
             this.logger.debug(
-              `Payment ID ${payment.id} has expired. Elapsed time: ${elapsed}s, allowed backend time: ${this.expiresTime + this.expiresTimeDelay}s. Marking paymnet as failed.`,
+              `Payment ID ${payment.id} has expired. Elapsed time: ${elapsed}s, allowed time with delay: ${this.expiresTime + this.expiresTimeDelay}s. Marking paymnet as failed.`,
             );
             await this.paymentAction.updateUserPaymentAuthStatus(
               payment,

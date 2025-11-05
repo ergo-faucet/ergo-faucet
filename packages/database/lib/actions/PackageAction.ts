@@ -387,47 +387,60 @@ class PackageAction {
     packageId: number,
     destAddress: string,
   ): Promise<number> => {
-    const pkg = await this.packageRepository.findOne({
-      where: { id: packageId },
-    });
-    const usr = await this.userRepository.findOne({
-      where: { id: userId },
-    });
+    return await this.dataSource.transaction(
+      async (transactionalEntityManager) => {
+        const packageRepository =
+          transactionalEntityManager.getRepository(Package);
 
-    const userRequest = this.userRequestRepository.create({
-      destinationAddress: destAddress,
-      package: pkg!,
-      status: 'pending',
-      user: usr!,
-      createdAt: Math.floor(Date.now() / 1000),
-      modifiedAt: Math.floor(Date.now() / 1000),
-    });
+        const userRepository = transactionalEntityManager.getRepository(User);
+        const userRequestRepository =
+          transactionalEntityManager.getRepository(UserRequest);
+        const userAuthStatusRepository =
+          transactionalEntityManager.getRepository(UserAuthStatus);
 
-    const paymentAuthMethods = await this.userAuthStatusRepository.find({
-      where: {
-        status: 'passed',
-        package: { id: packageId },
-        user: { id: userId },
-        authMethod: { name: ILike(`%${this.paymentPattern}%`) },
+        const pkg = await packageRepository.findOne({
+          where: { id: packageId },
+        });
+        const usr = await userRepository.findOne({
+          where: { id: userId },
+        });
+
+        const userRequest = userRequestRepository.create({
+          destinationAddress: destAddress,
+          package: pkg!,
+          status: 'pending',
+          user: usr!,
+          createdAt: Math.floor(Date.now() / 1000),
+          modifiedAt: Math.floor(Date.now() / 1000),
+        });
+
+        const paymentAuthMethods = await userAuthStatusRepository.find({
+          where: {
+            status: 'passed',
+            package: { id: packageId },
+            user: { id: userId },
+            authMethod: { name: ILike(`%${this.paymentPattern}%`) },
+          },
+        });
+
+        // Expire previously passed payment auth entries when creating a new request.
+        // This ensures an old/unused payment authorization cannot be reused —
+        // the user must create a fresh payment (new payment auth) for each request.
+        if (paymentAuthMethods.length !== 0) {
+          paymentAuthMethods.forEach((pam) => {
+            pam.status = 'expired';
+          });
+
+          await userAuthStatusRepository.save(paymentAuthMethods);
+        }
+
+        await userRequestRepository.save(userRequest);
+        this.logger.debug(
+          `Added UserRequest for user ID ${userId} and package ID ${packageId} to the database`,
+        );
+        return userRequest.id;
       },
-    });
-
-    // Expire previously passed payment auth entries when creating a new request.
-    // This ensures an old/unused payment authorization cannot be reused —
-    // the user must create a fresh payment (new payment auth) for each request.
-    if (paymentAuthMethods.length !== 0) {
-      paymentAuthMethods.forEach((pam) => {
-        pam.status = 'expired';
-      });
-
-      await this.userAuthStatusRepository.save(paymentAuthMethods);
-    }
-
-    await this.userRequestRepository.save(userRequest);
-    this.logger.debug(
-      `Added UserRequest for user ID ${userId} and package ID ${packageId} to the database`,
     );
-    return userRequest.id;
   };
 
   /**

@@ -7,6 +7,7 @@ import {
 } from '@rosen-bridge/extended-typeorm';
 import { PackageAuthMethod } from './PackageAuthMethod';
 import { UserAuthStatus } from './UserAuthStatus';
+import { AssetPayload } from '../types';
 
 @Entity('auth_method_entity')
 export class AuthMethod {
@@ -16,8 +17,10 @@ export class AuthMethod {
   @Column({ type: 'varchar' })
   name!: string;
 
-  @Column({ type: 'text' })
-  config!: string;
+  @Column({ type: 'simple-json' })
+  config!: {
+    payment?: AssetPayload[];
+  };
 
   @OneToMany(() => PackageAuthMethod, (pam) => pam.authMethod)
   packageAuthMethods!: Relation<PackageAuthMethod[]>;

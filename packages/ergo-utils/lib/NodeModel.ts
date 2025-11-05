@@ -289,7 +289,7 @@ export class NodeModel {
       .then((response) => {
         this.logger.debug('The Boxes retrieved successfully.');
 
-        return response.data;
+        return response.data.items;
       })
       .catch((error) => {
         if (axios.isAxiosError(error)) {
@@ -463,6 +463,13 @@ export class NodeModel {
     }
   };
 
+  /**
+   * Checks whether the given address has paid the required ERG and token amounts.
+   *
+   * @param address - Destination address to inspect.
+   * @param assets - Array of TokenTargetAmount<string> describing required token IDs and amounts.
+   * @returns {Promise<boolean>} True if the address contains the required ERG/tokens, otherwise false.
+   */
   public checkForPayment = async (
     address: string,
     assets: TokenTargetAmount<string>[],

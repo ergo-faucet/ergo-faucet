@@ -41,7 +41,7 @@ abstract class AbstractAuthAction {
     if (!method) {
       method = this.authMethodRepository.create({
         name: this.authMethodName,
-        config: JSON.stringify({}),
+        config: {},
         createdAt: Math.floor(Date.now() / 1000),
         modifiedAt: Math.floor(Date.now() / 1000),
       });

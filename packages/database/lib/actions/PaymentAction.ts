@@ -79,6 +79,19 @@ class PaymentAction {
     return this.instance;
   };
 
+  /**
+   * Retrieve an active payment authorization record for a user, auth method and package.
+   *
+   * - Validates that the package, payment auth method (matching payment pattern) and user exist.
+   * - Ensures the auth method is associated with the package.
+   * - Returns the UserAuthStatus excluding records with status 'failed' or 'expired'.
+   *
+   * @param userId - ID of the user.
+   * @param authMethodId - ID of the auth method (must be a payment auth).
+   * @param packageId - ID of the package.
+   * @returns {Promise<UserAuthStatus | null>} The active payment auth record, or null if none found.
+   * @throws {NotFoundError} If package, auth method, user, or the package→auth association is missing.
+   */
   public getUserPaymentAuthStatus = async (
     userId: number,
     authMethodId: number,
@@ -131,6 +144,19 @@ class PaymentAction {
     return userPaymentAuthStatus;
   };
 
+  /**
+   * Creates and stores a new pending payment authorization for a user.
+   *
+   * - Ensures the referenced user, package and auth method exist.
+   * - Inserts a UserAuthStatus with status 'pending' and metadata.address = paymentAddress.
+   *
+   * @param userId - ID of the user requesting payment.
+   * @param authMethodId - ID of the payment auth method.
+   * @param packageId - ID of the package the payment is for.
+   * @param paymentAddress - The generated payment address to associate with this auth.
+   * @returns {Promise<UserAuthStatus>} The created UserAuthStatus entity.
+   * @throws {NotFoundError} If the user, package, or auth method cannot be found.
+   */
   public addUserPaymentAuthStatus = async (
     userId: number,
     authMethodId: number,
@@ -148,14 +174,14 @@ class PaymentAction {
 
     const user = await this.userRepository.findOneBy({ id: userId });
 
-    const now = Date.now();
+    const now = Math.floor(Date.now() / 1000);
 
     const newUserPaymentAuthStatus = this.userAuthStatusRepository.create({
       user: user!,
       authMethod: paymentAuth!,
       package: pkg!,
-      createdAt: Math.floor(now / 1000),
-      modifiedAt: Math.floor(now / 1000),
+      createdAt: now,
+      modifiedAt: now,
       status: 'pending',
       metadata: {
         address: paymentAddress,
@@ -170,46 +196,21 @@ class PaymentAction {
     return newUserPaymentAuthStatus;
   };
 
-  updateUserPaymentAuthStatusUsingIds = async (
-    userId: number,
-    packageId: number,
-    authMethodId: number,
-    status: 'passed' | 'failed' | 'pending' | 'expired',
-    paymentAddress?: string,
-  ): Promise<UserAuthStatus> => {
-    this.logger.debug(
-      `Updating payment auth status for user ID: ${userId}, package ID: ${packageId}, auth method ID: ${authMethodId} to status: ${status}.`,
-    );
-
-    const userPaymentAuthStatus = await this.userAuthStatusRepository.findOne({
-      where: {
-        user: { id: userId },
-        package: { id: packageId },
-        authMethod: { id: authMethodId },
-      },
-      relations: ['authMethod'],
-    });
-
-    if (!userPaymentAuthStatus) {
-      throw new NotFoundError(
-        `Payment auth status not found for user ID: ${userId}, package ID: ${packageId}, auth method ID: ${authMethodId}.`,
-      );
-    }
-
-    userPaymentAuthStatus.status = status;
-    userPaymentAuthStatus.metadata = {
-      address: paymentAddress,
-    };
-    await this.userAuthStatusRepository.save(userPaymentAuthStatus);
-    this.logger.info(
-      `Payment auth status for user ID: ${userId}, package ID: ${packageId}, auth method ID: ${authMethodId} updated to status: ${status}.`,
-    );
-    return userPaymentAuthStatus;
-  };
-
+  /**
+   * Updates a UserAuthStatus record and persists the change.
+   *
+   * - Sets the new status and updates modifiedAt to current epoch seconds.
+   * - If provided, stores the payment address in the record's metadata.
+   *
+   * @param userAuthStatus - The UserAuthStatus entity to update.
+   * @param status - New status ( 'failed' | 'pending' | 'expired').
+   * @param paymentAddress - Optional payment address to save in metadata.
+   * @returns {Promise<UserAuthStatus>} The updated and saved UserAuthStatus.
+   * @throws {Error} If the repository save operation fails.
+   */
   public updateUserPaymentAuthStatus = async (
     userAuthStatus: UserAuthStatus,
-    status: 'passed' | 'failed' | 'pending' | 'expired',
+    status: 'failed' | 'pending' | 'expired',
     paymentAddress?: string,
   ): Promise<UserAuthStatus> => {
     this.logger.debug(
@@ -231,6 +232,15 @@ class PaymentAction {
     return userAuthStatus;
   };
 
+  /**
+   Marks a payment authorization record as passed.
+   *
+   * - Sets status to 'passed' and updates verifiedAt and modifiedsAt to the current epoch seconds.
+   *
+   * @param payment - The UserAuthStatus record to mark as passed.
+   * @returns {Promise<void>} Resolves after the record is saved.
+   * @throws {Error} If the database save operation fails.
+   */
   public passUserPayment = async (payment: UserAuthStatus): Promise<void> => {
     const now = Math.floor(Date.now() / 1000);
     payment.status = 'passed';
@@ -279,6 +289,11 @@ class PaymentAction {
     );
   };
 
+  /**
+   * Fetches all pending payment authorization records.
+   *
+   * @returns {Promise<UserAuthStatus[]>} Array of pending payment auth records.
+   */
   public getUnpaidRecords = async (): Promise<UserAuthStatus[]> => {
     return await this.userAuthStatusRepository.find({
       where: {
