@@ -147,13 +147,13 @@ class PackageAction {
         skip: offset,
         take: limit,
       })
-      .getMany();
+      .getManyAndCount();
 
-    const total = await qb.setFindOptions({ where }).getCount();
+    const total = packages[1];
 
     const result: PackageDTO[] = [];
 
-    for (const pkg of packages) {
+    for (const pkg of packages[0]) {
       const authMethods: AuthMethodDTO[] = [];
       for (const pam of pkg.packageAuthMethods) {
         let userStatus: AuthMethodStatus;

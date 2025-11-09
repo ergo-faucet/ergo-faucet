@@ -83,16 +83,16 @@ class RequestHistoryAction {
 
     const orderOption: FindOptionsOrder<UserRequest> = { [sort]: order };
 
-    const requests = await this.userRequestRepository.find({
+    const requests = await this.userRequestRepository.findAndCount({
       order: orderOption,
       skip: offset,
       take: limit,
       relations: ['user', 'package'],
     });
 
-    const total = await this.userRequestRepository.count({});
+    const total = requests[1];
 
-    const result = requests.map(
+    const result = requests[0].map(
       (r: UserRequest): RequestDTO => ({
         requestId: r.id,
         packageId: r.package.id,
