@@ -92,6 +92,7 @@ describe('PackageController', () => {
         url: '/packages?offset=0&limit=100&sort=name&order=desc',
       });
 
+      expect(mockedPackageAction.getPackages).toBeCalled();
       expect(result.statusCode).toEqual(200);
       expect(JSON.parse(result.body)).toEqual(mockPackageDTO);
     });
@@ -109,7 +110,6 @@ describe('PackageController', () => {
         method: 'GET',
         url: '/packages?offset=0&limit=200&sort=name&order=desc', //limit is greater than maximum 100
       });
-
       expect(result.statusCode).toEqual(400);
       expect(JSON.parse(result.body)).toEqual({
         code: 'Bad Request',
