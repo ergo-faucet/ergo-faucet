@@ -34,6 +34,7 @@ import {
   RequestLimitError,
   NotAvailableError,
   FilterOptions,
+  PackageList,
 } from '../types';
 
 class PackageAction {
@@ -115,7 +116,7 @@ class PackageAction {
     order: 'asc' | 'desc',
     options: FilterOptions,
     userId?: number,
-  ): Promise<PackageDTO[]> => {
+  ): Promise<PackageList> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
@@ -146,11 +147,13 @@ class PackageAction {
         skip: offset,
         take: limit,
       })
-      .getMany();
+      .getManyAndCount();
+
+    const total = packages[1];
 
     const result: PackageDTO[] = [];
 
-    for (const pkg of packages) {
+    for (const pkg of packages[0]) {
       const authMethods: AuthMethodDTO[] = [];
       for (const pam of pkg.packageAuthMethods) {
         let userStatus: AuthMethodStatus;
@@ -193,7 +196,7 @@ class PackageAction {
       });
     }
 
-    return result;
+    return { total, packages: result };
   };
 
   /**
