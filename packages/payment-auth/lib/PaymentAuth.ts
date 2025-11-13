@@ -140,18 +140,12 @@ class PaymentAuth {
             this.logger.debug(
               `No pending or passed payment record found for user ${user.userId}, package ${packageId}, auth method ${authMethodId}`,
             );
-            const addressIndex =
-              await this.paymentAction.getAndIncrementCounter();
 
-            const newAddress =
-              this.wallet.generateUniquePaymentAddress(addressIndex);
-            const newPaymentStatus =
-              await this.paymentAction.addUserPaymentAuthStatus(
-                user.userId,
-                authMethodId,
-                packageId,
-                newAddress,
-              );
+            const newPaymentStatus = await this.generateNewAddress(
+              user.userId,
+              authMethodId,
+              packageId,
+            );
 
             return reply
               .status(200)
@@ -171,18 +165,12 @@ class PaymentAuth {
                 paymentStatus,
                 'failed',
               );
-              const addressIndex =
-                await this.paymentAction.getAndIncrementCounter();
 
-              const newAddress =
-                this.wallet.generateUniquePaymentAddress(addressIndex);
-              const newPaymentStatus =
-                await this.paymentAction.addUserPaymentAuthStatus(
-                  user.userId,
-                  authMethodId,
-                  packageId,
-                  newAddress,
-                );
+              const newPaymentStatus = await this.generateNewAddress(
+                user.userId,
+                authMethodId,
+                packageId,
+              );
 
               return reply
                 .status(200)
@@ -279,6 +267,31 @@ class PaymentAuth {
         await this.paymentAction.updateUserPaymentAuthStatus(payment, 'failed');
       }
     }
+  };
+
+  /**
+   * Generate a new unique payment address and create a pending payment record.
+   *
+   * @param userId - ID of the user.
+   * @param authMethodId - ID of the payment auth method.
+   * @param packageId - ID of the package.
+   * @returns {Promise<UserAuthStatus>} The newly created pending UserAuthStatus.
+   * @throws {Error} If address generation or DB insertion fails.
+   */
+  private generateNewAddress = async (
+    userId: number,
+    authMethodId: number,
+    packageId: number,
+  ): Promise<UserAuthStatus> => {
+    const addressIndex = await this.paymentAction.getAndIncrementCounter();
+
+    const newAddress = this.wallet.generateUniquePaymentAddress(addressIndex);
+    return await this.paymentAction.addUserPaymentAuthStatus(
+      userId,
+      authMethodId,
+      packageId,
+      newAddress,
+    );
   };
 
   /**

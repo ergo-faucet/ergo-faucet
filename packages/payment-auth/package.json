@@ -1,8 +1,11 @@
 {
   "name": "@ergo-faucet/payment-auth",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "Payment authentication utilities for ergo-faucet",
-  "repository": "git+https://github.com/ergo-faucet/ergo-faucet.git",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ergo-faucet/ergo-faucet.git"
+  },
   "license": "MIT",
   "author": "ergo-faucet",
   "type": "module",
