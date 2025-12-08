@@ -85,7 +85,11 @@ export class FastifyAPIServer {
     this.instance = new FastifyAPIServer(config, logger);
 
     // Register CORS
-    if (this.instance.corsOrigins.includes('*')) {
+    if (
+      Array.isArray(this.instance.corsOrigins) &&
+      this.instance.corsOrigins.length === 1 &&
+      this.instance.corsOrigins[0] === '*'
+    ) {
       await this.instance.fastify.register(fastifyCors, {});
     } else {
       await this.instance.fastify.register(fastifyCors, {
@@ -95,10 +99,25 @@ export class FastifyAPIServer {
           const allowedOrigins = Array.isArray(this.instance.corsOrigins)
             ? this.instance.corsOrigins
             : [this.instance.corsOrigins];
-          if (allowedOrigins.some((item) => origin === item)) {
-            return callback(null, true);
-          }
-          return callback(null, false);
+
+          const isAllowed = allowedOrigins.some((pattern) => {
+            if (pattern === origin) return true;
+
+            const regexPattern =
+              '^' +
+              pattern
+                .split('*')
+                .map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+                .join('.*') +
+              '$';
+            const regex = new RegExp(regexPattern);
+
+            return regex.test(origin);
+          });
+
+          if (isAllowed) return callback(null, true);
+
+          return callback(new Error('Not allowed by CORS'), false);
         },
       });
     }
