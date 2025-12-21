@@ -544,6 +544,8 @@ class PackageAction {
             authMethod: auths[i],
             package: pkg,
             order: authMethods[i].order,
+            createdAt: Math.floor(Date.now() / 1000),
+            modifiedAt: Math.floor(Date.now() / 1000),
           });
 
           packageAuthMethods.push(pam);
