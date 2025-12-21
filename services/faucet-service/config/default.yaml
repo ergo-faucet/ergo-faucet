@@ -87,7 +87,12 @@ jobs:
 
 ergo:
   network: 'mainnet'
+  # Wallet credentials: use either mnemonic (+optional passphrase) or privateKey.
+  # With mnemonic, the first wallet address is derived. privateKey takes priority.
+  # Missing both causes an error.
   mnemonic: ''
+  #passphrase: ''
+  #privateKey: ''
   minNanoErg: 10000000
   minFee: 1000000
   node:

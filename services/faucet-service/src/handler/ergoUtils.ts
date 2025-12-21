@@ -13,11 +13,7 @@ export const setupErgoUtils = async () => {
     ergoUtilsLogger,
   );
 
-  await Wallet.initialize(
-    ergoConfig.mnemonic,
-    ergoConfig.network,
-    ergoUtilsLogger,
-  );
+  await Wallet.initialize(ergoConfig, ergoUtilsLogger);
 
   logger.info('ErgoUtils initialized successfully');
 };
