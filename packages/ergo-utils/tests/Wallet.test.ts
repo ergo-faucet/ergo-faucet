@@ -26,7 +26,7 @@ describe('Wallet', () => {
       const mnemonic =
         'steel wet husband avoid surround trial insect stone gauge trick zone dry famous family mechanic';
       await NodeModel.initialize('nodeUrl', 1000);
-      await Wallet.initialize(mnemonic, Network.Testnet);
+      await Wallet.initialize({ mnemonic: mnemonic, network: Network.Testnet });
     });
 
     afterAll(() => {
@@ -128,11 +128,12 @@ describe('Wallet', () => {
       const mnemonic =
         'steel wet husband avoid surround trial insect stone gauge trick zone dry famous family mechanic';
 
-      await Wallet.initialize(mnemonic, Network.Testnet);
+      await Wallet.initialize({ mnemonic, network: Network.Testnet });
     });
 
     afterAll(() => {
       vi.clearAllMocks();
+
       // eslint-disable-next-line
       (Wallet as any).instance = undefined;
     });

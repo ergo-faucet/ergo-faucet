@@ -83,7 +83,10 @@ export const PackageSchema = Type.Object({
   authMethods: Type.Array(AuthMethodSchema),
 });
 
-export const GetPackagesResponse200 = Type.Array(PackageSchema);
+export const GetPackagesResponse200 = Type.Object({
+  total: Type.Number({ minimum: 0 }),
+  packages: Type.Array(PackageSchema),
+});
 
 export const ErrorResponse = Type.Object({
   error: Type.String(),
@@ -168,4 +171,7 @@ const RequestHistorySchema = Type.Object({
   txId: Type.Optional(Type.String()),
 });
 
-export const GetRequestHistoryResponse200 = Type.Array(RequestHistorySchema);
+export const GetRequestHistoryResponse200 = Type.Object({
+  total: Type.Number({ minimum: 0 }),
+  requests: Type.Array(RequestHistorySchema),
+});

@@ -156,44 +156,47 @@ mockPackage = {
   modifiedAt: 1705312800,
 };
 
-export const mockPackageDTO = [
-  {
-    id: 101,
-    name: 'Starter Pack',
-    type: 'normal',
-    delay: '3600',
-    //openAt: new Date('2025-07-01').getTime() / 1000,
-    closeAt: new Date('2025-12-31').getTime() / 1000,
-    description: 'A package for new users',
-    numberEachUser: 1,
-    assets: [
-      {
-        tokenId: 'token-abc-123',
-        assetName: 'token-abc-123',
-        amount: '1000',
-        decimals: 1,
-        usageDescription: 'Initial reward',
-      },
-      {
-        tokenId: 'token-def-456',
-        assetName: 'token-def-456',
-        amount: '500',
-        decimals: 1,
-        usageDescription: 'Bonus item',
-      },
-    ],
-    authMethods: [
-      {
-        id: 1,
-        name: 'Telegram',
-      },
-      {
-        id: 2,
-        name: 'Email',
-      },
-    ],
-  },
-];
+export const mockPackageDTO = {
+  total: 5,
+  packages: [
+    {
+      id: 101,
+      name: 'Starter Pack',
+      type: 'normal',
+      delay: '3600',
+      //openAt: new Date('2025-07-01').getTime() / 1000,
+      closeAt: new Date('2025-12-31').getTime() / 1000,
+      description: 'A package for new users',
+      numberEachUser: 1,
+      assets: [
+        {
+          tokenId: 'token-abc-123',
+          assetName: 'token-abc-123',
+          amount: '1000',
+          decimals: 1,
+          usageDescription: 'Initial reward',
+        },
+        {
+          tokenId: 'token-def-456',
+          assetName: 'token-def-456',
+          amount: '500',
+          decimals: 1,
+          usageDescription: 'Bonus item',
+        },
+      ],
+      authMethods: [
+        {
+          id: 1,
+          name: 'Telegram',
+        },
+        {
+          id: 2,
+          name: 'Email',
+        },
+      ],
+    },
+  ],
+};
 
 export const mockFastifyConfig: ServerConfig = {
   port: 3000,
@@ -239,16 +242,19 @@ export const mockedRequestHistoryAction: RequestHistoryAction & {
   // eslint-disable-next-line
 } as any;
 
-export const mockRequestDTO = [
-  {
-    requestId: 1,
-    packageId: 101,
-    packageName: 'Starter Pack',
-    status: 'submitted',
-    createdAt: 19900822100,
-    destinationAddress: '9hT2oAddress',
-    txId: 'tx_abc',
-  },
-];
+export const mockRequestDTO = {
+  total: 5,
+  requests: [
+    {
+      requestId: 1,
+      packageId: 101,
+      packageName: 'Starter Pack',
+      status: 'submitted',
+      createdAt: 19900822100,
+      destinationAddress: '9hT2oAddress',
+      txId: 'tx_abc',
+    },
+  ],
+};
 
 export { mockPackage };

@@ -5,7 +5,7 @@ import {
 } from '@rosen-bridge/extended-typeorm';
 import { UserRequest } from '../entities';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { RequestDTO } from '../types';
+import { RequestDTO, RequestList } from '../types';
 
 class RequestHistoryAction {
   private static instance: RequestHistoryAction;
@@ -76,21 +76,23 @@ class RequestHistoryAction {
     limit: number,
     sort: 'status' | 'createdAt' | 'modifiedAt',
     order: 'asc' | 'desc',
-  ): Promise<RequestDTO[]> => {
+  ): Promise<RequestList> => {
     this.logger.debug(
       `Fetching packages from database offset:${offset}, limit:${limit}, sort:${sort}, order:${order}`,
     );
 
     const orderOption: FindOptionsOrder<UserRequest> = { [sort]: order };
 
-    const requests = await this.userRequestRepository.find({
+    const requests = await this.userRequestRepository.findAndCount({
       order: orderOption,
       skip: offset,
       take: limit,
       relations: ['user', 'package'],
     });
 
-    return requests.map(
+    const total = requests[1];
+
+    const result = requests[0].map(
       (r: UserRequest): RequestDTO => ({
         requestId: r.id,
         packageId: r.package.id,
@@ -101,6 +103,8 @@ class RequestHistoryAction {
         txId: r.txId || undefined,
       }),
     );
+
+    return { total, requests: result };
   };
 }
 

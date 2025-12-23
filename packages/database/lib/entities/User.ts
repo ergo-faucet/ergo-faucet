@@ -66,8 +66,8 @@ export class User {
     };
   };
 
-  @Column({ type: 'bigint', nullable: true })
-  lastLogin!: number | null;
+  @Column({ type: 'int', nullable: true })
+  lastLogin!: number;
 
   @Column({ type: 'int' })
   createdAt!: number;

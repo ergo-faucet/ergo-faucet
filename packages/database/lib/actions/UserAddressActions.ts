@@ -83,7 +83,7 @@ class UserAddressAction {
   findOrCreateUserWithAddress = async (address: string): Promise<User> => {
     this.logger.debug(`Finding or creating user for address: ${address}`);
     let user: User | undefined;
-    const now = Date.now();
+    const now = Math.floor(Date.now() / 1000);
 
     const users = await this.getUsersByAddresses([address]);
     if (users.length > 1) {
@@ -102,7 +102,7 @@ class UserAddressAction {
 
     if (user) {
       user.lastLogin = now;
-      user.modifiedAt = Math.floor(Date.now() / 1000);
+      user.modifiedAt = now;
       await this.UserRepository.save(user);
       this.logger.debug(`Updated lastLogin for user ID ${user.id} at ${now}`);
       return user;
@@ -114,14 +114,18 @@ class UserAddressAction {
         const userAddressRepoTx =
           transactionalEntityManager.getRepository(UserAddress);
 
-        const newUser = userRepoTx.create({ lastLogin: now });
+        const newUser = userRepoTx.create({
+          lastLogin: now,
+          createdAt: now,
+          modifiedAt: now,
+        });
         const savedUser = await userRepoTx.save(newUser);
 
         const userAddress = userAddressRepoTx.create({
           user: savedUser,
           value: address,
-          createdAt: Math.floor(Date.now() / 1000),
-          modifiedAt: Math.floor(Date.now() / 1000),
+          createdAt: now,
+          modifiedAt: now,
         });
         await userAddressRepoTx.save(userAddress);
 
