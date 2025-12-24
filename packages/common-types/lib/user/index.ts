@@ -1,6 +1,2 @@
-export interface userRequestPayload {
-  userId: number;
-  address: string;
-  name?: string;
-  isAdmin?: boolean;
-}
+export { UserRequestPayload } from './userRequestPayload';
+export { UserData } from './userData';

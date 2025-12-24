@@ -1,0 +1,13 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "rootDir": "./lib"
+  },
+  "include": ["lib"],
+  "references": [
+    { "path": "../../database/tsconfig.build.json" },
+    { "path": "../../fastify-server/tsconfig.build.json" },
+    { "path": "../../common-types/tsconfig.build.json" },
+    { "path": "../abstract-oauth/tsconfig.build.json" }
+  ]
+}

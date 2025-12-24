@@ -1,0 +1,42 @@
+{
+  "name": "@ergo-faucet/abstract-oauth",
+  "version": "0.1.0",
+  "description": "abstract OAuth utilities for ergo-faucet",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ergo-faucet/ergo-faucet.git"
+  },
+  "license": "GPL-3.0",
+  "author": "ergo-faucet",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
+  "scripts": {
+    "build": "tsc --build tsconfig.build.json",
+    "lint": "eslint --fix . && npm run prettify",
+    "lint:check": "eslint . && npm run prettify:check",
+    "prettify": "prettier --write . --ignore-path ../../../.gitignore",
+    "prettify:check": "prettier --check . --ignore-path ../../../.gitignore",
+    "release": "npm run build && npm publish --access public",
+    "type-check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.9",
+    "typescript": "^5.3.3"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "dependencies": {
+    "@ergo-faucet/common-types": "^0.1.0",
+    "@ergo-faucet/database": "^0.1.0",
+    "@ergo-faucet/fastify-server": "^0.1.0",
+    "@rosen-bridge/abstract-logger": "^3.0.0",
+    "@sinclair/typebox": "^0.34.41",
+    "ioredis": "^5.7.0"
+  }
+}

@@ -1,1 +1,1 @@
-export { userRequestPayload } from './user';
+export { UserData, UserRequestPayload } from './user';

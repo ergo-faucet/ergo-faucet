@@ -3,7 +3,6 @@ import {
   FastifyAPIServer,
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
-
 import {
   PackageAction,
   RequestLimitError,
@@ -29,13 +28,14 @@ import {
   UpdatePackageParams,
   AddAuthMethodsToPackageBody,
 } from './types';
-import { userRequestPayload } from '@ergo-faucet/common-types';
+import { UserRequestPayload } from '@ergo-faucet/common-types';
 import {
   isValidErgoAddress,
   NodeModel,
   TokenNotFoundError,
   InvalidTokenPrecisionError,
 } from '@ergo-faucet/ergo-utils';
+
 import { Network } from '@fleet-sdk/common';
 import { Static } from '@sinclair/typebox';
 import { processAssets } from './utils';
@@ -99,7 +99,7 @@ class PackageController {
       },
       async (request, reply) => {
         const { offset, limit, sort, order, ...options } = request.query;
-        const user = request.user as userRequestPayload;
+        const user = request.user as UserRequestPayload;
 
         try {
           const packages = await this.packageAction.getPackages(
@@ -173,7 +173,7 @@ class PackageController {
 
       async (request, reply) => {
         this.logger.debug(`New request for package ${request.body.packageId}`);
-        const user = request.user as userRequestPayload;
+        const user = request.user as UserRequestPayload;
         const { packageId, destAddress } = request.body;
 
         try {
@@ -269,7 +269,7 @@ class PackageController {
 
       async (request, reply) => {
         try {
-          const user = request.user as userRequestPayload;
+          const user = request.user as UserRequestPayload;
 
           // Validate admin privileges in database
           const isValid = await this.packageAction.validateAdminRequest(
@@ -344,7 +344,7 @@ class PackageController {
         const { packageId } = request.params as Static<
           typeof UpdatePackageParams
         >;
-        const user = request.user as userRequestPayload;
+        const user = request.user as UserRequestPayload;
 
         try {
           // Validate admin privileges in database
@@ -445,7 +445,7 @@ class PackageController {
         const { packageId } = request.params as Static<
           typeof UpdatePackageParams
         >;
-        const user = request.user as userRequestPayload;
+        const user = request.user as UserRequestPayload;
         const authMethods = request.body;
         try {
           // Validate admin privileges in database
