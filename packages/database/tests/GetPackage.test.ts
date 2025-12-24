@@ -39,7 +39,11 @@ describe('PackageAction.getPackages with mock data', () => {
     await sqliteDataSource.synchronize(true);
 
     const userRepo = sqliteDataSource.getRepository(User);
-    user = await userRepo.save({ name: 'test-user' } as User);
+    user = await userRepo.save({
+      name: 'test-user',
+      createdAt: 2000,
+      modifiedAt: 2000,
+    } as User);
 
     const pkgRepo = sqliteDataSource.getRepository(Package);
     const authRepo = sqliteDataSource.getRepository(AuthMethod);
@@ -56,6 +60,8 @@ describe('PackageAction.getPackages with mock data', () => {
         status: 'show',
         delay: pkgMock.delay,
         numberEachUser: pkgMock.numberEachUser,
+        createdAt: 2000,
+        modifiedAt: 2000,
       });
 
       savedPackages.push({ pkg, mock: pkgMock });
@@ -68,6 +74,8 @@ describe('PackageAction.getPackages with mock data', () => {
           amount: a.amount,
           decimals: 0,
           usageDescription: a.usageDescription,
+          createdAt: 2000,
+          modifiedAt: 2000,
         });
       }
 
@@ -75,13 +83,20 @@ describe('PackageAction.getPackages with mock data', () => {
       for (const am of pkgMock.authMethods) {
         let authMethod = await authRepo.findOne({ where: { name: am.name } });
         if (!authMethod) {
-          authMethod = await authRepo.save({ name: am.name, config: '{}' });
+          authMethod = await authRepo.save({
+            name: am.name,
+            config: '{}',
+            createdAt: 2000,
+            modifiedAt: 2000,
+          });
         }
 
         await pamRepo.save({
           package: pkg,
           authMethod,
           order: orderCounter++,
+          createdAt: 2000,
+          modifiedAt: 2000,
         });
 
         if (am.status) {
@@ -90,8 +105,10 @@ describe('PackageAction.getPackages with mock data', () => {
             authMethod,
             package: pkg,
             status: am.status,
-            verifiedAt: new Date(),
+            verifiedAt: Math.floor(Date.now() / 1000),
             metadata: { token: 'dummy', refresh_token: 'dummy' },
+            createdAt: 2000,
+            modifiedAt: 2000,
           });
         }
       }
@@ -111,12 +128,12 @@ describe('PackageAction.getPackages with mock data', () => {
    * - Each package contains correct authMethods with user status applied
    */
   it('should fetch all packages with assets and user-specific auth status', async () => {
-    const result = await action.getPackages(0, 10, 'id', 'asc', user.id);
+    const result = await action.getPackages(0, 10, 'id', 'asc', {}, user.id);
 
-    expect(result).toHaveLength(savedPackages.length);
+    expect(result.packages).toHaveLength(savedPackages.length);
 
     for (const { pkg, mock } of savedPackages) {
-      const pkgDTO = result.find((p) => p.id === pkg.id);
+      const pkgDTO = result.packages.find((p) => p.id === pkg.id);
       expect(pkgDTO).toBeDefined();
       expect(pkgDTO!.name).toBe(mock.name);
 
@@ -152,10 +169,10 @@ describe('PackageAction.getPackages with mock data', () => {
    * - All authMethods should have undefined status
    */
   it('should fetch packages without userId (all statuses undefined)', async () => {
-    const result = await action.getPackages(0, 10, 'id', 'asc');
+    const result = await action.getPackages(0, 10, 'id', 'asc', {});
 
-    expect(result).toHaveLength(savedPackages.length);
-    for (const pkg of result) {
+    expect(result.packages).toHaveLength(savedPackages.length);
+    for (const pkg of result.packages) {
       for (const am of pkg.authMethods) {
         expect(am.status).toBeUndefined();
       }
@@ -172,10 +189,10 @@ describe('PackageAction.getPackages with mock data', () => {
    * - Returned package should be the second one in savedPackages
    */
   it('should fetch packages with limit and offset', async () => {
-    const result = await action.getPackages(1, 1, 'id', 'asc', user.id);
+    const result = await action.getPackages(1, 1, 'id', 'asc', {}, user.id);
 
-    expect(result).toHaveLength(1);
-    expect(result[0].id).toBe(savedPackages[1].pkg.id);
+    expect(result.packages).toHaveLength(1);
+    expect(result.packages[0].id).toBe(savedPackages[1].pkg.id);
   });
 
   /**
@@ -187,12 +204,12 @@ describe('PackageAction.getPackages with mock data', () => {
    * - Returned package IDs should match savedPackages sorted descending
    */
   it('should fetch packages sorted by id desc', async () => {
-    const result = await action.getPackages(0, 10, 'id', 'desc', user.id);
+    const result = await action.getPackages(0, 10, 'id', 'desc', {}, user.id);
 
     const sortedIds = [...savedPackages.map((s) => s.pkg.id)].sort(
       (a, b) => b - a,
     );
-    const resultIds = result.map((p) => p.id);
+    const resultIds = result.packages.map((p) => p.id);
     expect(resultIds).toEqual(sortedIds);
   });
 });

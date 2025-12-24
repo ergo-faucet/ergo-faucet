@@ -24,4 +24,10 @@ export class AuthMethod {
 
   @OneToMany(() => UserAuthStatus, (status) => status.authMethod)
   userAuthStatuses!: Relation<UserAuthStatus[]>;
+
+  @Column({ type: 'int' })
+  createdAt!: number;
+
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

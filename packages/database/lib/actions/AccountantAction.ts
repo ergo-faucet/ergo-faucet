@@ -67,7 +67,7 @@ class AccountantAction {
     );
     const requests = await this.userRequestRepository.find({
       where: [{ status: 'pending' }, { status: 'submitted' }],
-      order: { id: 'asc' }, // From oldest to newest request
+      order: { createdAt: 'asc' }, // From oldest to newest request
       relations: ['package', 'package.assets'],
     });
     this.logger.info(`Fetched ${requests.length} unpaid user requests.`);
@@ -111,6 +111,7 @@ class AccountantAction {
     userRequest.txSerialized = txSerialized ? txSerialized : null;
     userRequest.txId = txId ? txId : null;
     userRequest.numberOfTries = numberOfTries;
+    userRequest.modifiedAt = Math.floor(Date.now() / 1000);
 
     // Save updated user request
     await this.userRequestRepository.save(userRequest);
@@ -145,8 +146,10 @@ class AccountantAction {
       );
       return;
     }
+
     // Update creation height
     userRequest.creationHeight = creationHeight;
+    userRequest.modifiedAt = Math.floor(Date.now() / 1000);
 
     // Save updated user request
     await this.userRequestRepository.save(userRequest);

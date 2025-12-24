@@ -3,14 +3,16 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1758541946064 implements MigrationInterface {
-  name = 'Migration1758541946064';
+export class Migration1762941030485 implements MigrationInterface {
+  name = 'Migration1762941030485';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
             CREATE TABLE "user_address_entity" (
                 "id" SERIAL NOT NULL,
                 "value" character varying NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer,
                 CONSTRAINT "UQ_bbfe7dadd3cd07bbcc25b559ad1" UNIQUE ("value"),
                 CONSTRAINT "PK_0b981d423406bfb13aa34c7dfd8" PRIMARY KEY ("id")
@@ -19,13 +21,14 @@ export class Migration1758541946064 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_request_entity" (
                 "id" SERIAL NOT NULL,
-                "timestamp" integer NOT NULL,
                 "destinationAddress" character varying NOT NULL,
                 "status" text NOT NULL,
                 "txId" text,
                 "signed_tx" text,
                 "creationHeight" integer,
                 "numberOfTries" integer NOT NULL DEFAULT '0',
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer,
                 "packageId" integer,
                 CONSTRAINT "PK_1a06e346f47b05bcfc45ef748f9" PRIMARY KEY ("id")
@@ -39,7 +42,9 @@ export class Migration1758541946064 implements MigrationInterface {
                 "google_id" character varying,
                 "name" character varying,
                 "metadata" text,
-                "lastLogin" bigint,
+                "lastLogin" integer,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "isAdmin" boolean NOT NULL DEFAULT false,
                 CONSTRAINT "UQ_d21d8b1697402c5288441fe9322" UNIQUE ("discord_id"),
                 CONSTRAINT "UQ_c90663850593629f210649c7891" UNIQUE ("x_id"),
@@ -50,10 +55,12 @@ export class Migration1758541946064 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_auth_status_entity" (
                 "id" SERIAL NOT NULL,
-                "verifiedAt" date NOT NULL,
+                "verifiedAt" integer NOT NULL,
                 "status" text NOT NULL,
-                "expiresAt" date,
+                "expiresAt" integer,
                 "metadata" text,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "userId" integer NOT NULL,
                 "authMethodId" integer NOT NULL,
                 "packageId" integer,
@@ -65,6 +72,8 @@ export class Migration1758541946064 implements MigrationInterface {
                 "id" SERIAL NOT NULL,
                 "name" character varying NOT NULL,
                 "config" text NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 CONSTRAINT "PK_7b41d2d1aef333041229308da22" PRIMARY KEY ("id")
             )
         `);
@@ -72,6 +81,8 @@ export class Migration1758541946064 implements MigrationInterface {
             CREATE TABLE "package_auth_method_entity" (
                 "id" SERIAL NOT NULL,
                 "order" integer,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "packageId" integer,
                 "authMethodId" integer,
                 CONSTRAINT "UQ_0ae66188ac3392947bf84cae271" UNIQUE ("packageId", "authMethodId", "order"),
@@ -89,6 +100,8 @@ export class Migration1758541946064 implements MigrationInterface {
                 "close_at" integer,
                 "delay" character varying NOT NULL DEFAULT '0',
                 "number_each_user" integer NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 CONSTRAINT "PK_4a054211f29714c2bdbbccd9fea" PRIMARY KEY ("id")
             )
         `);
@@ -100,6 +113,8 @@ export class Migration1758541946064 implements MigrationInterface {
                 "amount" character varying NOT NULL,
                 "decimals" integer NOT NULL,
                 "usageDescription" text NOT NULL,
+                "createdAt" integer NOT NULL,
+                "modifiedAt" integer NOT NULL,
                 "packageId" integer,
                 CONSTRAINT "PK_038b7b28b83db2205747ef9912e" PRIMARY KEY ("id")
             )

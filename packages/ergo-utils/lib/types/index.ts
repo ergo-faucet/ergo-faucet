@@ -9,3 +9,4 @@ export {
   tokenByIdResponse,
   tokenByIdResponseSuccess,
 } from './apiResponses';
+export type { WalletConfig } from './WalletConfig';

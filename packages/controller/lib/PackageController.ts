@@ -98,7 +98,7 @@ class PackageController {
         },
       },
       async (request, reply) => {
-        const { offset, limit, sort, order } = request.query;
+        const { offset, limit, sort, order, ...options } = request.query;
         const user = request.user as UserRequestPayload;
 
         try {
@@ -107,6 +107,7 @@ class PackageController {
             limit,
             sort,
             order,
+            options,
             user?.userId,
           );
 

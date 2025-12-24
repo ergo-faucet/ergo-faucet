@@ -12,6 +12,8 @@ export type {
   PackageType,
   AuthMethodStatus,
   RequestDTO,
+  PackageList,
+  RequestList,
 } from './DTOs';
 export {
   NotFoundError,
@@ -19,3 +21,4 @@ export {
   UnexpectedError,
   NotAvailableError,
 } from './errors';
+export type { FilterOptions } from './types';

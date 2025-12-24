@@ -16,6 +16,8 @@ export const mockProccessedAssets = [
     amount: '1000000000',
     decimals: 9,
     usageDescription: 'Test ERG',
+    createdAt: new Date('2024-01-15T10:00:00.000Z'),
+    modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
   },
   {
     tokenId: 'TOKEN1',
@@ -23,5 +25,7 @@ export const mockProccessedAssets = [
     amount: '10000',
     decimals: 2,
     usageDescription: 'Test token',
+    createdAt: new Date('2024-01-15T10:00:00.000Z'),
+    modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
   },
 ];

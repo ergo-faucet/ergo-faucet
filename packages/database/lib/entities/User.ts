@@ -66,8 +66,14 @@ export class User {
     };
   };
 
-  @Column({ type: 'bigint', nullable: true })
-  lastLogin!: number | null;
+  @Column({ type: 'int', nullable: true })
+  lastLogin!: number;
+
+  @Column({ type: 'int' })
+  createdAt!: number;
+
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 
   @Column({ type: 'boolean', default: false })
   isAdmin!: boolean;

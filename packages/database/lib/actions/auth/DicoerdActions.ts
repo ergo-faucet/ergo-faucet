@@ -82,6 +82,7 @@ class DiscordAction extends AbstractAuthAction {
 
     user.discord_id = userData.userId;
     user.name = user.name ?? userData.name ?? undefined;
+    user.modifiedAt = Math.floor(Date.now() / 1000);
     user.metadata = {
       ...user.metadata,
       discord: {
@@ -97,7 +98,7 @@ class DiscordAction extends AbstractAuthAction {
       `Linked Discord ID ${userData.userId} to user ID ${userId}`,
     );
 
-    const expiresAt = new Date(Date.now() + expiresTime * 1000);
+    const expiresAt = Math.floor(Date.now() / 1000) + expiresTime;
 
     await this.saveOrUpdateAuthStatus(
       savedUser,

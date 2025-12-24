@@ -50,4 +50,10 @@ export class Package {
 
   @OneToMany(() => UserRequest, (request) => request.package)
   requests!: Relation<UserRequest[]>;
+
+  @Column({ type: 'int' })
+  createdAt!: number;
+
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

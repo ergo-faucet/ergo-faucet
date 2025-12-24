@@ -30,4 +30,10 @@ export class PackageAuthMethod {
 
   @Column({ type: 'int', nullable: true })
   order!: number;
+
+  @Column({ type: 'int' })
+  createdAt!: number;
+
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

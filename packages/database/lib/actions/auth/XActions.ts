@@ -82,6 +82,7 @@ class XAction extends AbstractAuthAction {
 
     user.x_id = userData.userId;
     user.name = user.name ?? userData.name ?? undefined;
+    user.modifiedAt = Math.floor(Date.now() / 1000);
     user.metadata = {
       ...user.metadata,
       x: {
@@ -96,7 +97,7 @@ class XAction extends AbstractAuthAction {
       `Linked X-platform ID ${userData.userId} to user ID ${userId}`,
     );
 
-    const expiresAt = new Date(Date.now() + expiresTime * 1000);
+    const expiresAt = Math.floor(Date.now() / 1000) + expiresTime;
     await this.saveOrUpdateAuthStatus(
       savedUser,
       expiresAt,

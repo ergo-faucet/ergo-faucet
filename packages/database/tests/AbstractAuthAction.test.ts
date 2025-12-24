@@ -36,6 +36,8 @@ describe('AbstractAuthAction expire methods with real DB', () => {
     authMethod = await authRepo.save({
       name: 'test-auth',
       config: '{}',
+      createdAt: 2000,
+      modifiedAt: 2000,
     });
     (action as unknown as { authMethod: AuthMethod }).authMethod = authMethod;
   });
@@ -57,9 +59,21 @@ describe('AbstractAuthAction expire methods with real DB', () => {
     const statusRepo = sqliteDataSource.getRepository(UserAuthStatus);
 
     // Create test users
-    const u1 = await userRepo.save({ name: 'u1' } as User);
-    const u2 = await userRepo.save({ name: 'u2' } as User);
-    const u3 = await userRepo.save({ name: 'u3' } as User);
+    const u1 = await userRepo.save({
+      name: 'u1',
+      createdAt: 2000,
+      modifiedAt: 2000,
+    } as User);
+    const u2 = await userRepo.save({
+      name: 'u2',
+      createdAt: 2000,
+      modifiedAt: 2000,
+    } as User);
+    const u3 = await userRepo.save({
+      name: 'u3',
+      createdAt: 2000,
+      modifiedAt: 2000,
+    } as User);
 
     // Create test auth records
     await statusRepo.save([
@@ -67,25 +81,31 @@ describe('AbstractAuthAction expire methods with real DB', () => {
         user: u1,
         authMethod,
         status: 'passed',
-        verifiedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        verifiedAt: Math.floor(Date.now() / 1000) - 24 * 60 * 60,
         metadata: { token: 't1', refresh_token: 'r1' },
-        expiresAt: new Date(Date.now() - 24 * 60 * 60 * 1000), // yesterday
+        expiresAt: Math.floor(Date.now() / 1000) - 24 * 60 * 60, // yesterday
+        createdAt: 2000,
+        modifiedAt: 2000,
       },
       {
         user: u2,
         authMethod,
         status: 'passed',
-        verifiedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        verifiedAt: Math.floor(Date.now() / 1000) - 24 * 60 * 60,
         metadata: { token: 't2', refresh_token: 'r2' },
-        expiresAt: new Date(Date.now() + 24 * 60 * 60 * 1000), // tomorrow
+        expiresAt: Math.floor(Date.now() / 1000) + 24 * 60 * 60, // tomorrow
+        createdAt: 2000,
+        modifiedAt: 2000,
       },
       {
         user: u3,
         authMethod,
         status: 'passed',
-        verifiedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        verifiedAt: Math.floor(Date.now() / 1000) - 24 * 60 * 60,
         metadata: { token: 't3', refresh_token: 'r3' },
-        expiresAt: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000), // 2 days ago
+        expiresAt: Math.floor(Date.now() / 1000) - 2 * 24 * 60 * 60, // 2 days ago
+        createdAt: 2000,
+        modifiedAt: 2000,
       },
     ]);
 

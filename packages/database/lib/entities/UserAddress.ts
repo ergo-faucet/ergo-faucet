@@ -21,4 +21,10 @@ export class UserAddress {
 
   @Column({ type: 'varchar' })
   value!: string;
+
+  @Column({ type: 'int' })
+  createdAt!: number;
+
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

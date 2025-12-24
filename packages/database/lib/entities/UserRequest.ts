@@ -28,9 +28,6 @@ export class UserRequest {
   @JoinColumn()
   package!: Relation<Package>;
 
-  @Column({ type: 'int' })
-  timestamp!: number;
-
   @Column({ type: 'varchar' })
   destinationAddress!: string;
 
@@ -48,4 +45,10 @@ export class UserRequest {
 
   @Column({ type: 'int', default: 0 })
   numberOfTries!: number;
+
+  @Column({ type: 'int' })
+  createdAt!: number;
+
+  @Column({ type: 'int' })
+  modifiedAt!: number;
 }

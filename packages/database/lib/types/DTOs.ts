@@ -40,7 +40,17 @@ export interface RequestDTO {
   packageId: number;
   packageName: string;
   status: RequestStaus;
-  timestamp: number;
+  createdAt: number;
   destinationAddress: string;
   txId?: string;
+}
+
+export interface RequestList {
+  total: number;
+  requests: RequestDTO[];
+}
+
+export interface PackageList {
+  total: number;
+  packages: PackageDTO[];
 }
