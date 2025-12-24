@@ -2,6 +2,7 @@ import fastify, { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
 import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
 import fastifyCors from '@fastify/cors';
+import type { FastifyCorsOptions } from '@fastify/cors';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { ServerConfig, FastifySeverInstance, CookieConfig } from './types';
 import jwt from '@fastify/jwt';
@@ -24,7 +25,8 @@ export class FastifyAPIServer {
   private fastify: FastifySeverInstance;
   private readonly port: number;
   private readonly host: string;
-  private corsOrigins: string | string[];
+  private corsOrigins: string[];
+  private corsOriginRegexes: RegExp[];
   private swagger: FastifyDynamicSwaggerOptions;
   private swaggerUi: FastifySwaggerUiOptions;
   private jwtSecret: string;
@@ -42,7 +44,10 @@ export class FastifyAPIServer {
     this.logger = logger ?? new DummyLogger();
     this.port = config.port;
     this.host = config.host;
-    this.corsOrigins = config.corsOrigins;
+    this.corsOrigins = Array.isArray(config.corsOrigins)
+      ? config.corsOrigins
+      : [config.corsOrigins];
+    this.corsOriginRegexes = this.compileCorsRegexes(this.corsOrigins);
     this.swagger = config.swagger;
     this.swaggerUi = config.swaggerUi;
     this.jwtSecret = config.jwtSecret;
@@ -71,7 +76,6 @@ export class FastifyAPIServer {
    * Initializes the singleton instance with the provided configuration.
    * @param config - Server configuration parameters
    * @param logger - The logger of the class
-   * @returns The initialized FastifyAPIServer instance
    */
   public static initialize = async (
     config: ServerConfig,
@@ -84,68 +88,112 @@ export class FastifyAPIServer {
     }
     this.instance = new FastifyAPIServer(config, logger);
 
-    // Register CORS
-    if (
-      Array.isArray(this.instance.corsOrigins) &&
-      this.instance.corsOrigins.length === 1 &&
-      this.instance.corsOrigins[0] === '*'
-    ) {
-      await this.instance.fastify.register(fastifyCors, {});
-    } else {
-      await this.instance.fastify.register(fastifyCors, {
-        credentials: true,
-        origin: (origin, callback) => {
-          if (!origin) return callback(null, true);
-          const allowedOrigins = Array.isArray(this.instance.corsOrigins)
-            ? this.instance.corsOrigins
-            : [this.instance.corsOrigins];
+    await this.instance.registerCors();
 
-          const isAllowed = allowedOrigins.some((pattern) => {
-            if (pattern === origin) return true;
+    await this.instance.registerCookie();
 
-            const regexPattern =
-              '^' +
-              pattern
-                .split('*')
-                .map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
-                .join('.*') +
-              '$';
-            const regex = new RegExp(regexPattern);
+    await this.instance.registerJwt();
 
-            return regex.test(origin);
-          });
+    await this.instance.registerSwagger();
 
-          if (isAllowed) return callback(null, true);
+    await this.instance.registerRootRedirect();
 
-          return callback(new Error('Not allowed by CORS'), false);
-        },
-      });
-    }
-
-    await this.instance.fastify.register(cookie, {
-      secret: this.instance.cookieConfig.secret,
-    });
-
-    await this.instance.fastify.register(jwt, {
-      secret: this.instance.jwtSecret,
-      cookie: {
-        cookieName: this.instance.cookieConfig.name,
-        signed: this.instance.cookieConfig.signed,
-      },
-      sign: { expiresIn: this.instance.jwtExpiration },
-    });
-
-    await this.instance.fastify.register(fastifySwagger, this.instance.swagger);
-    await this.instance.fastify.register(
-      fastifySwaggerUi,
-      this.instance.swaggerUi,
-    );
-    this.instance.fastify.get('/', async (_, reply) => {
-      return reply.redirect(this.instance.swaggerUi.routePrefix || '');
-    });
+    await this.instance.register(this.instance.infoRoute, '/info');
 
     this.instance.logger.info(`FastifyAPIServer initialized successfully.`);
-    await this.instance.register(this.instance.infoRoute, '/info');
+  };
+
+  /**
+   * Registers CORS configuration for the Fastify server.
+   * Supports wildcard and pattern-based origins.
+   */
+  private registerCors = async (): Promise<void> => {
+    if (this.corsOrigins.length === 1 && this.corsOrigins[0] === '*') {
+      await this.fastify.register(fastifyCors, {});
+      return;
+    }
+
+    await this.fastify.register(fastifyCors, {
+      credentials: true,
+      origin: this.corsOriginValidator,
+    });
+  };
+
+  /**
+   * Registers cookie support for Fastify.
+   */
+  private registerCookie = async (): Promise<void> => {
+    await this.fastify.register(cookie, {
+      secret: this.cookieConfig.secret,
+    });
+  };
+
+  /**
+   * Registers JWT authentication support.
+   */
+  private registerJwt = async (): Promise<void> => {
+    await this.fastify.register(jwt, {
+      secret: this.jwtSecret,
+      cookie: {
+        cookieName: this.cookieConfig.name,
+        signed: this.cookieConfig.signed,
+      },
+      sign: { expiresIn: this.jwtExpiration },
+    });
+  };
+
+  /**
+   * Registers Swagger and Swagger UI plugins.
+   */
+  private registerSwagger = async (): Promise<void> => {
+    await this.fastify.register(fastifySwagger, this.swagger);
+    await this.fastify.register(fastifySwaggerUi, this.swaggerUi);
+  };
+
+  /**
+   * Registers root route redirecting to Swagger UI.
+   */
+  private registerRootRedirect = async (): Promise<void> => {
+    this.fastify.get('/', async (_, reply) => {
+      return reply.redirect(this.swaggerUi.routePrefix || '');
+    });
+  };
+
+  /**
+   * Compiles CORS origin patterns into RegExp instances.
+   * @param origins - List of allowed origin patterns
+   * @returns Array of compiled RegExp
+   */
+  private compileCorsRegexes = (origins: string[]): RegExp[] => {
+    return origins.map((pattern) => {
+      if (pattern === '*') return /.*/;
+
+      const regexPattern =
+        '^' +
+        pattern
+          .split('*')
+          .map((s) => s.replace(/[.+?^${}()|[\]\\]/g, '\\$&'))
+          .join('.*') +
+        '$';
+
+      return new RegExp(regexPattern);
+    });
+  };
+
+  /**
+   * Validates request origin against precompiled CORS regexes.
+   */
+  private corsOriginValidator: FastifyCorsOptions['origin'] = (
+    origin,
+    callback,
+  ) => {
+    if (!origin) return callback(null, true);
+
+    const isAllowed = this.corsOriginRegexes.some((regex) =>
+      regex.test(origin),
+    );
+
+    callback(isAllowed ? null : new Error('Not allowed by CORS'), isAllowed);
   };
 
   /**
@@ -362,7 +410,7 @@ export class FastifyAPIServer {
 
   public errorHandler = (
     error: FastifyError,
-    request: FastifyRequest,
+    _: FastifyRequest,
     reply: FastifyReply,
   ) => {
     if (error.validation) {
