@@ -25,7 +25,6 @@ export class FastifyAPIServer {
   private fastify: FastifySeverInstance;
   private readonly port: number;
   private readonly host: string;
-  private corsOrigins: string[];
   private corsOriginRegexes: RegExp[];
   private swagger: FastifyDynamicSwaggerOptions;
   private swaggerUi: FastifySwaggerUiOptions;
@@ -44,10 +43,10 @@ export class FastifyAPIServer {
     this.logger = logger ?? new DummyLogger();
     this.port = config.port;
     this.host = config.host;
-    this.corsOrigins = Array.isArray(config.corsOrigins)
+    const origins = Array.isArray(config.corsOrigins)
       ? config.corsOrigins
       : [config.corsOrigins];
-    this.corsOriginRegexes = this.compileCorsRegexes(this.corsOrigins);
+    this.corsOriginRegexes = this.compileCorsRegexes(origins);
     this.swagger = config.swagger;
     this.swaggerUi = config.swaggerUi;
     this.jwtSecret = config.jwtSecret;
@@ -108,7 +107,7 @@ export class FastifyAPIServer {
    * Supports wildcard and pattern-based origins.
    */
   private registerCors = async (): Promise<void> => {
-    if (this.corsOrigins.length === 1 && this.corsOrigins[0] === '*') {
+    if (this.corsOriginRegexes[0]?.source === '.*') {
       await this.fastify.register(fastifyCors, {});
       return;
     }
