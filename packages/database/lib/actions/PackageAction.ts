@@ -35,6 +35,7 @@ import {
   NotAvailableError,
   FilterOptions,
   PackageList,
+  DuplicateItemError,
 } from '../types';
 
 class PackageAction {
@@ -213,6 +214,7 @@ class PackageAction {
 
     const pkg = await this.packageRepository.findOne({
       where: { id: packageId },
+      relations: ['packageAuthMethods', 'packageAuthMethods.authMethod'],
     });
 
     if (!pkg) {
@@ -613,6 +615,51 @@ class PackageAction {
         `Some auth methods not found for IDs: ${JSON.stringify(notFoundAuths)}`,
       );
     }
+  };
+
+  /**
+   * Ensure none of the provided auth method IDs are already attached to the package.
+   *
+   * @param pkg - Package entity to validate
+   * @param authMethods - Array of auth method IDs intended to be added
+   * @throws {DuplicateItemError} when one or more auth method IDs are already present on the package
+   */
+  avoidDuplicateAuthMethod = (pkg: Package, authMethods: number[]): void => {
+    // Validate input early
+    if (!Array.isArray(authMethods) || authMethods.length === 0) {
+      this.logger.debug(
+        `No auth methods provided to check for duplicates on package id=${pkg.id}`,
+      );
+      return;
+    }
+
+    this.logger.debug(
+      `Checking for existing auth methods on package id=${pkg.id} for candidate ids=${JSON.stringify(authMethods)}`,
+    );
+
+    const existingAuthIds = new Set<number>(
+      (pkg.packageAuthMethods ?? []).map((pam) => pam.authMethod.id),
+    );
+
+    // Determine which of the requested ids already exist on the package
+    const duplicates = authMethods.filter((id) => existingAuthIds.has(id));
+
+    if (duplicates.length === 0) {
+      this.logger.debug(
+        `No duplicate auth methods found for package id=${pkg.id}`,
+      );
+      return;
+    }
+
+    this.logger.debug(
+      `Duplicate auth methods detected for package id=${pkg.id}: ${JSON.stringify(
+        duplicates,
+      )}`,
+    );
+
+    throw new DuplicateItemError(
+      `Auth method(s) already exist on package ${pkg.id}: ${JSON.stringify(duplicates)}`,
+    );
   };
 
   /**

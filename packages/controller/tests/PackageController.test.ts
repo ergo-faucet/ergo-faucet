@@ -29,6 +29,7 @@ import {
   mockProccessedAssets,
   requestPackagePayload,
 } from './testData';
+import { DuplicateItemError } from '@ergo-faucet/database/dist/types';
 
 describe('PackageController', () => {
   beforeEach(() => {
@@ -1141,6 +1142,44 @@ describe('PackageController', () => {
     });
 
     /**
+     * Test for duplicate auth methods in POST /packages/:packageId/auths
+     * @target PackageController.addAuthMethodsToPackageRoute
+     * @scenario
+     * - POST /packages/1/auths with an already existent auth method ID
+     * @expected
+     * - returns 400 with DUPLICATE_AUTH error
+     */
+    it('should return 400 for duplicate auth methods', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+      mockedPackageAction.getPackageById.mockResolvedValue(mockPackage);
+      mockedPackageAction.validateAuthMethods.mockImplementation(() => {});
+      mockedPackageAction.avoidDuplicateAuthMethod.mockImplementation(() => {
+        throw new DuplicateItemError(
+          `Auth method(s) already exist on package ${mockPackage.id}: ${JSON.stringify([1, 2])}`,
+        );
+      });
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages/1/auths',
+        payload: [{ id: 1 }, { id: 2 }],
+      });
+
+      expect(mockedPackageAction.validateAuthMethods).toHaveBeenCalledWith([
+        1, 2,
+      ]);
+      expect(mockedPackageAction.avoidDuplicateAuthMethod).toHaveBeenCalledWith(
+        mockPackage,
+        [1, 2],
+      );
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'Auth method(s) already exist on package 101: [1,2]',
+        code: 'DUPLICATE_AUTH',
+      });
+    });
+
+    /**
      * Test for internal server error in POST /packages/:packageId/auths
      * @target PackageController.addAuthMethodsToPackageRoute
      * @scenario
@@ -1152,6 +1191,7 @@ describe('PackageController', () => {
       mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
       mockedPackageAction.getPackageById.mockResolvedValue(mockPackage);
       mockedPackageAction.validateAuthMethods.mockImplementation(() => {});
+      mockedPackageAction.avoidDuplicateAuthMethod.mockImplementation(() => {});
       mockedPackageAction.addPackageAuthMethods.mockRejectedValue(
         new Error('Database error'),
       );

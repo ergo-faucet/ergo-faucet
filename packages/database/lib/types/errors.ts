@@ -25,3 +25,10 @@ export class NotAvailableError extends Error {
     this.name = 'Not Available Error';
   }
 }
+
+export class DuplicateItemError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'Duplicate Item Error';
+  }
+}
