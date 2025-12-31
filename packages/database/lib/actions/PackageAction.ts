@@ -626,7 +626,7 @@ class PackageAction {
    */
   avoidDuplicateAuthMethod = (pkg: Package, authMethods: number[]): void => {
     // Validate input early
-    if (!Array.isArray(authMethods) || authMethods.length === 0) {
+    if (authMethods.length === 0) {
       this.logger.debug(
         `No auth methods provided to check for duplicates on package id=${pkg.id}`,
       );
