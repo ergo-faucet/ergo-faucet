@@ -156,6 +156,9 @@ class PackageAction {
 
     for (const pkg of packages[0]) {
       const authMethods: AuthMethodDTO[] = [];
+      let lastRequest: UserRequest | undefined;
+      let totalRequestCount: number | undefined;
+
       for (const pam of pkg.packageAuthMethods) {
         let userStatus: AuthMethodStatus;
 
@@ -183,6 +186,27 @@ class PackageAction {
           status: userStatus,
         });
       }
+
+      if (userId) {
+        const userRequests = await this.userRequestRepository.find({
+          where: {
+            user: { id: userId },
+            package: { id: pkg.id },
+          },
+        });
+
+        if (userRequests.length === 0) {
+          totalRequestCount = 0;
+          lastRequest = undefined;
+        } else {
+          totalRequestCount = userRequests.filter(
+            (ur) => ur.status !== 'failed',
+          ).length;
+
+          lastRequest = userRequests.reduce((a, b) => (a.id > b.id ? a : b));
+        }
+      }
+
       result.push({
         id: pkg.id,
         name: pkg.name,
@@ -194,6 +218,9 @@ class PackageAction {
         numberEachUser: pkg.numberEachUser,
         assets: pkg.assets,
         authMethods,
+        totalRequestCount,
+        lastRequestStatus: lastRequest?.status,
+        lastRequestTime: lastRequest?.createdAt,
       });
     }
 
