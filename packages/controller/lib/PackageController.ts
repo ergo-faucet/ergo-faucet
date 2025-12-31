@@ -39,6 +39,7 @@ import {
 import { Network } from '@fleet-sdk/common';
 import { Static } from '@sinclair/typebox';
 import { processAssets } from './utils';
+import { DuplicateItemError } from '@ergo-faucet/database/dist/types';
 
 class PackageController {
   private readonly logger: AbstractLogger;
@@ -466,6 +467,12 @@ class PackageController {
             authMethods.map((am) => am.id),
           );
 
+          // Avoid duplicate auth methos
+          this.packageAction.avoidDuplicateAuthMethod(
+            pkg,
+            authMethods.map((am) => am.id),
+          );
+
           // Save to database
           const addedAuthIds = await this.packageAction.addPackageAuthMethods(
             authMethods,
@@ -495,6 +502,10 @@ class PackageController {
             return reply
               .status(400)
               .send({ error: error.message, code: 'AUTH_NOT_FOUND' });
+          } else if (error instanceof DuplicateItemError) {
+            return reply
+              .status(400)
+              .send({ error: error.message, code: 'DUPLICATE_AUTH' });
           } else {
             this.logger.error(`Unexpected error during adding package`, {
               message: error instanceof Error ? error.message : error,

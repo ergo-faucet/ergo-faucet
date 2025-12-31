@@ -20,5 +20,6 @@ export {
   RequestLimitError,
   UnexpectedError,
   NotAvailableError,
+  DuplicateItemError,
 } from './errors';
 export type { FilterOptions } from './types';

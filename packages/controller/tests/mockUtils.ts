@@ -13,7 +13,7 @@ import {
 } from '@ergo-faucet/fastify-server';
 
 /**
- * A mocked PackageAction instance with a spyable getPackages method.
+ * A mocked PackageAction instance with spyable methods.
  */
 export const mockedPackageAction: PackageAction & {
   getPackages: ReturnType<typeof vi.fn>;
@@ -27,6 +27,7 @@ export const mockedPackageAction: PackageAction & {
   getPackageById: ReturnType<typeof vi.fn>;
   addPackageAuthMethods: ReturnType<typeof vi.fn>;
   addAssets: ReturnType<typeof vi.fn>;
+  avoidDuplicateAuthMethod: ReturnType<typeof vi.fn>;
 } = {
   getPackages: vi.fn(),
   isPackageAvailableForUser: vi.fn(),
@@ -39,6 +40,7 @@ export const mockedPackageAction: PackageAction & {
   getPackageById: vi.fn(),
   addPackageAuthMethods: vi.fn(),
   addAssets: vi.fn(),
+  avoidDuplicateAuthMethod: vi.fn(),
   // eslint-disable-next-line
 } as any;
 
