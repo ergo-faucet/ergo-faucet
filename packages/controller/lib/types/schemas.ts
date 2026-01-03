@@ -81,6 +81,16 @@ export const PackageSchema = Type.Object({
   numberEachUser: Type.Number({ minimum: 0 }),
   assets: Type.Array(AssetSchema),
   authMethods: Type.Array(AuthMethodSchema),
+  totalRequestCount: Type.Optional(Type.Number({ minimum: 0 })),
+  lastRequestStatus: Type.Optional(
+    Type.Union([
+      Type.Literal('paid'),
+      Type.Literal('submitted'),
+      Type.Literal('pending'),
+      Type.Literal('failed'),
+    ]),
+  ),
+  lastRequestTime: Type.Optional(Type.Number({ minimum: 0 })),
 });
 
 export const GetPackagesResponse200 = Type.Object({

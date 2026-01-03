@@ -33,6 +33,9 @@ export interface PackageDTO {
   numberEachUser: number;
   assets: AssetDTO[];
   authMethods: AuthMethodDTO[];
+  totalRequestCount?: number;
+  lastRequestTime?: number;
+  lastRequestStatus?: 'paid' | 'failed' | 'pending' | 'submitted';
 }
 
 export interface RequestDTO {
