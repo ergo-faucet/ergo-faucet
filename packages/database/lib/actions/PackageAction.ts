@@ -189,6 +189,7 @@ class PackageAction {
 
       if (userId) {
         const userRequests = await this.userRequestRepository.find({
+          order: { createdAt: 'DESC' },
           where: {
             user: { id: userId },
             package: { id: pkg.id },
@@ -203,7 +204,7 @@ class PackageAction {
             (ur) => ur.status !== 'failed',
           ).length;
 
-          lastRequest = userRequests.reduce((a, b) => (a.id > b.id ? a : b));
+          lastRequest = userRequests[0];
         }
       }
 
