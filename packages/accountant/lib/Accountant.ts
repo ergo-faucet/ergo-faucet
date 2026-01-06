@@ -132,19 +132,6 @@ class Accountant {
         return;
       }
 
-      // Mark as paid if no assets are present
-      if (request.package.assets.length === 0) {
-        this.logger.debug(
-          `Request with ID: ${request.id} has no assets. Marking as paid.`,
-        );
-        await this.accountantAction.updateUserRequestPaymentInfo(
-          request.id,
-          'paid',
-          request.numberOfTries,
-        );
-        return;
-      }
-
       const { serializedTx, transactionId } =
         await this.processTransaction(request);
       await this.accountantAction.updateUserRequestPaymentInfo(
