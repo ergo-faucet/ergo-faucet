@@ -302,6 +302,12 @@ class PackageAction {
       );
     }
 
+    if (pkg.assets.length === 0) {
+      throw new NotAvailableError(
+        `Package ${packageId} has no assets available.`,
+      );
+    }
+
     const userRequests = await this.userRequestRepository.find({
       where: {
         package: { id: packageId },
