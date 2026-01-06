@@ -132,6 +132,7 @@ class Accountant {
         return;
       }
 
+      // Mark as paid if no assets are present
       if (request.package.assets.length === 0) {
         this.logger.debug(
           `Request with ID: ${request.id} has no assets. Marking as paid.`,
