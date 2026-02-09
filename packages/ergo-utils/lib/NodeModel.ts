@@ -8,6 +8,13 @@ import {
 } from './types';
 import { Box, ensureUTxOBigInt, TokenTargetAmount } from '@fleet-sdk/common';
 import { BoxSelector } from '@fleet-sdk/core';
+import {
+  AvlTree$,
+  BlockchainParameters,
+  BlockchainStateContext,
+  GroupElement$,
+} from 'sigmastate-js/main';
+import { Header } from '@fleet-sdk/mock-chain';
 
 export class NodeModel {
   private static instance: NodeModel;
@@ -527,8 +534,87 @@ export class NodeModel {
       }
     } while (receivedBoxes.length); //till no more boxes are there
 
-    // if user didn't pay enough
+    // if user didn't pay
     this.logger.debug('User has not paid the required ergs and assets.');
     return false;
+  };
+
+  /**
+   * Return the first header id for a given block height.
+   * @param height - block height
+   * @returns header id (hex string)
+   */
+  public getBlockHeader = async (height: number): Promise<string> => {
+    const headerId: string[] = JSON.parse(
+      (await this.axiosInstance.get(`blocks/at/${height}`)).data,
+    );
+    return headerId[0];
+  };
+
+  /**
+   * Fetch a block by its header id.
+   * @param blockHeader - header id (hex string)
+   * @returns block parameters
+   */
+  public getBlock = async (blockHeader: string) => {
+    const blockParam: BlockchainParameters = JSON.parse(
+      (await this.axiosInstance.get(`blocks/${blockHeader}`)).data,
+    );
+
+    return blockParam;
+  };
+
+  /**
+   * Get blockchain parameters from the node .
+   * @returns BlockchainParameters
+   */
+  public getBlockchainParameters = async () => {
+    const response = (await this.axiosInstance.get('info')).data;
+    const blockchainParameters: BlockchainParameters = response.parameters;
+    return blockchainParameters;
+  };
+
+  /**
+   * Fetch recent headers from currentHeight-10 to currentHeight.
+   * Newest header returned first.
+   * @returns Header[]
+   */
+  public getHeaders = async (): Promise<Header[]> => {
+    const currentHeight = await this.getCurrentBlockchainHeight();
+    const headers: Header[] = (
+      await this.axiosInstance.get(
+        `blocks/chainSlice?fromHeight=${
+          currentHeight - 10
+        }&toHeight=${currentHeight}`,
+      )
+    ).data;
+
+    return headers.reverse();
+  };
+
+  /**
+   * Build a BlockchainStateContext from recent headers, converting fields to sigmastate-js types.
+   * @returns BlockchainStateContext
+   */
+  public getBlockchainContext = async (): Promise<BlockchainStateContext> => {
+    const headers = (await this.getHeaders()).map((h) => ({
+      ...h,
+      ADProofsRoot: h.adProofsRoot,
+      // eslint-disable-next-line
+      stateRoot: (AvlTree$ as any).fromDigest(h.stateRoot),
+      timestamp: BigInt(h.timestamp),
+      nBits: BigInt(h.nBits),
+      extensionRoot: h.extensionHash,
+      minerPk: GroupElement$.fromPointHex(h.powSolutions.pk),
+      powOnetimePk: GroupElement$.fromPointHex(h.powSolutions.w),
+      powNonce: h.powSolutions.n,
+      powDistance: BigInt(h.powSolutions.d),
+    }));
+
+    return {
+      sigmaLastHeaders: headers.slice(1),
+      previousStateDigest: headers[1].stateRoot.digest,
+      sigmaPreHeader: headers[0],
+    } as BlockchainStateContext;
   };
 }

@@ -103,6 +103,7 @@ ergo:
   node:
     URL: ''
     timeout: 5000
+  scriptName: ''
 
 accountant:
   tryLimit: 3
