@@ -2,7 +2,9 @@ import {
   And,
   DataSource,
   ILike,
+  In,
   Not,
+  Raw,
   Repository,
 } from '@rosen-bridge/extended-typeorm';
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
@@ -26,7 +28,7 @@ class PaymentAction {
   private userRepository: Repository<User>;
 
   private counterRepository: Repository<Counter>;
-  private readonly paymentPattern = 'p-';
+  private readonly paymentPattern = 'p-1';
 
   /**
    * Constructs an PaymentAction instance.
@@ -185,6 +187,7 @@ class PaymentAction {
       status: 'pending',
       metadata: {
         address: paymentAddress,
+        withdrawn: false,
       },
     });
 
@@ -302,6 +305,41 @@ class PaymentAction {
       },
       relations: ['package', 'authMethod', 'user'],
     });
+  };
+
+  /**
+   * Retrieves all user payment addresses.
+   * @returns {Promise<string[]>} Array of user payment addresses.
+   */
+  getUserPaymentAddresses = async (): Promise<UserAuthStatus[]> => {
+    const userAuthStatuses = await this.userAuthStatusRepository.find({
+      where: {
+        authMethod: { name: ILike(`%${this.paymentPattern}%`) },
+        status: Not('pending'),
+        metadata: Raw(
+          (alias) =>
+            `${alias} LIKE '%"address":"%' AND ${alias} NOT LIKE '%"address":""%' AND ${alias} LIKE '%"withdrawn":false%'`,
+        ),
+      },
+    });
+
+    return userAuthStatuses;
+  };
+
+  /**
+   * Marks the specified user payment addresses as collected.
+   * @param records - The user payment addresses to mark as collected.
+   */
+  markAddressesAsCollected = async (
+    records: UserAuthStatus[],
+  ): Promise<void> => {
+    await this.userAuthStatusRepository.update(
+      { id: In(records.map((record) => record.id)) },
+      {
+        metadata: { withdrawn: true },
+        modifiedAt: Math.floor(Date.now() / 1000), // in seconds
+      },
+    );
   };
 }
 

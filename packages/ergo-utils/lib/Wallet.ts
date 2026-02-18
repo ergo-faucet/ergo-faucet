@@ -24,6 +24,7 @@ import {
   SGroupElement,
   SInt,
   serializeTransaction,
+  SLong,
 } from '@fleet-sdk/serializer';
 import * as fs from 'fs';
 import path from 'path';
@@ -186,18 +187,38 @@ export class Wallet {
    * Compiles the controller script using:
    *  - faucetPK set to the child's public key
    *  - trueScriptsIndex set to -count (to produce a distinct script/address per count)
+   *  - If script is faucetTrueContract.es and ownerPK is provided, it is included in the script compilation along with MIN_FEE.
    *
    * @param count - Non-negative integer used to derive a unique script index.
    * @returns {string} The generated payment address.
    */
-  public generateUniquePaymentAddress = (count: number): string => {
-    const paymentContract = compile(this.paymentScript, {
-      map: {
-        faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
-        trueScriptsIndex: SInt(-count),
-      },
-    });
+  public generateUniquePaymentAddress = (
+    count: number,
+    ownerPK?: Base58String,
+  ): string => {
+    let paymentContract;
 
+    if (this.scriptName === 'truePaymentScript.es') {
+      paymentContract = compile(this.paymentScript, {
+        map: {
+          faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
+          trueScriptsIndex: SInt(-count),
+        },
+      });
+    } else if (this.scriptName === 'faucetTrueContract.es' && ownerPK) {
+      paymentContract = compile(this.paymentScript, {
+        map: {
+          faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
+          ownerPK: SSigmaProp(
+            SGroupElement(ErgoAddress.fromBase58(ownerPK).getPublicKeys()[0]),
+          ),
+          index: SInt(-count),
+          MIN_FEE: SLong(this.minFee),
+        },
+      });
+    } else {
+      throw new Error('Not provided ownerPK');
+    }
     const paymentAddress = paymentContract.toAddress(this.network).toString();
     this.logger.debug(`Generated unique payment address: ${paymentAddress}`);
     return paymentAddress;

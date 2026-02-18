@@ -84,11 +84,14 @@ googleAuth:
 paymentAuth:
   expiresTime: 3600 # Time (in seconds) the user is allowed to complete the payment
   expiresTimeDelay: 300 # Additional time (in seconds) allowed for delayed payments
+  ownerPk: '' # owner public key to which user paid collected boxes are sent
+  maxAddress: 50 # Limit on the number of addresses processed in a single transaction
 
 jobs:
   authJobInterval: 300
   accountantJobInterval: 300
   paymentAuthJobInterval: 300
+  collectUserPaidBoxesJobInterval: 300
 
 ergo:
   network: 'mainnet'

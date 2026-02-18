@@ -44,6 +44,8 @@ const mockConfig = {
   nodeModel: mockNodeModel,
   paymentAction: mockPaymentAction,
   wallet: mockWallet,
+  ownerPk: 'mock-owner-pk',
+  maxAddress: 10,
 };
 
 export const mockFastifyConfig: ServerConfig = {
