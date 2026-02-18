@@ -1,11 +1,11 @@
-import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 import { ergoConfig } from '@configs';
 import { NodeModel, Wallet } from '@ergo-faucet/ergo-utils';
-const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
+import { DefaultLogger } from '@rosen-bridge/abstract-logger';
+
+const logger = DefaultLogger.getInstance().child(import.meta.url);
 
 export const setupErgoUtils = async () => {
-  const ergoUtilsLogger =
-    CallbackLoggerFactory.getInstance().getLogger('ErgoUtils');
+  const ergoUtilsLogger = DefaultLogger.getInstance().child('ErgoUtils');
 
   await NodeModel.initialize(
     ergoConfig.nodeUrl,

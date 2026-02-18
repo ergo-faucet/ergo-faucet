@@ -6,34 +6,30 @@
     "type": "git",
     "url": "git+https://github.com/ergo-faucet/ergo-faucet.git"
   },
-  "license": "GPL-3.0",
+  "license": "MIT",
   "author": "ergo-faucet",
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "CHANGELOG.md"
+  ],
   "scripts": {
     "build": "tsc --build tsconfig.build.json",
+    "clean": "rimraf dist && rimraf tsconfig.build.tsbuildinfo",
     "coverage": "npm run test -- --coverage",
     "lint": "eslint --fix . && npm run prettify",
-    "prettify": "prettier --write . --ignore-path ./.gitignore",
-    "release": "npm run test -- --run && npm run build && npm publish --access public",
-    "test": "NODE_OPTIONS='--import tsx' vitest",
+    "lint:check": "eslint . && npm run prettify:check",
+    "prettify": "prettier --write . --ignore-path ../../.gitignore",
+    "prettify:check": "prettier --check . --ignore-path ../../.gitignore",
+    "release": "npm run test -- --run && npm run clean && npm run build && npm publish --access public",
+    "test": "cross-env NODE_OPTIONS=\"--import tsx\" vitest",
     "type-check": "tsc --noEmit"
   },
-  "devDependencies": {
-    "@types/node": "^20.11.9",
-    "@typescript-eslint/eslint-plugin": "^6.19.1",
-    "@typescript-eslint/parser": "^6.19.1",
-    "@vitest/coverage-istanbul": "^3.1.4",
-    "eslint": "^8.56.0",
-    "eslint-config-prettier": "^9.1.0",
-    "prettier": "^3.2.4",
-    "tsx": "^4.19.4",
-    "typescript": "^5.3.3",
-    "vitest": "^3.1.4"
-  },
   "engines": {
-    "node": ">=20.11.0"
+    "node": ">=22.18.0",
+    "npm": "11.6.2"
   },
   "dependencies": {
     "@ergo-faucet/common-types": "^0.1.0",

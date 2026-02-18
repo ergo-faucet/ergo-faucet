@@ -1,5 +1,6 @@
-import fs from 'fs';
-import path from 'path';
+import fs from 'node:fs';
+import path from 'node:path';
+import process from 'node:process';
 
 const perPackage = (resolver) => (files) => {
   return Array.from(
@@ -19,30 +20,34 @@ const perPackage = (resolver) => (files) => {
   );
 };
 
-const getDepcheckCommand = (directory) => {
-  return `npx depcheck  ${path.relative(process.cwd(), directory)}`;
+const getKnipCommand = (dir) => {
+  const posixRelative = path.posix.relative(process.cwd(), dir);
+  return `knip --dependencies --workspace ${posixRelative}`;
 };
 
-const runDepcheck = {
-  '**/*.{js,ts,mjs}': perPackage(getDepcheckCommand),
-  '**/package.json': perPackage(getDepcheckCommand),
+const runKnipConditional = (files) => {
+  const rootChanged = files.some((f) => {
+    const relative = path.relative(process.cwd(), path.resolve(f));
+    return !relative.includes(path.sep);
+  });
+  if (rootChanged) {
+    return ['knip --dependencies'];
+  } else {
+    return perPackage(getKnipCommand)(files);
+  }
 };
 
-export default {
-  ...(process.env.CI === 'true'
-    ? runDepcheck
-    : {
-        '*': 'prettier --ignore-unknown --write',
-
-        '*.{js,ts}': ['eslint --fix', 'npm run test -- related -- --run'],
-
-        '**/*.{ts,js}': perPackage((directory) => {
-          return `npm run type-check --workspace ${path.relative(
-            process.cwd(),
-            directory,
-          )}`;
-        }),
-
-        ...runDepcheck,
-      }),
+const tasks = {
+  '*.ts': () => 'npm run type-check',
 };
+
+tasks['*'] = ['prettier --ignore-unknown --write'];
+tasks['*.{js,ts}'] = ['eslint --fix'];
+
+if (tasks['*']) {
+  tasks['*'].push(runKnipConditional);
+} else {
+  tasks['*'] = [runKnipConditional];
+}
+
+export default tasks;

@@ -1,14 +1,13 @@
-import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
 import { serverConfig } from '@configs';
+import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
 import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
-import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
+import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
-const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
+const logger = DefaultLogger.getInstance().child(import.meta.url);
 
 export const setupFastifyServer = async () => {
   const recaptcha = GoogleRecaptcha.getInstance();
-  const fastifyLogger =
-    CallbackLoggerFactory.getInstance().getLogger('FastifyServer');
+  const fastifyLogger = DefaultLogger.getInstance().child('FastifyServer');
   const fasftyConfig: ServerConfig = {
     ...serverConfig,
     googleRecaptcha: recaptcha,

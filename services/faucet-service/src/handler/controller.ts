@@ -1,19 +1,18 @@
-import { ErgoFaucetController } from '@ergo-faucet/controller';
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
-import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 import { controllerConfig } from '@configs';
+import { ErgoFaucetController } from '@ergo-faucet/controller';
+import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
 import { NodeModel } from '@ergo-faucet/ergo-utils';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
-const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
+const logger = DefaultLogger.getInstance().child(import.meta.url);
 
 export const setupController = async () => {
   const fastify = FastifyAPIServer.getInstance();
 
   const packageAction = PackageAction.getInstance();
   const requestHistoryAction = RequestHistoryAction.getInstance();
-  const controllerLogger =
-    CallbackLoggerFactory.getInstance().getLogger('Controller');
+  const controllerLogger = DefaultLogger.getInstance().child('Controller');
 
   const nodeModel = await NodeModel.getInstance();
 

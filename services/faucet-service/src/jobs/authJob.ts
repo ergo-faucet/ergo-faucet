@@ -1,8 +1,8 @@
-import WinstonLogger from '@rosen-bridge/winston-logger';
-import { DiscordAction, GoogleAction, XAction } from '@ergo-faucet/database';
 import { jobConfig } from '@configs';
+import { DiscordAction, GoogleAction, XAction } from '@ergo-faucet/database';
+import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
-const logger = WinstonLogger.getInstance().getLogger(import.meta.url);
+const logger = DefaultLogger.getInstance().child(import.meta.url);
 
 const jobExpireDiscordAuths = async (): Promise<void> => {
   const discordAction = DiscordAction.getInstance();

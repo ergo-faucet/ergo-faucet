@@ -1,2 +1,2 @@
-export { scheduleExpiringJob } from './AuthJob';
+export { scheduleExpiringJob } from './authJob';
 export { schedulePayingJob } from './accountantJob';
