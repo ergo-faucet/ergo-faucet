@@ -12,7 +12,7 @@ export {
   AssetPayload,
   AuthMethodPayload,
 } from './types';
-export { DataSourceHandler } from './DataSourceHandler';
+export { DataSourceHandler } from './dataSourceHandler';
 export {
   UserAddressAction,
   PackageAction,

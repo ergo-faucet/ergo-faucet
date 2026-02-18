@@ -1,5 +1,5 @@
-export { NodeModel } from './NodeModel';
-export { Wallet } from './Wallet';
+export { NodeModel } from './nodeModel';
+export { Wallet } from './wallet';
 export {
   DoubleSpendError,
   NotEnoughAssetsError,

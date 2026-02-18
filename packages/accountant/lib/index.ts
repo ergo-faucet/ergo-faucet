@@ -1,2 +1,2 @@
-export { Accountant } from './Accountant';
+export { Accountant } from './accountant';
 export type { AccountantConfig } from './types';

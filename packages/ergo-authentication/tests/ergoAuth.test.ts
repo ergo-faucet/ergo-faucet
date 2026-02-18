@@ -1,3 +1,4 @@
+import { DummyLogger } from '@rosen-bridge/abstract-logger';
 import {
   describe,
   it,
@@ -7,8 +8,8 @@ import {
   vi,
   afterAll,
 } from 'vitest';
-import { ErgoAuth } from '../lib/ErgoAuth';
-import { DummyLogger } from '@rosen-bridge/abstract-logger';
+
+import { ErgoAuth } from '../lib/ergoAuth';
 import {
   mockErgoAuthConfig,
   mockFastifyServer,
@@ -81,9 +82,7 @@ describe('ErgoAuth', () => {
     const result = await ergoAuth.verifyChallenge(testAddress, 'abc', 'sig');
 
     expect(result.success).toBe(false);
-    if (!result.success) {
-      expect(result.code).toBe('challenge-not-found');
-    }
+    expect(result.success ? true : result.code).toBe('challenge-not-found');
   });
 
   /**
@@ -107,6 +106,7 @@ describe('ErgoAuth', () => {
     const result = await ergoAuth.verifyChallenge(testAddress, 'abc', 'sig');
 
     expect(result.success).toBe(false);
+    // eslint-disable-next-line vitest/no-conditional-expect
     if (!result.success) expect(result.code).toBe('challenge-mismatch');
   });
 
@@ -129,6 +129,7 @@ describe('ErgoAuth', () => {
     const result = await ergoAuth.verifyChallenge(testAddress, 'abc', 'sig');
 
     expect(result.success).toBe(false);
+    // eslint-disable-next-line vitest/no-conditional-expect
     if (!result.success) expect(result.code).toBe('invalid-signature');
   });
 

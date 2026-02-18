@@ -1,3 +1,3 @@
-export { ErgoFaucetController } from './ErgoFaucetController';
-export { PackageController } from './PackageController';
-export { RequestHistoryController } from './RequestHistoryController';
+export { ErgoFaucetController } from './ergoFaucetController';
+export { PackageController } from './packageController';
+export { RequestHistoryController } from './requestHistoryController';
