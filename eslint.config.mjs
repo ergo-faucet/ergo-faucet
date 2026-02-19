@@ -33,12 +33,15 @@ export default [
     rules: {
       'check-file/filename-naming-convention': [
         'error',
-        { '**/*.{js,ts,jsx,tsx}': 'CAMEL_CASE' },
+        { '**/!(*-migration|*-migrations).{js,ts,jsx,tsx}': 'CAMEL_CASE' },
         { ignoreMiddleExtensions: true },
       ],
       ...typescriptEslint.configs.recommended.rules,
       // vitest Rules
       ...vitestPlugin.configs.recommended.rules,
+      ...typescriptEslint.configs.recommended.rules,
+      'no-unused-vars': 'off',
+      '@typescript-eslint/no-unused-vars': ['error'],
     },
   },
   // Integrate Prettier for Formatting

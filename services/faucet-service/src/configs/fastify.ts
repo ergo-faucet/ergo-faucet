@@ -1,6 +1,8 @@
 import { CookieConfig } from '@ergo-faucet/fastify-server';
 import config from 'config';
-import packageJson from '../../package.json' assert { type: 'json' };
+
+import packageJson from '../../package.json' with { type: 'json' };
+
 /**
  * Cookie configuration
  */

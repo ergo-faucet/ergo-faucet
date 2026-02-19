@@ -14,7 +14,7 @@ export type {
   RequestDTO,
   PackageList,
   RequestList,
-} from './DTOs';
+} from './dtos';
 export {
   NotFoundError,
   RequestLimitError,
