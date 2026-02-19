@@ -157,7 +157,7 @@ class PackageAction {
     for (const pkg of packages[0]) {
       const authMethods: AuthMethodDTO[] = [];
       for (const pam of pkg.packageAuthMethods) {
-        let userStatus: AuthMethodStatus;
+        let userStatus: AuthMethodStatus | undefined;
 
         if (userId) {
           const statusResault = await this.userAuthStatusRepository.findOne({

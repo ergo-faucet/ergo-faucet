@@ -9,6 +9,7 @@ import {
 import { User } from './User';
 import { AuthMethod } from './AuthMethod';
 import { Package } from './Package';
+import { AuthMethodStatus } from '../types';
 
 @Entity('user_auth_status_entity')
 export class UserAuthStatus {
@@ -37,7 +38,7 @@ export class UserAuthStatus {
   verifiedAt!: number;
 
   @Column({ type: 'text' })
-  status!: 'passed' | 'failed' | 'pending' | 'expired';
+  status!: AuthMethodStatus;
 
   @Column({ type: 'int', nullable: true })
   expiresAt?: number;

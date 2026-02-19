@@ -13,7 +13,7 @@ import {
   User,
   UserAuthStatus,
 } from '../entities';
-import { NotFoundError } from '../types';
+import { AuthMethodStatus, NotFoundError } from '../types';
 
 class PaymentAction {
   private static instance: PaymentAction;
@@ -173,11 +173,13 @@ class PaymentAction {
     });
 
     const user = await this.userRepository.findOneBy({ id: userId });
-
+    if (!user) {
+      throw new NotFoundError(`User with Id ${userId} not found`);
+    }
     const now = Math.floor(Date.now() / 1000);
 
     const newUserPaymentAuthStatus = this.userAuthStatusRepository.create({
-      user: user!,
+      user: user,
       authMethod: paymentAuth!,
       package: pkg!,
       createdAt: now,
@@ -210,7 +212,7 @@ class PaymentAction {
    */
   public updateUserPaymentAuthStatus = async (
     userAuthStatus: UserAuthStatus,
-    status: 'failed' | 'pending' | 'expired',
+    status: AuthMethodStatus,
     paymentAddress?: string,
   ): Promise<UserAuthStatus> => {
     this.logger.debug(
