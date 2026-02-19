@@ -1,11 +1,11 @@
+import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
+import fastifyCookie from '@fastify/cookie';
+import fastifyJwt from '@fastify/jwt';
 import { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
+import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
 import { FastifyBaseLogger, FastifyInstance } from 'fastify';
 import { Server, IncomingMessage, ServerResponse } from 'http';
-import { TypeBoxTypeProvider } from '@fastify/type-provider-typebox';
-import fastifyJwt from '@fastify/jwt';
-import fastifyCookie from '@fastify/cookie';
-import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
 
 export interface ServerConfig {
   port: number;

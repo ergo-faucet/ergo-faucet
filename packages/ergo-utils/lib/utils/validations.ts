@@ -1,6 +1,7 @@
 import { Network } from '@fleet-sdk/common';
-import { InvalidTokenPrecisionError } from '../types';
 import { ErgoAddress } from '@fleet-sdk/core';
+
+import { InvalidTokenPrecisionError } from '../types';
 
 /**
  * Validates the precision of the provided amount against the token's decimals.

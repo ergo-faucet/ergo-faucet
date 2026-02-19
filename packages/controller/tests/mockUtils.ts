@@ -5,12 +5,12 @@ import {
   PackageAuthMethod,
   RequestHistoryAction,
 } from '@ergo-faucet/database';
-import { vi } from 'vitest';
 import {
   FastifyAPIServer,
   FastifyRequest,
   ServerConfig,
 } from '@ergo-faucet/fastify-server';
+import { vi } from 'vitest';
 
 /**
  * A mocked PackageAction instance with spyable methods.

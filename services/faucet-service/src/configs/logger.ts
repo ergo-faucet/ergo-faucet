@@ -1,6 +1,6 @@
 import { TransportOptions } from '@rosen-bridge/winston-logger';
-import { cloneDeep } from 'lodash-es';
 import config from 'config';
+import { cloneDeep } from 'lodash-es';
 
 const getOptionalString = (path: string, defaultValue = '') => {
   if (config.has(path)) {

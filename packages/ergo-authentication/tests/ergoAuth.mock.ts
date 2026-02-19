@@ -1,4 +1,5 @@
 import { vi } from 'vitest';
+
 import { ErgoAuthConfig } from '../lib/types';
 
 // eslint-disable-next-line

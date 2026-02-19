@@ -1,6 +1,6 @@
-import { RedisOptions } from 'ioredis';
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { GoogleAction } from '@ergo-faucet/database';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+import { RedisOptions } from 'ioredis';
 
 export interface GoogleToken {
   accessToken: string;

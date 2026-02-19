@@ -1,6 +1,6 @@
-import { RedisOptions } from 'ioredis';
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { XAction } from '@ergo-faucet/database';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+import { RedisOptions } from 'ioredis';
 
 export interface XToken {
   accessToken: string;

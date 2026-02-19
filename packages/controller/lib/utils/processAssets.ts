@@ -1,8 +1,9 @@
 import { AssetPayload } from '@ergo-faucet/database';
-import { Static } from '@sinclair/typebox';
-import { UserProvidedAsset } from '../types';
 import { validateAmountPrecision } from '@ergo-faucet/ergo-utils';
 import { NodeModel } from '@ergo-faucet/ergo-utils';
+import { Static } from '@sinclair/typebox';
+
+import { UserProvidedAsset } from '../types';
 
 /**
  * Converts a decimal string or number into a BigInt representation

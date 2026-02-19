@@ -1,9 +1,10 @@
-import { vi } from 'vitest';
-import { ServerConfig } from '../lib';
 import {
   GoogleRecaptcha,
   RecaptchaServerError,
 } from '@ergo-faucet/google-recaptcha';
+import { vi } from 'vitest';
+
+import { ServerConfig } from '../lib';
 
 export const setupGoogleRecaptchaMock = () => {
   vi.mock('@ergo-faucet/google-recaptcha', () => {
