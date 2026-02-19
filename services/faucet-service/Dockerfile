@@ -1,6 +1,6 @@
 # syntax=docker.io/docker/dockerfile:1.7-labs
 
-FROM node:20.11-slim AS base
+FROM node:22.22-slim AS base
 WORKDIR /app
 COPY . /app
 
