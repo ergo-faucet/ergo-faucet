@@ -25,10 +25,6 @@
     "release": "npm run clean && npm run build && npm publish --access public",
     "type-check": "tsc --noEmit"
   },
-  "engines": {
-    "node": ">=22.18.0",
-    "npm": "11.6.2"
-  },
   "dependencies": {
     "@ergo-faucet/common-types": "^0.1.0",
     "@ergo-faucet/database": "^0.1.0",
@@ -38,5 +34,9 @@
     "axios": "^1.11.0",
     "ioredis": "^5.7.0",
     "uuid": "^13.0.0"
+  },
+  "engines": {
+    "node": ">=22.18.0",
+    "npm": "11.6.2"
   }
 }

@@ -1,7 +1,7 @@
-import { DummyLogger } from '@rosen-bridge/abstract-logger';
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 
-import { PackageAction } from '../lib/actions/packageAction';
+import { DummyLogger } from '@rosen-bridge/abstract-logger';
+
 import {
   Package,
   PackageAuthMethod,
@@ -9,7 +9,8 @@ import {
   UserAuthStatus,
   Asset,
   AuthMethod,
-} from '../lib/entities';
+  PackageAction,
+} from '../lib';
 import sqliteDataSource from '../lib/migrationDataSource/sqliteDataSource';
 import { mockPackages } from './mockData';
 

@@ -25,12 +25,12 @@
     "release": "npm run clean && npm run build && npm publish --access public",
     "type-check": "tsc --noEmit"
   },
-  "engines": {
-    "node": ">=22.18.0",
-    "npm": "11.6.2"
-  },
   "dependencies": {
     "@rosen-bridge/abstract-logger": "^2.0.1",
     "axios": "^1.10.0"
+  },
+  "engines": {
+    "node": ">=22.18.0",
+    "npm": "11.6.2"
   }
 }

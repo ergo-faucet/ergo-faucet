@@ -1,9 +1,10 @@
-import { DummyLogger } from '@rosen-bridge/abstract-logger';
-import { DataSource } from '@rosen-bridge/extended-typeorm';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { AbstractAuthAction } from '../lib/actions/abstractAuthAction';
-import { User, UserAuthStatus, AuthMethod } from '../lib/entities';
+import { DummyLogger } from '@rosen-bridge/abstract-logger';
+import { DataSource } from '@rosen-bridge/extended-typeorm';
+
+import { User, UserAuthStatus, AuthMethod } from '../lib';
+import { AbstractAuthAction } from '../lib/actions';
 import sqliteDataSource from '../lib/migrationDataSource/sqliteDataSource';
 
 /**

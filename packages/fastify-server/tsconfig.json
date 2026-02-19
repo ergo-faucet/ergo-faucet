@@ -4,7 +4,8 @@
     "outDir": "./dist",
     "experimentalDecorators": true,
     "emitDecoratorMetadata": true,
-    "composite": true
+    "composite": true,
+    "types": ["node", "vitest/globals"]
   },
   "include": ["tests", "lib"],
   "references": [

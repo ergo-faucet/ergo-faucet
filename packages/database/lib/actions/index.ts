@@ -5,3 +5,4 @@ export { XAction } from './xActions';
 export { GoogleAction } from './googleActions';
 export { AccountantAction } from './accountantAction';
 export { RequestHistoryAction } from './requestHistoryAction';
+export { AbstractAuthAction } from './abstractAuthAction';

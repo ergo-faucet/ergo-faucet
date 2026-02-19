@@ -27,10 +27,6 @@
     "test": "cross-env NODE_OPTIONS=\"--import tsx\" vitest",
     "type-check": "tsc --noEmit"
   },
-  "engines": {
-    "node": ">=22.18.0",
-    "npm": "11.6.2"
-  },
   "dependencies": {
     "@ergo-faucet/common-types": "^0.1.0",
     "@ergo-faucet/database": "^0.1.0",
@@ -39,5 +35,9 @@
     "@fleet-sdk/common": "^0.10.0",
     "@rosen-bridge/abstract-logger": "^2.0.1",
     "@sinclair/typebox": "^0.34.38"
+  },
+  "engines": {
+    "node": ">=22.18.0",
+    "npm": "11.6.2"
   }
 }

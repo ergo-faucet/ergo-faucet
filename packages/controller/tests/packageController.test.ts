@@ -1,5 +1,8 @@
-import { RequestLimitError, NotFoundError } from '@ergo-faucet/database';
-import { DuplicateItemError } from '@ergo-faucet/database/dist/types';
+import {
+  RequestLimitError,
+  NotFoundError,
+  DuplicateItemError,
+} from '@ergo-faucet/database';
 import * as ergo_utils from '@ergo-faucet/ergo-utils';
 import {
   InvalidTokenPrecisionError,

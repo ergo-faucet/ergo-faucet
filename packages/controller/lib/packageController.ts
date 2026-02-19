@@ -4,8 +4,8 @@ import {
   RequestLimitError,
   NotFoundError,
   NotAvailableError,
+  DuplicateItemError,
 } from '@ergo-faucet/database';
-import { DuplicateItemError } from '@ergo-faucet/database/dist/types';
 import {
   isValidErgoAddress,
   NodeModel,
@@ -17,8 +17,9 @@ import {
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
 import { Network } from '@fleet-sdk/common';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { Static } from '@sinclair/typebox';
+
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import {
   ErrorResponse,

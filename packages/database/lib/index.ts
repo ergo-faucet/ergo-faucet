@@ -11,6 +11,7 @@ export {
   PackagePayload,
   AssetPayload,
   AuthMethodPayload,
+  DuplicateItemError,
 } from './types';
 export { DataSourceHandler } from './dataSourceHandler';
 export {
