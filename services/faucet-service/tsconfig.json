@@ -18,6 +18,7 @@
     { "path": "../../packages/x-auth" },
     { "path": "../../packages/google-auth" },
     { "path": "../../packages/accountant" },
-    { "path": "../../packages/ergo-utils" }
+    { "path": "../../packages/ergo-utils" },
+    { "path": "../../packages/payment-auth" }
   ]
 }

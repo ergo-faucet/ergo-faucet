@@ -21,6 +21,7 @@ export {
   GoogleAction,
   AccountantAction,
   RequestHistoryAction,
+  PaymentAction,
 } from './actions';
 export {
   Asset,
@@ -31,4 +32,5 @@ export {
   UserAddress,
   UserAuthStatus,
   UserRequest,
+  Counter,
 } from './entities';

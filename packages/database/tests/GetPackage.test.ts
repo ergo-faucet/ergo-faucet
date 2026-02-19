@@ -85,7 +85,7 @@ describe('PackageAction.getPackages with mock data', () => {
         if (!authMethod) {
           authMethod = await authRepo.save({
             name: am.name,
-            config: '{}',
+            config: {},
             createdAt: 2000,
             modifiedAt: 2000,
           });

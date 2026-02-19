@@ -1,11 +1,6 @@
 export type PackageType = 'normal' | 'random';
-export type AuthMethodStatus =
-  | 'passed'
-  | 'failed'
-  | 'pending'
-  | 'expired'
-  | undefined;
-export type RequestStaus = 'paid' | 'failed' | 'pending' | 'submitted';
+export type AuthMethodStatus = 'passed' | 'failed' | 'pending' | 'expired';
+export type RequestStatus = 'paid' | 'failed' | 'pending' | 'submitted';
 
 export interface AssetDTO {
   id: number;
@@ -42,7 +37,7 @@ export interface RequestDTO {
   requestId: number;
   packageId: number;
   packageName: string;
-  status: RequestStaus;
+  status: RequestStatus;
   createdAt: number;
   destinationAddress: string;
   txId?: string;

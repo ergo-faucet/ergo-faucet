@@ -4,6 +4,7 @@ import {
   DiscordAction,
   GoogleAction,
   PackageAction,
+  PaymentAction,
   RequestHistoryAction,
   UserAddressAction,
   XAction,
@@ -25,6 +26,7 @@ export const setupDatabase = async () => {
     await GoogleAction.initialize(dataSource, dbLogger);
     RequestHistoryAction.initialize(dataSource, dbLogger);
     await AccountantAction.initialize(dataSource, dbLogger);
+    await PaymentAction.initialize(dataSource, dbLogger);
   } catch (error) {
     if (error instanceof Error) {
       logger.error(

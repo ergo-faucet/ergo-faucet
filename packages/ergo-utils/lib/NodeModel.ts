@@ -6,7 +6,8 @@ import {
   tokenByIdResponseSuccess,
   TokenNotFoundError,
 } from './types';
-import { Box } from '@fleet-sdk/common';
+import { Box, ensureUTxOBigInt, TokenTargetAmount } from '@fleet-sdk/common';
+import { BoxSelector } from '@fleet-sdk/core';
 
 export class NodeModel {
   private static instance: NodeModel;
@@ -258,6 +259,54 @@ export class NodeModel {
   };
 
   /**
+   * Retrieves unspent boxes by their associated address
+   *
+   * @param {offset} - amount of elements to skip from the start
+   * @param {limit} - amount of elements to retrieve
+   * @returns {Box<bigint>[]} - returns desired boxes
+   */
+  public getUnspentBoxesForCheckPayment = async (
+    address: string,
+    offset: number,
+    limit: number,
+  ): Promise<Box<bigint>[]> => {
+    if (this.axiosInstance == undefined) {
+      const error: errorResponse = {
+        error: 500,
+        reason: 'Internal Error',
+        detail: 'The Network object has not been initialized!',
+      };
+      return Promise.reject(error);
+    }
+
+    return await this.axiosInstance
+      .post(`/blockchain/box/byAddress`, address, {
+        params: {
+          offset: offset,
+          limit: limit,
+        },
+      })
+      .then((response) => {
+        this.logger.debug('The Boxes retrieved successfully.');
+
+        return response.data.items;
+      })
+      .catch((error) => {
+        if (axios.isAxiosError(error)) {
+          this.logger.error(`Axios error.`, {
+            message: error.message,
+            stack: error.stack,
+          });
+        } else
+          this.logger.error('Error during selecing box for transaction', {
+            message: error.message,
+            stack: error.stack,
+          });
+        return [];
+      });
+  };
+
+  /**
    * Checks if a transaction is currently in the mempool.
    * @param {string} txId - The transaction ID to check.
    * @returns {Promise<boolean>} - True if the transaction is in the mempool, false otherwise.
@@ -412,5 +461,74 @@ export class NodeModel {
 
       throw new Error('FetchingDecimalsTokenError: Unknown error occurred');
     }
+  };
+
+  /**
+   * Checks whether the given address has paid the required ERG and token amounts.
+   *
+   * @param address - Destination address to inspect.
+   * @param assets - Array of TokenTargetAmount<string> describing required token IDs and amounts.
+   * @returns {Promise<boolean>} True if the address contains the required ERG/tokens, otherwise false.
+   */
+  public checkForPayment = async (
+    address: string,
+    assets: TokenTargetAmount<string>[],
+  ): Promise<boolean> => {
+    const assetsInBigint = assets.map((element): TokenTargetAmount<bigint> => {
+      return { tokenId: element.tokenId, amount: BigInt(element.amount!) };
+    });
+
+    const ergAssets = assetsInBigint.filter((asset) => asset.tokenId === 'ERG');
+
+    const ergsAmount = ergAssets.length
+      ? ergAssets.reduce(
+          (total: bigint, erg: TokenTargetAmount<bigint>) =>
+            total + BigInt(erg.amount!),
+          0n,
+        )
+      : 0n;
+
+    let tokens: TokenTargetAmount<bigint>[] = [];
+    tokens = assetsInBigint.filter((asset) => asset.tokenId !== 'ERG');
+
+    let offset: number = 0;
+    const limit: number = 100;
+
+    const boxes: Box<bigint>[] = [];
+    let receivedBoxes: Box<bigint>[] = [];
+    do {
+      receivedBoxes =
+        await NodeModel.getInstance().getUnspentBoxesForCheckPayment(
+          address,
+          offset,
+          limit,
+        );
+      this.logger.debug('Successfully retrieved boxes');
+      offset += limit;
+
+      // updating boxes
+      receivedBoxes.forEach((box) => {
+        boxes.push(ensureUTxOBigInt(box));
+      });
+
+      const selector: BoxSelector<Box<bigint>> = new BoxSelector(boxes);
+      try {
+        selector.select({
+          nanoErgs: ergsAmount,
+          tokens,
+        });
+        this.logger.debug('User has paid the required ergs and assets.');
+
+        return true;
+      } catch (error) {
+        // the error is usual as we are using pagination
+        if (error instanceof Error)
+          this.logger.debug(error.message, { stack: error.stack });
+      }
+    } while (receivedBoxes.length); //till no more boxes are there
+
+    // if user didn't pay enough
+    this.logger.debug('User has not paid the required ergs and assets.');
+    return false;
   };
 }

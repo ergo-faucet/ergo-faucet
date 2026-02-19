@@ -18,8 +18,8 @@
     "type-check": "tsc --noEmit"
   },
   "dependencies": {
-    "@ergo-faucet/controller": "^0.1.0",
     "@ergo-faucet/accountant": "^0.1.0",
+    "@ergo-faucet/controller": "^0.1.0",
     "@ergo-faucet/database": "^0.1.0",
     "@ergo-faucet/discord-auth": "^0.1.0",
     "@ergo-faucet/ergo-authentication": "^0.1.0",
@@ -27,6 +27,7 @@
     "@ergo-faucet/fastify-server": "^0.1.0",
     "@ergo-faucet/google-auth": "^0.1.0",
     "@ergo-faucet/google-recaptcha": "^0.1.0",
+    "@ergo-faucet/payment-auth": "^0.1.0",
     "@ergo-faucet/x-auth": "^0.1.0",
     "@rosen-bridge/callback-logger": "^0.1.0",
     "@rosen-bridge/winston-logger": "^0.2.1",

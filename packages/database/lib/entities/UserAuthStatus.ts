@@ -9,6 +9,7 @@ import {
 import { User } from './User';
 import { AuthMethod } from './AuthMethod';
 import { Package } from './Package';
+import { AuthMethodStatus } from '../types';
 
 @Entity('user_auth_status_entity')
 export class UserAuthStatus {
@@ -33,11 +34,11 @@ export class UserAuthStatus {
   @JoinColumn()
   package?: Relation<Package>;
 
-  @Column({ type: 'int' })
+  @Column({ type: 'int', nullable: true })
   verifiedAt!: number;
 
   @Column({ type: 'text' })
-  status!: 'passed' | 'failed' | 'pending' | 'expired';
+  status!: AuthMethodStatus;
 
   @Column({ type: 'int', nullable: true })
   expiresAt?: number;
@@ -46,6 +47,7 @@ export class UserAuthStatus {
   metadata!: {
     token?: string;
     refresh_token?: string;
+    address?: string;
   };
 
   @Column({ type: 'int' })

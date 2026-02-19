@@ -174,6 +174,7 @@ class PackageController {
 
       async (request, reply) => {
         this.logger.debug(`New request for package ${request.body.packageId}`);
+
         const user = request.user as userRequestPayload;
         const { packageId, destAddress } = request.body;
 
@@ -187,6 +188,9 @@ class PackageController {
             packageId,
           );
           if (!isValid) {
+            this.logger.debug(
+              `User has not completed all of the auth methods for package: ${packageId}.`,
+            );
             return reply
               .status(403)
               .send({ error: 'forbidden', code: 'AUTH_METHODS_INCOMPLETE' });

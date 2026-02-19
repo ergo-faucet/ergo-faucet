@@ -3,8 +3,8 @@ import {
   QueryRunner,
 } from '@rosen-bridge/extended-typeorm';
 
-export class Migration1762941030485 implements MigrationInterface {
-  name = 'Migration1762941030485';
+export class Migration1766477126311 implements MigrationInterface {
+  name = 'Migration1766477126311';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
     await queryRunner.query(`
@@ -55,7 +55,7 @@ export class Migration1762941030485 implements MigrationInterface {
     await queryRunner.query(`
             CREATE TABLE "user_auth_status_entity" (
                 "id" SERIAL NOT NULL,
-                "verifiedAt" integer NOT NULL,
+                "verifiedAt" integer,
                 "status" text NOT NULL,
                 "expiresAt" integer,
                 "metadata" text,
@@ -123,6 +123,13 @@ export class Migration1762941030485 implements MigrationInterface {
             CREATE INDEX "IDX_941e620c721dbd2ec1a03bdef3" ON "asset_entity" ("tokenId")
         `);
     await queryRunner.query(`
+            CREATE TABLE "counter" (
+                "id" SERIAL NOT NULL,
+                "count" integer NOT NULL,
+                CONSTRAINT "PK_012f437b30fcf5a172841392ef3" PRIMARY KEY ("id")
+            )
+        `);
+    await queryRunner.query(`
             ALTER TABLE "user_address_entity"
             ADD CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1" FOREIGN KEY ("userId") REFERENCES "user_entity"("id") ON DELETE CASCADE ON UPDATE NO ACTION
         `);
@@ -187,6 +194,9 @@ export class Migration1762941030485 implements MigrationInterface {
         `);
     await queryRunner.query(`
             ALTER TABLE "user_address_entity" DROP CONSTRAINT "FK_8015306c9dd58bdfaf36a74d3f1"
+        `);
+    await queryRunner.query(`
+            DROP TABLE "counter"
         `);
     await queryRunner.query(`
             DROP INDEX "public"."IDX_941e620c721dbd2ec1a03bdef3"

@@ -5,9 +5,16 @@ import {
   Box,
   TokenTargetAmount,
   ensureUTxOBigInt,
+  Network,
 } from '@fleet-sdk/common';
 import { ErgoHDKey, Prover } from '@fleet-sdk/wallet';
 import { NodeModel } from './NodeModel';
+
+import { compile } from '@fleet-sdk/compiler';
+import { SSigmaProp, SGroupElement, SInt } from '@fleet-sdk/serializer';
+import * as fs from 'fs';
+import path from 'path';
+
 import { NotEnoughAssetsError, WalletConfig } from './types';
 
 export class Wallet {
@@ -16,6 +23,8 @@ export class Wallet {
   private readonly prover: Prover;
   private readonly childKey: ErgoHDKey;
   private readonly walletAddress: string;
+  private readonly network: Network;
+  private readonly paymentScript: string;
 
   private constructor(
     walletConfig: WalletConfig,
@@ -24,6 +33,7 @@ export class Wallet {
   ) {
     this.logger = logger ? logger : new DummyLogger();
     this.prover = new Prover();
+    this.network = walletConfig.network;
 
     if (walletConfig.privateKey) {
       this.childKey = new ErgoHDKey({
@@ -42,6 +52,13 @@ export class Wallet {
     }
 
     this.walletAddress = this.childKey.address.encode(walletConfig.network);
+
+    const SCRIPT_DIR = path.join(import.meta.dirname, `../lib/scripts/`);
+    this.paymentScript = fs.readFileSync(
+      path.join(SCRIPT_DIR, 'truePaymentScript.es'),
+      'utf8',
+    );
+
     this.logger.debug('First address of the mnemonic', this.walletAddress);
   }
 
@@ -145,5 +162,32 @@ export class Wallet {
 
     // if didn't return with selcted boxes
     throw new NotEnoughAssetsError('Not enough ERG/tokens.');
+  };
+
+  /**
+   * Generates a unique payment address derived from the wallet's child key.
+   *
+   * Compiles the controller script using:
+   *  - faucetPK set to the child's public key
+   *  - trueScriptsIndex set to -count (to produce a distinct script/address per count)
+   *
+   * @param count - Non-negative integer used to derive a unique script index.
+   * @returns {string} The generated payment address.
+   */
+  public generateUniquePaymentAddress = (count: number): string => {
+    const paymentContract = compile(this.paymentScript, {
+      map: {
+        faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
+        trueScriptsIndex: SInt(-count),
+      },
+    });
+
+    const paymentAddress = paymentContract.toAddress(this.network).toString();
+    this.logger.debug(`Generated unique payment address: ${paymentAddress}`);
+    return paymentAddress;
+  };
+
+  public getErgoTree = () => {
+    return this.childKey.address.ergoTree;
   };
 }

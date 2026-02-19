@@ -32,7 +32,7 @@ describe('AbstractAuthAction expire methods with real DB', () => {
     const authRepo = sqliteDataSource.getRepository(AuthMethod);
     authMethod = await authRepo.save({
       name: 'test-auth',
-      config: '{}',
+      config: {},
       createdAt: 2000,
       modifiedAt: 2000,
     });

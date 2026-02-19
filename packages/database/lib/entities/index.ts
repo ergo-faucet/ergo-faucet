@@ -1,5 +1,6 @@
 import { Asset } from './Asset';
 import { AuthMethod } from './AuthMethod';
+import { Counter } from './Counter';
 import { Package } from './Package';
 import { PackageAuthMethod } from './PackageAuthMethod';
 import { User } from './User';
@@ -16,6 +17,7 @@ export const entities = [
   UserAddress,
   UserAuthStatus,
   UserRequest,
+  Counter,
 ];
 
 export {
@@ -27,4 +29,5 @@ export {
   UserAddress,
   UserAuthStatus,
   UserRequest,
+  Counter,
 };

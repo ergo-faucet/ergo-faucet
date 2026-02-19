@@ -111,7 +111,7 @@ const mockAuthMethod1: PackageAuthMethod = {
   authMethod: {
     id: 1,
     name: 'Telegram',
-    config: '{"botToken": "123456:ABC-DEF"}',
+    config: {},
     packageAuthMethods: [],
     userAuthStatuses: [],
     createdAt: 1705312800,
@@ -128,7 +128,7 @@ const mockAuthMethod2: PackageAuthMethod = {
   authMethod: {
     id: 2,
     name: 'Email',
-    config: '{"smtpServer": "smtp.example.com"}',
+    config: {},
     packageAuthMethods: [],
     userAuthStatuses: [],
     createdAt: 1705312800,
