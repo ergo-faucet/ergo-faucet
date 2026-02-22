@@ -2,6 +2,7 @@ import { accountantConfig, ergoConfig } from '@configs';
 import { Accountant } from '@ergo-faucet/accountant';
 import { AccountantAction } from '@ergo-faucet/database';
 import { NodeModel, Wallet } from '@ergo-faucet/ergo-utils';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

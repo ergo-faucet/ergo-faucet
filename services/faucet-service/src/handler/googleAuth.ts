@@ -2,6 +2,7 @@ import { googleAuthConfig, redisConfig } from '@configs';
 import { GoogleAction } from '@ergo-faucet/database';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { GoogleAuth } from '@ergo-faucet/google-auth';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

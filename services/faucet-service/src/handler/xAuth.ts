@@ -2,6 +2,7 @@ import { xAuthConfig, redisConfig } from '@configs';
 import { XAction } from '@ergo-faucet/database';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { XAuth } from '@ergo-faucet/x-auth';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

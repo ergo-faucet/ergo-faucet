@@ -2,6 +2,7 @@ import { ergoAuthConfig, redisConfig, ergoConfig } from '@configs';
 import { UserAddressAction } from '@ergo-faucet/database';
 import { ErgoAuth } from '@ergo-faucet/ergo-authentication';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

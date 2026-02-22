@@ -1,6 +1,7 @@
 import { Box } from '@fleet-sdk/common';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import axios, { AxiosInstance } from 'axios';
+
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import {
   errorResponse,

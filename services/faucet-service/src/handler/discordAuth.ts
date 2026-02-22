@@ -2,6 +2,7 @@ import { discordConfig, redisConfig } from '@configs';
 import { DiscordAction } from '@ergo-faucet/database';
 import { DiscordAuth } from '@ergo-faucet/discord-auth';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

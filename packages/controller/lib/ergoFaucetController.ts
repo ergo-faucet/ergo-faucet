@@ -2,6 +2,7 @@ import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
 import { NodeModel } from '@ergo-faucet/ergo-utils';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { Network } from '@fleet-sdk/common';
+
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import { RequestHistoryController, PackageController } from '.';

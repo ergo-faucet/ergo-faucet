@@ -3,6 +3,7 @@ import {
   FastifyAPIServer,
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
+
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import {

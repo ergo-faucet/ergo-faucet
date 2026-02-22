@@ -3,6 +3,7 @@ import { ErgoFaucetController } from '@ergo-faucet/controller';
 import { PackageAction, RequestHistoryAction } from '@ergo-faucet/database';
 import { NodeModel } from '@ergo-faucet/ergo-utils';
 import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

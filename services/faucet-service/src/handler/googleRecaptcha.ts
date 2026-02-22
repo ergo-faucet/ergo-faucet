@@ -1,5 +1,6 @@
 import { recaptchaConfig } from '@configs';
 import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

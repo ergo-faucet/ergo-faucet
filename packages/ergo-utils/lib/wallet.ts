@@ -6,6 +6,7 @@ import {
 } from '@fleet-sdk/common';
 import { BoxSelector, ErgoUnsignedTransaction } from '@fleet-sdk/core';
 import { ErgoHDKey, Prover } from '@fleet-sdk/wallet';
+
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import { NodeModel } from './nodeModel';

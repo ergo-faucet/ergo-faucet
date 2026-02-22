@@ -4,10 +4,11 @@ import {
   FastifyAPIServer,
   FastifySeverInstance,
 } from '@ergo-faucet/fastify-server';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import axios from 'axios';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
+
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import {
   CallBackRouteQuery,

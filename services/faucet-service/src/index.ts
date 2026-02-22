@@ -1,6 +1,7 @@
+import './bootstrap';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
-import './bootstrap';
 import {
   setupDatabase,
   setupDiscordAuth,

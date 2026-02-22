@@ -11,8 +11,9 @@ import {
 } from '@fleet-sdk/core';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import { Accountant } from '../lib';
 import { mockInput } from './boxes.data';

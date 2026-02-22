@@ -9,6 +9,7 @@ import {
   UserAddressAction,
   XAction,
 } from '@ergo-faucet/database';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

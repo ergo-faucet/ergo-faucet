@@ -21,6 +21,7 @@ import {
 } from '@fleet-sdk/core';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
+
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import { AccountantConfig } from './types';

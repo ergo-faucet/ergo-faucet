@@ -1,5 +1,6 @@
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import axios from 'axios';
+
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import {
   InvalidHostname,

@@ -10,8 +10,9 @@ import type { FastifyCorsOptions } from '@fastify/cors';
 import jwt from '@fastify/jwt';
 import fastifySwagger, { FastifyDynamicSwaggerOptions } from '@fastify/swagger';
 import fastifySwaggerUi, { FastifySwaggerUiOptions } from '@fastify/swagger-ui';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import fastify, { FastifyError, FastifyReply, FastifyRequest } from 'fastify';
+
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import { ServerConfig, FastifySeverInstance, CookieConfig } from './types';
 

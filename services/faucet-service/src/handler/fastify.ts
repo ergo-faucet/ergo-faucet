@@ -1,6 +1,7 @@
 import { serverConfig } from '@configs';
 import { FastifyAPIServer, ServerConfig } from '@ergo-faucet/fastify-server';
 import { GoogleRecaptcha } from '@ergo-faucet/google-recaptcha';
+
 import { DefaultLogger } from '@rosen-bridge/abstract-logger';
 
 const logger = DefaultLogger.getInstance().child(import.meta.url);

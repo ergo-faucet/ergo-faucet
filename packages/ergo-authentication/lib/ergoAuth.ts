@@ -8,9 +8,10 @@ import {
 import { ErgoAddress, ErgoMessage, Network } from '@fleet-sdk/core';
 import { hex } from '@fleet-sdk/crypto';
 import { Prover } from '@fleet-sdk/wallet';
-import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 import Redis from 'ioredis';
 import { v4 as uuidv4 } from 'uuid';
+
+import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import {
   AuthenticationBody,
