@@ -1,16 +1,16 @@
-import { GoogleAuth } from '@ergo-faucet/google-auth';
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
-import { GoogleAction } from '@ergo-faucet/database';
-import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 import { googleAuthConfig, redisConfig } from '@configs';
+import { GoogleAction } from '@ergo-faucet/database';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
+import { GoogleAuth } from '@ergo-faucet/google-auth';
 
-const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
+import { DefaultLogger } from '@rosen-bridge/abstract-logger';
+
+const logger = DefaultLogger.getInstance().child(import.meta.url);
 
 export const setupGoogleAuth = async () => {
   const fastify = FastifyAPIServer.getInstance();
   const googleAction = GoogleAction.getInstance();
-  const googleLogger =
-    CallbackLoggerFactory.getInstance().getLogger('googleAuth');
+  const googleLogger = DefaultLogger.getInstance().child('GoogleAuth');
 
   await GoogleAuth.initialize(
     {

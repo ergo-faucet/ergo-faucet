@@ -24,4 +24,4 @@ export {
   AddAssetsToPackageBodyType,
   AddAuthMethodsToPackageBodyType,
 } from './routeBodyTypes';
-export { PackageControllerConfig } from './PackageControllerConfig';
+export { PackageControllerConfig } from './packageControllerConfig';

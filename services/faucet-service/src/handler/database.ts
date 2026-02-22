@@ -1,3 +1,4 @@
+import { dbConfig } from '@configs';
 import {
   AccountantAction,
   DataSourceHandler,
@@ -8,13 +9,13 @@ import {
   UserAddressAction,
   XAction,
 } from '@ergo-faucet/database';
-import { dbConfig } from '@configs';
-import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 
-const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
+import { DefaultLogger } from '@rosen-bridge/abstract-logger';
+
+const logger = DefaultLogger.getInstance().child(import.meta.url);
 
 export const setupDatabase = async () => {
-  const dbLogger = CallbackLoggerFactory.getInstance().getLogger('Database');
+  const dbLogger = DefaultLogger.getInstance().child('Database');
   await DataSourceHandler.initialize(dbConfig, dbLogger);
   try {
     const dataSource = DataSourceHandler.getInstance().getDataSource();

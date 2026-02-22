@@ -1,7 +1,8 @@
-export { DiscordAction } from './DicoerdActions';
-export { UserAddressAction } from './UserAddressActions';
-export { PackageAction } from './PackageAction';
-export { XAction } from './XActions';
-export { GoogleAction } from './GoogleActions';
-export { AccountantAction } from './AccountantAction';
-export { RequestHistoryAction } from './RequestHistoryAction';
+export { DiscordAction } from './dicoerdActions';
+export { UserAddressAction } from './userAddressActions';
+export { PackageAction } from './packageAction';
+export { XAction } from './xActions';
+export { GoogleAction } from './googleActions';
+export { AccountantAction } from './accountantAction';
+export { RequestHistoryAction } from './requestHistoryAction';
+export { AbstractAuthAction } from './abstractAuthAction';

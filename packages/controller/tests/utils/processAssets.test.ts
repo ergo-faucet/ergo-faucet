@@ -2,9 +2,10 @@ import {
   InvalidTokenPrecisionError,
   TokenNotFoundError,
 } from '@ergo-faucet/ergo-utils';
-import { mockNodeModel } from '../mockUtils';
 import { expect, it, describe, vi, beforeEach, afterAll } from 'vitest';
+
 import { toBigIntAmount, processAssets } from '../../lib/utils';
+import { mockNodeModel } from '../mockUtils';
 
 describe('utils', () => {
   beforeEach(() => {

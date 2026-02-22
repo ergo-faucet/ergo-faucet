@@ -1,4 +1,5 @@
 import { Static } from '@sinclair/typebox';
+
 import {
   RequestPackageBody,
   AddPackageBody,

@@ -1,6 +1,6 @@
 import { AccountantAction } from '@ergo-faucet/database';
-import { Network } from '@fleet-sdk/common';
 import { Wallet, NodeModel } from '@ergo-faucet/ergo-utils';
+import { Network } from '@fleet-sdk/common';
 
 export interface AccountantConfig {
   nodeModel: NodeModel;

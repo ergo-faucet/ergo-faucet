@@ -3,9 +3,11 @@
   "compilerOptions": {
     "outDir": "./dist",
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "composite": true,
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["tests", "lib", "vitest.config.ts"],
+  "include": ["tests", "lib"],
   "references": [
     { "path": "../google-recaptcha" },
     { "path": "../common-types" }

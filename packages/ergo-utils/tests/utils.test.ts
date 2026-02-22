@@ -1,8 +1,9 @@
-import { describe, expect, it } from 'vitest';
-import { isValidErgoAddress } from '../lib';
 import { Network } from '@fleet-sdk/common';
+import { describe, expect, it } from 'vitest';
 
-describe('', async () => {
+import { isValidErgoAddress } from '../lib';
+
+describe('Utils', async () => {
   /**
    * Test for rejecting a TESTNET address on MAINNET
    * @target ErgoAuth.isvalidErgoAddress

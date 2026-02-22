@@ -1,5 +1,7 @@
-import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
 import './bootstrap';
+
+import { DefaultLogger } from '@rosen-bridge/abstract-logger';
+
 import {
   setupDatabase,
   setupDiscordAuth,
@@ -15,7 +17,7 @@ import {
 } from './handler';
 import { scheduleExpiringJob, schedulePayingJob } from './jobs';
 
-const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
+const logger = DefaultLogger.getInstance().child(import.meta.url);
 
 const main = async () => {
   // Initialize all services

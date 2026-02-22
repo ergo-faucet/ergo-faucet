@@ -1,16 +1,16 @@
-import { DiscordAuth } from '@ergo-faucet/discord-auth';
 import { discordConfig, redisConfig } from '@configs';
-import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 import { DiscordAction } from '@ergo-faucet/database';
-import { CallbackLoggerFactory } from '@rosen-bridge/callback-logger';
+import { DiscordAuth } from '@ergo-faucet/discord-auth';
+import { FastifyAPIServer } from '@ergo-faucet/fastify-server';
 
-const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
+import { DefaultLogger } from '@rosen-bridge/abstract-logger';
+
+const logger = DefaultLogger.getInstance().child(import.meta.url);
 
 export const setupDiscordAuth = async () => {
   const fastify = FastifyAPIServer.getInstance();
   const discordAction = DiscordAction.getInstance();
-  const discordLogger =
-    CallbackLoggerFactory.getInstance().getLogger('DiscordAuth');
+  const discordLogger = DefaultLogger.getInstance().child('DiscordAuth');
 
   await DiscordAuth.initialize(
     {

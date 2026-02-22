@@ -1,11 +1,11 @@
-import { Asset } from './Asset';
-import { AuthMethod } from './AuthMethod';
-import { Package } from './Package';
-import { PackageAuthMethod } from './PackageAuthMethod';
-import { User } from './User';
-import { UserAddress } from './UserAddress';
-import { UserAuthStatus } from './UserAuthStatus';
-import { UserRequest } from './UserRequest';
+import { Asset } from './asset';
+import { AuthMethod } from './authMethod';
+import { Package } from './package';
+import { PackageAuthMethod } from './packageAuthMethod';
+import { User } from './user';
+import { UserAddress } from './userAddress';
+import { UserAuthStatus } from './userAuthStatus';
+import { UserRequest } from './userRequest';
 
 export const entities = [
   Asset,

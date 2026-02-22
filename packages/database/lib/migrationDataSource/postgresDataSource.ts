@@ -1,5 +1,5 @@
-// lib/postgresDataSource.ts
 import { DataSource } from '@rosen-bridge/extended-typeorm';
+
 import { entities } from '../entities';
 import { migrations } from '../migrations';
 

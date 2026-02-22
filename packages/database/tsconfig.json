@@ -3,7 +3,9 @@
   "compilerOptions": {
     "outDir": "./dist",
     "experimentalDecorators": true,
-    "emitDecoratorMetadata": true
+    "emitDecoratorMetadata": true,
+    "composite": true,
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["tests", "lib", "vitest.config.ts", "scripts"]
+  "include": ["tests", "lib", "scripts"]
 }

@@ -1,4 +1,5 @@
 import config from 'config';
+
 const activate = config.get<boolean>('recaptcha.activate');
 
 /**

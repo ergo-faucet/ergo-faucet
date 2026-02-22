@@ -1,8 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "composite": true,
+    "types": ["node", "vitest/globals"]
   },
-  "include": ["tests", "lib", "vitest.config.ts"],
+  "include": ["tests", "lib"],
   "references": [{ "path": "../database" }, { "path": "../ergo-utils" }]
 }

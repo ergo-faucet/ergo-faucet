@@ -1,2 +1,2 @@
-export { XAuth } from './XAuth';
+export { XAuth } from './xAuth';
 export { XAuthConfig } from './types';

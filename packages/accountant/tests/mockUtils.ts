@@ -6,6 +6,7 @@ import {
 } from '@ergo-faucet/database';
 import { Network } from '@fleet-sdk/common';
 import { vi } from 'vitest';
+
 import { AccountantConfig } from '../lib';
 
 const mockLogger = {
