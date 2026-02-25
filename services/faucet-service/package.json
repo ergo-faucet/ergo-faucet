@@ -38,6 +38,7 @@
     "@rosen-bridge/callback-logger": "^2.0.0",
     "@rosen-bridge/winston-logger": "^3.0.0",
     "config": "^3.3.7",
+    "js-yaml": "^4.1.0",
     "lodash-es": "^4.17.21",
     "tsx": "^4.19.4"
   },
