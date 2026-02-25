@@ -15,7 +15,7 @@
     "lint": "npm run lint --workspaces",
     "lint:check": "npm run lint:check --workspaces",
     "madge": "madge --circular --extensions ts ./",
-    "prepare": "husky || true",
+    "prepare": "husky",
     "release": "npm run release --workspaces",
     "test": "npm run test --workspaces",
     "type-check": "npm run type-check --workspaces",
