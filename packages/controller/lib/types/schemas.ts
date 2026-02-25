@@ -45,8 +45,8 @@ export const PackagesRouteQuery = Type.Object({
 });
 
 export const AssetSchema = Type.Object({
-  tokenId: Type.String(),
-  assetName: Type.String(),
+  tokenId: Type.String({ minLength: 3 }),
+  assetName: Type.String({ minLength: 1 }),
   amount: Type.String({ pattern: '^[0-9]+(\\.[0-9]+)?$' }),
   decimals: Type.Number({ minimum: 0 }),
   usageDescription: Type.Optional(Type.String()),
@@ -72,7 +72,7 @@ export const AuthMethodSchema = Type.Object({
 
 export const PackageSchema = Type.Object({
   id: Type.Number({ minimum: 0 }),
-  name: Type.String(),
+  name: Type.String({ minLength: 1 }),
   description: Type.String(),
   type: Type.Union([Type.Literal('normal'), Type.Literal('random')]),
   openAt: Type.Optional(Type.Number()),
@@ -106,7 +106,7 @@ export const ErrorResponse = Type.Object({
 export const RequestPackageBody = Type.Object({
   packageId: Type.Number({ minimum: 0 }),
   destAddress: Type.String({ minLength: 1 }),
-  captchaToken: Type.String({ minLength: 1 }),
+  captchaToken: Type.String({ minLength: 0 }),
 });
 
 export const RequestPackageResponse200 = Type.Object({
@@ -114,13 +114,13 @@ export const RequestPackageResponse200 = Type.Object({
 });
 
 export const AddPackageBody = Type.Object({
-  name: Type.String(),
-  description: Type.String(),
+  name: Type.String({ minLength: 1, maxLength: 24 }),
+  description: Type.String({ maxLength: 300 }),
   type: Type.Union([Type.Literal('normal'), Type.Literal('random')]),
   status: Type.Union([Type.Literal('show'), Type.Literal('hide')]),
   openAt: Type.Optional(Type.Number({ minimum: 0 })),
   closeAt: Type.Optional(Type.Number({ minimum: 0 })),
-  delay: Type.String(),
+  delay: Type.String({ pattern: '^[0-9]+$', minLength: 1 }),
   numberEachUser: Type.Number({ minimum: 1 }),
 });
 
