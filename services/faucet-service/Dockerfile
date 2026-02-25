@@ -3,9 +3,9 @@
 FROM node:22.18-slim AS base
 WORKDIR /app
 COPY . /app
+RUN npm i -g npm@11.6.2
 
 FROM base AS build
-RUN npm i -g npm@11.6.2
 RUN --mount=type=cache,target=/root/.npm npm ci
 RUN npm run build
 
