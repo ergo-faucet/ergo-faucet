@@ -10,4 +10,10 @@ export {
   TokenNotFoundError,
   WalletConfig,
 } from './types';
-export { isValidErgoAddress, validateAmountPrecision } from './utils';
+export {
+  isValidErgoAddress,
+  validateAmountPrecision,
+  execute,
+  ExecutionParameters,
+  TransactionExecutionResult,
+} from './utils';

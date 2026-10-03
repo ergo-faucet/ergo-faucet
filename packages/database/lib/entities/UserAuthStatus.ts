@@ -48,6 +48,7 @@ export class UserAuthStatus {
     token?: string;
     refresh_token?: string;
     address?: string;
+    withdrawn?: boolean;
   };
 
   @Column({ type: 'int' })

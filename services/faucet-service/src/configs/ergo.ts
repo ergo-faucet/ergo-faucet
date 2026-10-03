@@ -21,4 +21,5 @@ export const ergoConfig = {
       ? config.get<string>('ergo.passphrase')
       : undefined,
   timeout: config.get<number>('ergo.node.timeout'),
+  scriptName: config.get<string>('ergo.scriptName'),
 };

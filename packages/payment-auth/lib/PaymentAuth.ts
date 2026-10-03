@@ -26,7 +26,8 @@ class PaymentAuth {
   private readonly nodeModel: NodeModel;
   private readonly fastifyServer: FastifyAPIServer;
   private readonly paymentAction: PaymentAction;
-
+  private readonly ownerPk: string;
+  private readonly maxAddress: number;
   private readonly expiresTime: number; // Time (in seconds) the user is allowed to complete the payment
   private readonly expiresTimeDelay: number; // Additional time (in seconds) allowed for delayed payments
 
@@ -45,6 +46,8 @@ class PaymentAuth {
     this.paymentAction = config.paymentAction;
     this.expiresTime = config.expiresTime;
     this.expiresTimeDelay = config.expiresTimeDelay;
+    this.ownerPk = config.ownerPk;
+    this.maxAddress = config.maxAddress;
   }
 
   /**
@@ -99,7 +102,7 @@ class PaymentAuth {
         errorHandler: this.fastifyServer.errorHandler,
         preHandler: [
           this.fastifyServer.authPreHandler(),
-          this.fastifyServer.captchaPreHandler,
+          // this.fastifyServer.captchaPreHandler,
         ],
         schema: {
           body: checkStatusOrGetAddressBody,
@@ -285,13 +288,69 @@ class PaymentAuth {
   ): Promise<UserAuthStatus> => {
     const addressIndex = await this.paymentAction.getAndIncrementCounter();
 
-    const newAddress = this.wallet.generateUniquePaymentAddress(addressIndex);
+    const newAddress = this.wallet.generateUniquePaymentAddress(
+      addressIndex,
+      this.ownerPk,
+    );
     return await this.paymentAction.addUserPaymentAuthStatus(
       userId,
       authMethodId,
       packageId,
       newAddress,
     );
+  };
+
+  private chunkAddresses = (
+    addresses: UserAuthStatus[],
+    limit: number,
+  ): UserAuthStatus[][] => {
+    const chunks: UserAuthStatus[][] = [];
+    for (let i = 0; i < addresses.length; i += limit) {
+      chunks.push(addresses.slice(i, i + limit));
+    }
+    return chunks;
+  };
+
+  /**
+   * Collects all user payment boxes and marks them as collected.
+   * @returns {Promise<void>}
+   */
+  public collectBoxes = async (): Promise<void> => {
+    this.logger.debug('Collecting user payment boxes...');
+    try {
+      const addresses: UserAuthStatus[] =
+        await this.paymentAction.getUserPaymentAddresses();
+      if (addresses.length === 0) {
+        this.logger.debug('No payment addresses found.');
+        return;
+      }
+
+      this.logger.debug(`Found ${addresses.length} payment addresses.`);
+
+      const chunks = this.chunkAddresses(addresses, this.maxAddress);
+      for (const chunk of chunks) {
+        try {
+          await this.wallet.collectUserPaidBoxes(
+            this.ownerPk,
+            chunk.map((record) => record.metadata.address!),
+          );
+          await this.paymentAction.markAddressesAsCollected(chunk);
+        } catch (error) {
+          this.logger.debug(
+            `Error during collectUserPaidBoxes with addresses: ${chunk.map((record) => record.metadata.address!)} `,
+            {
+              message: error instanceof Error ? error.message : '',
+              stack: error instanceof Error ? error.stack : undefined,
+            },
+          );
+        }
+      }
+    } catch (error) {
+      this.logger.debug('Error during collectBoxes', {
+        message: error instanceof Error ? error.message : '',
+        stack: error instanceof Error ? error.stack : undefined,
+      });
+    }
   };
 
   /**

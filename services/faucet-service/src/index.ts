@@ -19,6 +19,7 @@ import {
   schedulePayingJob,
   scheduleVerifyIncomingPaymentsJob,
 } from './jobs';
+import { scheduleCollectBoxesJob } from './jobs/collectBoxesJob';
 
 const logger = CallbackLoggerFactory.getInstance().getLogger(import.meta.url);
 
@@ -41,6 +42,7 @@ const main = async () => {
     await scheduleExpiringJob();
     await schedulePayingJob();
     await scheduleVerifyIncomingPaymentsJob();
+    await scheduleCollectBoxesJob();
   } catch (err) {
     logger.debug('Error in initialize the packages', err);
   }

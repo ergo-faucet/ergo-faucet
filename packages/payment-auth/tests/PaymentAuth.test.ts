@@ -92,7 +92,10 @@ describe('PaymentAuth', () => {
       // Arrange
       mockPaymentAction.getUserPaymentAuthStatus.mockResolvedValue(null);
       const mockIndex = 5;
-      mockPaymentAction.getAndIncrementCounter.mockResolvedValue(mockIndex);
+      mockPaymentAction.getAndIncrementCounter.mockResolvedValue(
+        mockIndex,
+        'mock-owner-pk',
+      );
       const mockAddress = 'newaddress';
       mockWallet.generateUniquePaymentAddress.mockReturnValue(mockAddress);
       mockPaymentAction.addUserPaymentAuthStatus.mockResolvedValue(
@@ -115,6 +118,7 @@ describe('PaymentAuth', () => {
       expect(mockPaymentAction.getAndIncrementCounter).toHaveBeenCalled();
       expect(mockWallet.generateUniquePaymentAddress).toHaveBeenCalledWith(
         mockIndex,
+        'mock-owner-pk',
       );
       expect(mockPaymentAction.addUserPaymentAuthStatus).toHaveBeenCalledWith(
         userId,
@@ -169,6 +173,7 @@ describe('PaymentAuth', () => {
       expect(mockPaymentAction.getAndIncrementCounter).toHaveBeenCalled();
       expect(mockWallet.generateUniquePaymentAddress).toHaveBeenCalledWith(
         mockIndex,
+        'mock-owner-pk',
       );
       expect(mockPaymentAction.addUserPaymentAuthStatus).toHaveBeenCalledWith(
         userId,
@@ -223,6 +228,7 @@ describe('PaymentAuth', () => {
       expect(mockPaymentAction.getAndIncrementCounter).toHaveBeenCalled();
       expect(mockWallet.generateUniquePaymentAddress).toHaveBeenCalledWith(
         mockIndex,
+        'mock-owner-pk',
       );
       expect(mockPaymentAction.addUserPaymentAuthStatus).toHaveBeenCalledWith(
         userId,
@@ -356,6 +362,7 @@ describe('PaymentAuth', () => {
       expect(mockPaymentAction.getAndIncrementCounter).toHaveBeenCalled();
       expect(mockWallet.generateUniquePaymentAddress).toHaveBeenCalledWith(
         mockIndex,
+        'mock-owner-pk',
       );
       expect(mockPaymentAction.addUserPaymentAuthStatus).toHaveBeenCalledWith(
         userId,

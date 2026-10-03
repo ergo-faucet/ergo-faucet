@@ -9,4 +9,6 @@ export interface PaymentAuthConfig {
   paymentAction: PaymentAction;
   expiresTime: number;
   expiresTimeDelay: number;
+  ownerPk: string;
+  maxAddress: number;
 }

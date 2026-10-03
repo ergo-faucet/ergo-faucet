@@ -1,21 +1,38 @@
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
-import { BoxSelector, ErgoUnsignedTransaction } from '@fleet-sdk/core';
+import {
+  BoxSelector,
+  ErgoAddress,
+  ErgoUnsignedTransaction,
+  OutputBuilder,
+  TransactionBuilder,
+} from '@fleet-sdk/core';
 import {
   SignedTransaction,
   Box,
   TokenTargetAmount,
   ensureUTxOBigInt,
   Network,
+  TokenAmount,
+  Base58String,
 } from '@fleet-sdk/common';
 import { ErgoHDKey, Prover } from '@fleet-sdk/wallet';
 import { NodeModel } from './NodeModel';
 
 import { compile } from '@fleet-sdk/compiler';
-import { SSigmaProp, SGroupElement, SInt } from '@fleet-sdk/serializer';
+import {
+  SSigmaProp,
+  SGroupElement,
+  SInt,
+  serializeTransaction,
+  SLong,
+} from '@fleet-sdk/serializer';
 import * as fs from 'fs';
 import path from 'path';
 
 import { NotEnoughAssetsError, WalletConfig } from './types';
+import { execute, TransactionExecutionResult } from './utils';
+
+import { hex } from '@fleet-sdk/crypto';
 
 export class Wallet {
   private static instance: Wallet;
@@ -24,16 +41,16 @@ export class Wallet {
   private readonly childKey: ErgoHDKey;
   private readonly walletAddress: string;
   private readonly network: Network;
+  private readonly scriptName: string;
   private readonly paymentScript: string;
+  private readonly minFee: bigint;
 
-  private constructor(
-    walletConfig: WalletConfig,
-
-    logger?: AbstractLogger,
-  ) {
+  private constructor(walletConfig: WalletConfig, logger?: AbstractLogger) {
     this.logger = logger ? logger : new DummyLogger();
     this.prover = new Prover();
     this.network = walletConfig.network;
+    this.scriptName = walletConfig.scriptName;
+    this.minFee = walletConfig.minFee;
 
     if (walletConfig.privateKey) {
       this.childKey = new ErgoHDKey({
@@ -55,7 +72,7 @@ export class Wallet {
 
     const SCRIPT_DIR = path.join(import.meta.dirname, `../lib/scripts/`);
     this.paymentScript = fs.readFileSync(
-      path.join(SCRIPT_DIR, 'truePaymentScript.es'),
+      path.join(SCRIPT_DIR, this.scriptName),
       'utf8',
     );
 
@@ -170,24 +187,142 @@ export class Wallet {
    * Compiles the controller script using:
    *  - faucetPK set to the child's public key
    *  - trueScriptsIndex set to -count (to produce a distinct script/address per count)
+   *  - If script is faucetTrueContract.es and ownerPK is provided, it is included in the script compilation along with MIN_FEE.
    *
    * @param count - Non-negative integer used to derive a unique script index.
    * @returns {string} The generated payment address.
    */
-  public generateUniquePaymentAddress = (count: number): string => {
-    const paymentContract = compile(this.paymentScript, {
-      map: {
-        faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
-        trueScriptsIndex: SInt(-count),
-      },
-    });
+  public generateUniquePaymentAddress = (
+    count: number,
+    ownerPK?: Base58String,
+  ): string => {
+    let paymentContract;
 
+    if (this.scriptName === 'truePaymentScript.es') {
+      paymentContract = compile(this.paymentScript, {
+        map: {
+          faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
+          trueScriptsIndex: SInt(-count),
+        },
+      });
+    } else if (this.scriptName === 'faucetTrueContract.es' && ownerPK) {
+      paymentContract = compile(this.paymentScript, {
+        map: {
+          faucetPK: SSigmaProp(SGroupElement(this.childKey.publicKey)),
+          ownerPK: SSigmaProp(
+            SGroupElement(ErgoAddress.fromBase58(ownerPK).getPublicKeys()[0]),
+          ),
+          index: SInt(-count),
+          MIN_FEE: SLong(this.minFee),
+        },
+      });
+    } else {
+      throw new Error('Not provided ownerPK');
+    }
     const paymentAddress = paymentContract.toAddress(this.network).toString();
     this.logger.debug(`Generated unique payment address: ${paymentAddress}`);
     return paymentAddress;
   };
 
+  /**
+   * Returns the ErgoTree for the wallet's first derived address.
+   * @returns {string} Hex-encoded ErgoTree of the wallet's child address.
+   */
   public getErgoTree = () => {
     return this.childKey.address.ergoTree;
+  };
+
+  /**
+   * Collect unspent boxes from the given contractAddresses, consolidate ERG and tokens,
+   * build, sign and submit a single transaction sending (totalErgs - minFee) and tokens to ownerPK.
+   *
+   * @param ownerPK Base58String - recipient address/public key (base58)
+   * @param contractAddresses Base58String[] - contract addresses to collect boxes from
+   * @throws Error if transaction execution/submission fails or no boxes found
+   */
+  public collectUserPaidBoxes = async (
+    ownerPK: Base58String,
+    contractAddresses: Base58String[],
+  ): Promise<void> => {
+    // gather boxes from all contract addresses (paginated)
+    const contractBoxes: Box<bigint>[] = [];
+    for (const contractAddress of contractAddresses) {
+      this.logger.debug(
+        `Fetching unspent contract boxes for address: ${contractAddress}`,
+      );
+      let receivedBoxes: Box<bigint>[] = [];
+      let offset: number = 0;
+      const limit: number = 100;
+      do {
+        receivedBoxes = await NodeModel.getInstance().getUnspentBoxes(
+          contractAddress,
+          offset,
+          limit,
+        );
+        this.logger.debug('Successfully retrieved boxes');
+        offset += limit;
+
+        // updating boxes
+        receivedBoxes.forEach((box) => {
+          contractBoxes.push(ensureUTxOBigInt(box));
+        });
+      } while (receivedBoxes.length); // till no more boxes are there
+    }
+    this.logger.debug(`Collected ${contractBoxes.length} contract boxes`);
+
+    const totalErgs = contractBoxes.reduce((sum, box) => sum + box.value, 0n);
+    this.logger.debug('Total ERG in inputs:', totalErgs.toString());
+    this.logger.debug(
+      'Total ERG in outputs:',
+      (totalErgs - this.minFee).toString(),
+    );
+
+    const currentHeight =
+      await NodeModel.getInstance().getCurrentBlockchainHeight();
+    this.logger.debug('Current block height:', currentHeight);
+
+    // aggregate tokens
+    const tokens: TokenAmount<bigint>[] = [];
+    contractBoxes
+      .map((box) => box.assets)
+      .forEach((arr) => tokens.push(...arr));
+
+    // build unsigned tx
+    const unsignedTx = new TransactionBuilder(currentHeight)
+      .from(contractBoxes)
+      .to(new OutputBuilder(totalErgs - this.minFee, ownerPK).addTokens(tokens))
+      .payFee(this.minFee)
+      .sendChangeTo(ErgoAddress.fromBase58(ownerPK).ergoTree)
+      .build();
+
+    this.logger.debug(
+      `Unsigned spend transaction built. ${JSON.stringify(unsignedTx.toEIP12Object())}`,
+    );
+
+    // execute/sign and submit
+    this.logger.debug('Loading blockchain context & parameters');
+    const context = await NodeModel.getInstance().getBlockchainContext();
+    const parameters = await NodeModel.getInstance().getBlockchainParameters();
+
+    const executedTx = execute(unsignedTx, [this.childKey], {
+      context,
+      network: this.network,
+      parameters,
+    });
+
+    if (
+      executedTx === undefined ||
+      (executedTx as TransactionExecutionResult).success === false
+    ) {
+      this.logger.warn('Execution failed, tx not submitted');
+      throw new Error('Transaction execution failed');
+    } else {
+      this.logger.debug('Execution successful, submitting tx...');
+      const serializedTx = hex.encode(
+        serializeTransaction(executedTx as SignedTransaction).toBytes(),
+      );
+      await NodeModel.getInstance().submitTransactionBytes(serializedTx);
+      this.logger.info('Transaction submitted successfully');
+    }
   };
 }

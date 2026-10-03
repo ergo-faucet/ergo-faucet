@@ -26,7 +26,12 @@ describe('Wallet', () => {
       const mnemonic =
         'steel wet husband avoid surround trial insect stone gauge trick zone dry famous family mechanic';
       await NodeModel.initialize('nodeUrl', 1000);
-      await Wallet.initialize({ mnemonic: mnemonic, network: Network.Testnet });
+      await Wallet.initialize({
+        mnemonic: mnemonic,
+        scriptName: 'truePaymentScript.es',
+        network: Network.Testnet,
+        minFee: 1000000n,
+      });
     });
 
     afterAll(() => {
@@ -128,7 +133,12 @@ describe('Wallet', () => {
       const mnemonic =
         'steel wet husband avoid surround trial insect stone gauge trick zone dry famous family mechanic';
 
-      await Wallet.initialize({ mnemonic, network: Network.Testnet });
+      await Wallet.initialize({
+        mnemonic,
+        scriptName: 'truePaymentScript.es',
+        network: Network.Testnet,
+        minFee: 1000000n,
+      });
     });
 
     afterAll(() => {
