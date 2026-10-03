@@ -21,11 +21,11 @@ import {
 } from '@fleet-sdk/core';
 import { hex } from '@fleet-sdk/crypto';
 import { serializeTransaction } from '@fleet-sdk/serializer';
-import { chooseWeighted } from './utils';
 
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
 import { AccountantConfig } from './types';
+import { chooseWeighted } from './utils';
 
 class Accountant {
   private static instance: Accountant;

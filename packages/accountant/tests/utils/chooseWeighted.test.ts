@@ -1,4 +1,5 @@
 import { describe, vi, afterEach, expect, it } from 'vitest';
+
 import { chooseWeighted } from '../../lib';
 
 describe('chooseWeighted', () => {
