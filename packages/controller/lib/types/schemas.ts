@@ -50,7 +50,7 @@ export const AssetSchema = Type.Object({
   amount: Type.String({ pattern: '^[0-9]+(\\.[0-9]+)?$' }),
   decimals: Type.Number({ minimum: 0 }),
   usageDescription: Type.Optional(Type.String()),
-  weight: Type.Number({ default: 10, minimum: 0, maximum: 100 }),
+  weight: Type.Integer({ default: 10, minimum: 0, maximum: 100 }),
 });
 
 export const UserProvidedAsset = Type.Omit(AssetSchema, [
@@ -123,6 +123,7 @@ export const AddPackageBody = Type.Object({
   closeAt: Type.Optional(Type.Number({ minimum: 0 })),
   delay: Type.String({ pattern: '^[0-9]+$', minLength: 1 }),
   numberEachUser: Type.Number({ minimum: 1 }),
+  maxPayout: Type.Optional(Type.Number({ minimum: 0 })),
 });
 
 export const AddPackageResponse200 = Type.Object({

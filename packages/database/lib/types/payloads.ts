@@ -9,6 +9,7 @@ export interface PackagePayload {
   status: 'show' | 'hide';
   delay: string;
   numberEachUser: number;
+  maxPayout?: number;
 }
 
 export type AssetPayload = Omit<

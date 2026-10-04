@@ -33,3 +33,14 @@ export class TokenNotFoundError extends Error {
     this.name = 'TokenNotFoundError';
   }
 }
+
+export class NoAssetsSelectedError extends Error {
+  /**
+   * Constructs the error with details.
+   * @param details - The details about the failure.
+   */
+  constructor() {
+    super('No assets selected for transaction');
+    this.name = 'NoAssetsSelectedError';
+  }
+}

@@ -4,6 +4,7 @@ import {
   Wallet,
   DoubleSpendError,
   NotEnoughAssetsError,
+  NoAssetsSelectedError,
 } from '@ergo-faucet/ergo-utils';
 import {
   Amount,
@@ -24,7 +25,7 @@ import { serializeTransaction } from '@fleet-sdk/serializer';
 
 import { AbstractLogger, DummyLogger } from '@rosen-bridge/abstract-logger';
 
-import { AccountantConfig } from './types';
+import { AccountantConfig, ProcessTransactionResult } from './types';
 import { chooseWeighted } from './utils';
 
 class Accountant {
@@ -134,7 +135,7 @@ class Accountant {
         return;
       }
 
-      const { serializedTx, transactionId } =
+      const { serializedTx, transactionId }: ProcessTransactionResult =
         await this.processTransaction(request);
       await this.accountantAction.updateUserRequestPaymentInfo(
         request.id,
@@ -157,6 +158,16 @@ class Accountant {
           request.id,
           'pending',
           request.numberOfTries + 1,
+        );
+      } else if (error instanceof NoAssetsSelectedError) {
+        this.logger.debug(
+          `No assets selected for request ID: ${request.id}. Marking as failed.`,
+        );
+
+        await this.accountantAction.updateUserRequestPaymentInfo(
+          request.id,
+          'failed',
+          request.numberOfTries,
         );
       } else throw error;
     }
@@ -259,17 +270,16 @@ class Accountant {
    *
    * For `normal` packages:
    *  - Selects input boxes, builds and signs a transaction, then submits it.
-   * For `random` packages: returns empty transaction data (not implemented).
+   *
+   * For `random` packages:
+   * - Randomly selects assets from the package based on the maximum payout. The selected assets are used to build, sign, and submit the transaction.
    *
    * @param request - User request with package details and destination.
    * @returns Promise with the serialized transaction and transaction ID.
    */
   public processTransaction = async (
     request: UserRequest,
-  ): Promise<{
-    serializedTx: string;
-    transactionId: string;
-  }> => {
+  ): Promise<ProcessTransactionResult> => {
     let selectedAssets;
     switch (request.package.type) {
       case 'normal': {
@@ -287,6 +297,11 @@ class Accountant {
           request.package.maxPayout!,
         );
         break;
+    }
+
+    if (selectedAssets.length === 0) {
+      this.logger.debug(`No assets selected for request ID: ${request.id}`);
+      throw new NoAssetsSelectedError();
     }
 
     // Find ERG assets amount
@@ -360,15 +375,24 @@ class Accountant {
     return { serializedTx, transactionId };
   };
 
-  selectRandomAssets = (assets: Asset[], max_payout: number): Asset[] => {
+  /**
+   * Selects assets randomly based on their weights.
+   * Assets with a weight of 100 are always selected, while the remaining
+   * assets are selected until the maximum payout is reached.
+   *
+   * @param assets - Assets available for selection.
+   * @param maxPayout - Maximum number of assets to select.
+   * @returns The selected assets.
+   */
+  selectRandomAssets = (assets: Asset[], maxPayout: number): Asset[] => {
     let assetToChoose = [...assets];
-    let remain = max_payout;
+    let remain = maxPayout;
     const selected: Asset[] = [];
 
     // Select assets with weight 100 automatically
     const always = assetToChoose.filter((a) => a.weight === 100);
     selected.push(...always);
-    remain = Math.max(0, max_payout - always.length);
+    remain = Math.max(0, maxPayout - always.length);
 
     // Remove "always" assets from assetToChoose
     assetToChoose = assetToChoose.filter((a) => a.weight !== 100);

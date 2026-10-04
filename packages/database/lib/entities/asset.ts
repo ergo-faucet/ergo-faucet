@@ -41,6 +41,10 @@ export class Asset {
   @Column({ type: 'int' })
   modifiedAt!: number;
 
-  @Column({ type: 'int', default: 10, nullable: true })
+  /**
+   * Selection weight for random packages. A weight of 100 means the asset
+   * is always included; other weights are used for weighted random selection.
+   */
+  @Column({ type: 'int', default: 10 })
   weight!: number;
 }
