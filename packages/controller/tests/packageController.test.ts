@@ -80,7 +80,9 @@ describe('PackageController', () => {
 
     // Default mock for getPackages to return a package
     vi.spyOn(mockedPackageAction, 'getPackages').mockImplementation(
-      async () => mockPackageDTO,
+      async () => {
+        return { total: 1, packages: mockPackageDTO };
+      },
     );
 
     /**
@@ -99,7 +101,10 @@ describe('PackageController', () => {
 
       expect(mockedPackageAction.getPackages).toBeCalled();
       expect(result.statusCode).toEqual(200);
-      expect(JSON.parse(result.body)).toEqual(mockPackageDTO);
+      expect(JSON.parse(result.body)).toEqual({
+        total: 1,
+        packages: mockPackageDTO,
+      });
     });
 
     /**
