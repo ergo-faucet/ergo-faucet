@@ -508,6 +508,43 @@ describe('PackageController', () => {
     });
 
     /**
+     * Test for missing maxPayout in random package creation
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages with a random package and no maxPayout
+     * @expected
+     * - returns 400 with a missing maxPayout error
+     * - package is not added to the database
+     */
+    it('should return 400 when maxPayout is missing for a random package', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+
+      const payload = {
+        name: 'Test Package',
+        description: 'A test package',
+        type: 'random',
+        status: 'show',
+        delay: '360000',
+        numberEachUser: 1,
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages',
+        payload,
+      });
+
+      expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
+        12345,
+      );
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'maxPayout is required for random packages',
+        code: 'missing-max-payout',
+      });
+      expect(mockedPackageAction.addPackage).not.toHaveBeenCalled();
+    });
+    /**
      * Test for database error during package addition in POST /packages
      * @target PackageController.addPackageRoute
      * @scenario

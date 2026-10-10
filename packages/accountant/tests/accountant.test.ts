@@ -224,6 +224,42 @@ describe('Accountant', () => {
       expect(mockWallet.signTransaction).not.toHaveBeenCalled();
       expect(mockNodeModel.submitTransactionBytes).not.toHaveBeenCalled();
     });
+
+    /**
+     * Test for processing a random package without maxPayout
+     * @scenario
+     * - Package type is 'random'
+     * - Package has assets but maxPayout is undefined
+     * @expected
+     * - NoAssetsSelectedError is thrown
+     * - No transaction is built or submitted
+     */
+    it('should throw when maxPayout is undefined for a random package', async () => {
+      const request: UserRequest = {
+        ...mockUserRequest,
+        package: {
+          ...mockUserRequest.package,
+          type: 'random',
+          assets: [
+            {
+              id: 1,
+              tokenId: 'ERG',
+              amount: '1000000',
+              weight: 100,
+            },
+          ],
+          maxPayout: undefined,
+        } as Package,
+      };
+
+      await expect(accountant.processTransaction(request)).rejects.toThrow(
+        'No assets selected for transaction',
+      );
+
+      expect(mockWallet.selectBoxes).not.toHaveBeenCalled();
+      expect(mockWallet.signTransaction).not.toHaveBeenCalled();
+      expect(mockNodeModel.submitTransactionBytes).not.toHaveBeenCalled();
+    });
   });
 
   /**
@@ -629,7 +665,7 @@ describe('Accountant', () => {
 
       expect(selected).toHaveLength(1);
       expect(selected[0].id).toBe(1);
-      expect(randomSpy).not.toHaveBeenCalledOnce(); // Since total=0, chooseWeighted returns undefined
+      expect(randomSpy).not.toHaveBeenCalled(); // Since total=0, chooseWeighted returns undefined
     });
   });
 });

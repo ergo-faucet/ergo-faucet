@@ -289,6 +289,16 @@ class Accountant {
       }
       case 'random':
         this.logger.debug(`Processing request for a random package...`);
+
+        if (request.package.maxPayout === undefined) {
+          this.logger.debug(
+            `Request with ID: ${request.id} has a random package but no maxPayout defined. Marking as failed.`,
+          );
+          throw new NoAssetsSelectedError(
+            'Random package with undefined maxPayout',
+          );
+        }
+
         this.logger.debug(
           `Selecting assets for request with id: ${request.id}`,
         );
@@ -301,7 +311,7 @@ class Accountant {
 
     if (selectedAssets.length === 0) {
       this.logger.debug(`No assets selected for request ID: ${request.id}`);
-      throw new NoAssetsSelectedError();
+      throw new NoAssetsSelectedError(`Request ID: ${request.id}`);
     }
 
     // Find ERG assets amount
