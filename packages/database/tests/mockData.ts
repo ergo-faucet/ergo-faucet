@@ -18,6 +18,7 @@ export const mockPackages: PackageDTO[] = [
         amount: '300',
         decimals: 0,
         usageDescription: 'usage for package 3',
+        weight: 10,
       },
     ],
     authMethods: [
@@ -50,6 +51,7 @@ export const mockPackages: PackageDTO[] = [
         amount: '200',
         decimals: 0,
         usageDescription: 'usage for package 2',
+        weight: 10,
       },
     ],
     authMethods: [
@@ -81,6 +83,7 @@ export const mockPackages: PackageDTO[] = [
         amount: '1000',
         decimals: 0,
         usageDescription: 'usage for package 1',
+        weight: 10,
       },
       {
         id: 2,
@@ -89,6 +92,7 @@ export const mockPackages: PackageDTO[] = [
         amount: '500',
         decimals: 0,
         usageDescription: 'extra usage for package 1',
+        weight: 10,
       },
     ],
     authMethods: [

@@ -5,8 +5,13 @@ export const requestPackagePayload = {
 };
 
 export const mockAssets = [
-  { tokenId: 'ERG', amount: '1', usageDescription: 'Test ERG' },
-  { tokenId: 'TOKEN1', amount: '1.0', usageDescription: 'Test token' },
+  { tokenId: 'ERG', amount: '1', usageDescription: 'Test ERG', weight: 10 },
+  {
+    tokenId: 'TOKEN1',
+    amount: '1.0',
+    usageDescription: 'Test token',
+    weight: 10,
+  },
 ];
 
 export const mockProccessedAssets = [
@@ -18,6 +23,7 @@ export const mockProccessedAssets = [
     usageDescription: 'Test ERG',
     createdAt: new Date('2024-01-15T10:00:00.000Z'),
     modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+    weight: 10,
   },
   {
     tokenId: 'TOKEN1',
@@ -27,5 +33,6 @@ export const mockProccessedAssets = [
     usageDescription: 'Test token',
     createdAt: new Date('2024-01-15T10:00:00.000Z'),
     modifiedAt: new Date('2024-01-15T10:00:00.000Z'),
+    weight: 10,
   },
 ];

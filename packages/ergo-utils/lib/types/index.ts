@@ -3,6 +3,7 @@ export {
   NotEnoughAssetsError,
   InvalidTokenPrecisionError,
   TokenNotFoundError,
+  NoAssetsSelectedError,
 } from './errors';
 export {
   errorResponse,

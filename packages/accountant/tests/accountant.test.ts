@@ -1,4 +1,4 @@
-import { Asset, UserRequest } from '@ergo-faucet/database';
+import { Asset, Package, UserRequest } from '@ergo-faucet/database';
 import {
   NotEnoughAssetsError,
   DoubleSpendError,
@@ -54,6 +54,212 @@ describe('Accountant', () => {
     // eslint-disable-next-line
     (Accountant as any).instance = undefined;
     vi.clearAllMocks();
+  });
+
+  /**
+   * Test suite for processing transactions
+   * @target Accountant.processTransaction
+   * @description
+   * - Covers normal and random package transaction processing.
+   * - Covers transaction building, signing, and submission.
+   * - Covers empty asset selection.
+   */
+  describe('processTransaction', () => {
+    /**
+     * Test for processing a normal package
+     * @scenario
+     * - Package type is 'normal'
+     * - Package contains token assets
+     * @expected
+     * - Transaction is built with the package assets
+     * - Transaction is signed and submitted successfully
+     */
+    it('should process a normal package', async () => {
+      const request: UserRequest = {
+        ...mockUserRequest,
+        package: {
+          ...mockUserRequest.package,
+          type: 'normal',
+          assets: [
+            {
+              tokenId:
+                '03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04',
+              amount: '100',
+            },
+          ],
+        } as Package,
+      };
+
+      const currentHeight = 1000;
+      const signedTx: SignedTransaction = {
+        id: 'tx123',
+        inputs: [],
+        outputs: [],
+        dataInputs: [],
+      };
+
+      mockWallet.selectBoxes.mockResolvedValue(mockInput);
+      mockNodeModel.getCurrentBlockchainHeight.mockResolvedValue(currentHeight);
+      mockWallet.signTransaction.mockReturnValue(signedTx);
+      mockNodeModel.submitTransactionBytes.mockResolvedValue('tx123');
+
+      const result = await accountant.processTransaction(request);
+
+      expect(mockWallet.selectBoxes).toHaveBeenCalledWith(
+        mockedConfig.minFee + mockedConfig.minNanoErg + 1000000n,
+        [
+          {
+            tokenId:
+              '03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04',
+            amount: 100n,
+          },
+        ],
+      );
+
+      expect(mockWallet.signTransaction).toHaveBeenCalled();
+      expect(mockNodeModel.submitTransactionBytes).toHaveBeenCalled();
+
+      expect(result).toEqual({
+        serializedTx: hex.encode(serializeTransaction(signedTx).toBytes()),
+        transactionId: 'tx123',
+      });
+    });
+
+    /**
+     * Test for processing a random package
+     * @scenario
+     * - Package type is 'random'
+     * - Package contains ERG and token assets
+     * - All assets have weight 100 and are selected
+     * @expected
+     * - Selected ERG amount is added to the output value
+     * - Selected token assets are added to the output
+     * - Transaction is signed and submitted successfully
+     */
+    it('should process a random package with selected ERG and token assets', async () => {
+      const request: UserRequest = {
+        ...mockUserRequest,
+        package: {
+          ...mockUserRequest.package,
+          type: 'random',
+          assets: [
+            {
+              id: 1,
+              tokenId: 'ERG',
+              amount: '1000000',
+              weight: 100,
+            },
+            {
+              id: 2,
+              tokenId:
+                '03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04',
+              amount: '100',
+              weight: 100,
+            },
+          ],
+          maxPayout: 2,
+        } as Package,
+      };
+
+      const currentHeight = 1000;
+      const signedTx: SignedTransaction = {
+        id: 'tx123',
+        inputs: [],
+        outputs: [],
+        dataInputs: [],
+      };
+
+      mockWallet.selectBoxes.mockResolvedValue(mockInput);
+      mockNodeModel.getCurrentBlockchainHeight.mockResolvedValue(currentHeight);
+      mockWallet.signTransaction.mockReturnValue(signedTx);
+      mockNodeModel.submitTransactionBytes.mockResolvedValue('tx123');
+
+      const result = await accountant.processTransaction(request);
+
+      expect(mockWallet.selectBoxes).toHaveBeenCalledWith(
+        mockedConfig.minFee + mockedConfig.minNanoErg + 1000000n,
+        [
+          {
+            tokenId:
+              '03faf2cb329f2e90d6d23b58d91bbb6c046aa143261cc21f52fbe2824bfcbf04',
+            amount: 100n,
+          },
+        ],
+      );
+
+      expect(mockWallet.signTransaction).toHaveBeenCalled();
+      expect(mockNodeModel.submitTransactionBytes).toHaveBeenCalled();
+
+      expect(result).toEqual({
+        serializedTx: hex.encode(serializeTransaction(signedTx).toBytes()),
+        transactionId: 'tx123',
+      });
+    });
+
+    /**
+     * Test for handling empty random asset selection
+     * @scenario
+     * - Package type is 'random'
+     * - No assets are available for selection
+     * @expected
+     * - NoAssetsSelectedError is thrown
+     * - No transaction is built or submitted
+     */
+    it('should throw when no assets are selected for a random package', async () => {
+      const request: UserRequest = {
+        ...mockUserRequest,
+        package: {
+          ...mockUserRequest.package,
+          type: 'random',
+          assets: [],
+          maxPayout: 5,
+        },
+      };
+
+      await expect(accountant.processTransaction(request)).rejects.toThrow(
+        'No assets selected for transaction',
+      );
+
+      expect(mockWallet.selectBoxes).not.toHaveBeenCalled();
+      expect(mockWallet.signTransaction).not.toHaveBeenCalled();
+      expect(mockNodeModel.submitTransactionBytes).not.toHaveBeenCalled();
+    });
+
+    /**
+     * Test for processing a random package without maxPayout
+     * @scenario
+     * - Package type is 'random'
+     * - Package has assets but maxPayout is undefined
+     * @expected
+     * - NoAssetsSelectedError is thrown
+     * - No transaction is built or submitted
+     */
+    it('should throw when maxPayout is undefined for a random package', async () => {
+      const request: UserRequest = {
+        ...mockUserRequest,
+        package: {
+          ...mockUserRequest.package,
+          type: 'random',
+          assets: [
+            {
+              id: 1,
+              tokenId: 'ERG',
+              amount: '1000000',
+              weight: 100,
+            },
+          ],
+          maxPayout: undefined,
+        } as Package,
+      };
+
+      await expect(accountant.processTransaction(request)).rejects.toThrow(
+        'No assets selected for transaction',
+      );
+
+      expect(mockWallet.selectBoxes).not.toHaveBeenCalled();
+      expect(mockWallet.signTransaction).not.toHaveBeenCalled();
+      expect(mockNodeModel.submitTransactionBytes).not.toHaveBeenCalled();
+    });
   });
 
   /**
@@ -226,6 +432,35 @@ describe('Accountant', () => {
         mockUserRequest.numberOfTries + 1,
       );
     });
+
+    /**
+     * Test for handling random request with no selected assets
+     * @scenario
+     * - Random package has no assets to select
+     * @expected
+     * - Request marked as 'failed', no transaction attempted
+     */
+    it('should mark random request as failed when no assets are selected', async () => {
+      const request: UserRequest = {
+        ...mockUserRequest,
+        package: {
+          ...mockUserRequest.package,
+          type: 'random',
+          assets: [],
+          maxPayout: 5,
+        },
+      };
+
+      await accountant.handlePendingRequest(request);
+
+      expect(
+        mockAccountantAction.updateUserRequestPaymentInfo,
+      ).toHaveBeenCalledWith(request.id, 'failed', request.numberOfTries);
+
+      expect(mockWallet.selectBoxes).not.toHaveBeenCalled();
+      expect(mockWallet.signTransaction).not.toHaveBeenCalled();
+      expect(mockNodeModel.submitTransactionBytes).not.toHaveBeenCalled();
+    });
   });
 
   /**
@@ -340,6 +575,97 @@ describe('Accountant', () => {
       expect(
         mockAccountantAction.updateUserRequestPaymentInfo,
       ).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('selectRandomAssets', () => {
+    let randomSpy: ReturnType<typeof vi.spyOn>;
+
+    beforeEach(() => {
+      randomSpy = vi.spyOn(Math, 'random');
+    });
+
+    afterEach(() => {
+      randomSpy.mockRestore();
+    });
+
+    it('should select all assets with weight 100 and randomly select others up to max_payout', () => {
+      const assets: Asset[] = [
+        { id: 1, tokenId: 't1', amount: '10', weight: 100 } as Asset,
+        { id: 2, tokenId: 't2', amount: '20', weight: 100 } as Asset,
+        { id: 3, tokenId: 't3', amount: '30', weight: 50 } as Asset,
+        { id: 4, tokenId: 't4', amount: '40', weight: 30 } as Asset,
+        { id: 5, tokenId: 't5', amount: '50', weight: 20 } as Asset,
+      ];
+      const max_payout = 4;
+
+      // Mock random to select asset 3 (id:3) first: r = 0.1 * 100 = 10 < 50 -> pick 3
+      // Then select asset 5 (id:5): r = 0.7 * 50 = 35 > 30, 35-30=5 <20 -> pick 5
+      randomSpy.mockReturnValueOnce(0.1);
+      randomSpy.mockReturnValueOnce(0.7);
+
+      const selected = accountant.selectRandomAssets(assets, max_payout);
+
+      expect(selected).toHaveLength(4);
+      expect(selected.map((a) => a.id)).toEqual(
+        expect.arrayContaining([1, 2, 3, 5]),
+      );
+      expect(randomSpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('should select all always assets even if exceeding max_payout', () => {
+      const assets: Asset[] = [
+        { id: 1, tokenId: 't1', amount: '10', weight: 100 } as Asset,
+        { id: 2, tokenId: 't2', amount: '20', weight: 100 } as Asset,
+        { id: 3, tokenId: 't3', amount: '30', weight: 50 } as Asset,
+      ];
+      const max_payout = 1;
+
+      // No random calls since remain=0
+      const selected = accountant.selectRandomAssets(assets, max_payout);
+
+      expect(selected).toHaveLength(2);
+      expect(selected.map((a) => a.id)).toEqual([1, 2]);
+      expect(randomSpy).not.toHaveBeenCalled();
+    });
+
+    it('should select up to max_payout random assets when no always assets', () => {
+      const assets: Asset[] = [
+        { id: 1, tokenId: 't1', amount: '10', weight: 40 } as Asset,
+        { id: 2, tokenId: 't2', amount: '20', weight: 60 } as Asset,
+        { id: 3, tokenId: 't3', amount: '30', weight: 0 } as Asset, // weight 0, should be skipped
+      ];
+      const max_payout = 1;
+
+      // Total weight 100 (40+60), r=0.3*100=30 <40 -> pick 1
+      randomSpy.mockReturnValueOnce(0.3);
+
+      const selected = accountant.selectRandomAssets(assets, max_payout);
+
+      expect(selected).toHaveLength(1);
+      expect(selected[0].id).toBe(1);
+      expect(randomSpy).toHaveBeenCalledTimes(1);
+    });
+
+    it('should return empty array if no assets', () => {
+      const selected = accountant.selectRandomAssets([], 5);
+      expect(selected).toHaveLength(0);
+    });
+
+    it('should skip assets with zero weight in random selection', () => {
+      const assets: Asset[] = [
+        { id: 1, tokenId: 't1', amount: '10', weight: 100 } as Asset,
+        { id: 2, tokenId: 't2', amount: '20', weight: 0 } as Asset,
+        { id: 3, tokenId: 't3', amount: '30', weight: 0 } as Asset,
+      ];
+      const max_payout = 3;
+
+      // Only always selected, random total weight=0, no pick
+      const selected = accountant.selectRandomAssets(assets, max_payout);
+
+      expect(selected).toHaveLength(1);
+      expect(selected[0].id).toBe(1);
+      expect(randomSpy).not.toHaveBeenCalled(); // Since total=0, chooseWeighted returns undefined
     });
   });
 });

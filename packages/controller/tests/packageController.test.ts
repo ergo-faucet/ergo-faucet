@@ -80,7 +80,9 @@ describe('PackageController', () => {
 
     // Default mock for getPackages to return a package
     vi.spyOn(mockedPackageAction, 'getPackages').mockImplementation(
-      async () => mockPackageDTO,
+      async () => {
+        return { total: 1, packages: mockPackageDTO };
+      },
     );
 
     /**
@@ -99,7 +101,10 @@ describe('PackageController', () => {
 
       expect(mockedPackageAction.getPackages).toBeCalled();
       expect(result.statusCode).toEqual(200);
-      expect(JSON.parse(result.body)).toEqual(mockPackageDTO);
+      expect(JSON.parse(result.body)).toEqual({
+        total: 1,
+        packages: mockPackageDTO,
+      });
     });
 
     /**
@@ -503,6 +508,43 @@ describe('PackageController', () => {
     });
 
     /**
+     * Test for missing maxPayout in random package creation
+     * @target PackageController.addPackageRoute
+     * @scenario
+     * - POST /packages with a random package and no maxPayout
+     * @expected
+     * - returns 400 with a missing maxPayout error
+     * - package is not added to the database
+     */
+    it('should return 400 when maxPayout is missing for a random package', async () => {
+      mockedPackageAction.validateAdminRequest.mockResolvedValue(true);
+
+      const payload = {
+        name: 'Test Package',
+        description: 'A test package',
+        type: 'random',
+        status: 'show',
+        delay: '360000',
+        numberEachUser: 1,
+      };
+
+      const result = await fastifyInstance['fastify'].inject({
+        method: 'POST',
+        url: '/packages',
+        payload,
+      });
+
+      expect(mockedPackageAction.validateAdminRequest).toHaveBeenCalledWith(
+        12345,
+      );
+      expect(result.statusCode).toEqual(400);
+      expect(JSON.parse(result.body)).toEqual({
+        error: 'maxPayout is required for random packages',
+        code: 'missing-max-payout',
+      });
+      expect(mockedPackageAction.addPackage).not.toHaveBeenCalled();
+    });
+    /**
      * Test for database error during package addition in POST /packages
      * @target PackageController.addPackageRoute
      * @scenario
@@ -771,11 +813,11 @@ describe('PackageController', () => {
       const result = await fastifyInstance['fastify'].inject({
         method: 'POST',
         url: '/packages/1/assets',
-        payload: [{ tokenId: 'INVALID_TOKEN', amount: '1' }],
+        payload: [{ tokenId: 'INVALID_TOKEN', amount: '1', weight: 10 }],
       });
 
       expect(utils.processAssets).toHaveBeenCalledWith(
-        [{ tokenId: 'INVALID_TOKEN', amount: '1' }],
+        [{ tokenId: 'INVALID_TOKEN', amount: '1', weight: 10 }],
         mockNodeModel,
       );
       expect(result.statusCode).toEqual(400);
@@ -809,7 +851,7 @@ describe('PackageController', () => {
       });
 
       expect(utils.processAssets).toHaveBeenCalledWith(
-        [{ tokenId: 'TOKEN1', amount: '1.234' }],
+        [{ tokenId: 'TOKEN1', amount: '1.234', weight: 10 }],
         mockNodeModel,
       );
       expect(result.statusCode).toEqual(400);
@@ -838,6 +880,7 @@ describe('PackageController', () => {
           amount: '1000000000',
           decimals: 9,
           usageDescription: 'Test',
+          weight: 10,
         },
       ]);
       mockedPackageAction.addAssets.mockRejectedValue(
