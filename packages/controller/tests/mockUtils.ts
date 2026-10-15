@@ -90,8 +90,11 @@ const mockAsset1: Asset = {
   assetName: 'token-abc-123',
   amount: '1000',
   usageDescription: 'Initial reward',
+
   createdAt: 1705312800,
   modifiedAt: 1705312800,
+
+  weight: 10,
 };
 
 const mockAsset2: Asset = {
@@ -102,8 +105,11 @@ const mockAsset2: Asset = {
   assetName: 'token-def-456',
   amount: '500',
   usageDescription: 'Bonus item',
+
   createdAt: 1705312800,
   modifiedAt: 1705312800,
+
+  weight: 10,
 };
 
 const mockAuthMethod1: PackageAuthMethod = {
@@ -158,47 +164,46 @@ mockPackage = {
   modifiedAt: 1705312800,
 };
 
-export const mockPackageDTO = {
-  total: 5,
-  packages: [
-    {
-      id: 101,
-      name: 'Starter Pack',
-      type: 'normal',
-      delay: '3600',
-      //openAt: new Date('2025-07-01').getTime() / 1000,
-      closeAt: new Date('2025-12-31').getTime() / 1000,
-      description: 'A package for new users',
-      numberEachUser: 1,
-      assets: [
-        {
-          tokenId: 'token-abc-123',
-          assetName: 'token-abc-123',
-          amount: '1000',
-          decimals: 1,
-          usageDescription: 'Initial reward',
-        },
-        {
-          tokenId: 'token-def-456',
-          assetName: 'token-def-456',
-          amount: '500',
-          decimals: 1,
-          usageDescription: 'Bonus item',
-        },
-      ],
-      authMethods: [
-        {
-          id: 1,
-          name: 'Telegram',
-        },
-        {
-          id: 2,
-          name: 'Email',
-        },
-      ],
-    },
-  ],
-};
+export const mockPackageDTO = [
+  {
+    id: 101,
+    name: 'Starter Pack',
+    type: 'normal',
+    delay: '3600',
+    //openAt: new Date('2025-07-01').getTime() / 1000,
+    closeAt: new Date('2025-12-31').getTime() / 1000,
+    description: 'A package for new users',
+    numberEachUser: 1,
+    assets: [
+      {
+        tokenId: 'token-abc-123',
+        assetName: 'token-abc-123',
+        amount: '1000',
+        decimals: 1,
+        usageDescription: 'Initial reward',
+        weight: 10,
+      },
+      {
+        tokenId: 'token-def-456',
+        assetName: 'token-def-456',
+        amount: '500',
+        decimals: 1,
+        usageDescription: 'Bonus item',
+        weight: 10,
+      },
+    ],
+    authMethods: [
+      {
+        id: 1,
+        name: 'Telegram',
+      },
+      {
+        id: 2,
+        name: 'Email',
+      },
+    ],
+  },
+];
 
 export const mockFastifyConfig: ServerConfig = {
   port: 3000,

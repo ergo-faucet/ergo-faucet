@@ -14,6 +14,7 @@ export interface AssetDTO {
   amount: string;
   decimals: number;
   usageDescription: string;
+  weight: number;
 }
 
 export interface AuthMethodDTO {

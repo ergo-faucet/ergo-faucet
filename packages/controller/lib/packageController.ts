@@ -283,6 +283,16 @@ class PackageController {
             return reply.status(403).send({ error: 'Forbidden' });
           }
 
+          if (
+            request.body.type === 'random' &&
+            request.body.maxPayout === undefined
+          ) {
+            return reply.status(400).send({
+              error: 'maxPayout is required for random packages',
+              code: 'missing-max-payout',
+            });
+          }
+
           // Add package to database
           const packageId = await this.packageAction.addPackage(request.body);
           this.logger.debug(`Package with ID: ${packageId} successfully added`);

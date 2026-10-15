@@ -477,6 +477,7 @@ class PackageAction {
           closeAt: packagePayload.closeAt,
           delay: packagePayload.delay,
           numberEachUser: packagePayload.numberEachUser,
+          maxPayout: packagePayload.maxPayout,
           createdAt: Math.floor(Date.now() / 1000),
           modifiedAt: Math.floor(Date.now() / 1000),
         });
